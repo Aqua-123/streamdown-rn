@@ -1,5 +1,5 @@
 import React, { Profiler, useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { AccessibilityInfo, Linking, SafeAreaView, ScrollView, Text } from 'react-native';
+import { AccessibilityInfo, Linking, SafeAreaView, ScrollView, StatusBar, Text } from 'react-native';
 import { FullscreenModal, Streamdown, createStreamingInstrumentation } from 'streamdown-rn';
 import { createCodePlugin } from 'streamdown-rn/code';
 import { cjk } from 'streamdown-rn/cjk';
@@ -12,7 +12,7 @@ const STREAM = `${STATIC}\n## Incomplete\n\n[link](https://example.com`;
 const BENCHMARK = buildBenchmarkCorpus();
 const code = createCodePlugin({ provider: { languages: ['js', 'typescript'], aliases: { ts: 'typescript' }, highlight: ({ code: source }) => ({ tokens: source.split('\n').map((line) => [{ content: line, color: '#2563eb' }]) }) } });
 const math = createMathPlugin({ adapter: { render: ({ source, display }) => React.createElement(Text, { accessibilityLabel: `${display ? 'Block' : 'Inline'} math: ${source}` }, source) } });
-const mermaid = createMermaidPlugin({ adapter: { families: ['flowchart'], render: ({ source }) => ({ kind: 'native', content: React.createElement(Text, { accessibilityLabel: 'Native flowchart' }, source) }) } });
+const mermaid = createMermaidPlugin({ adapter: { families: ['flowchart'], render: ({ source }) => ({ kind: 'native', content: React.createElement(Text, { accessibilityLabel: 'Native flowchart', style: { color: '#8b949e' } }, source) }) } });
 const PLUGINS = { code, cjk, math, mermaid };
 const codeLoading = createCodePlugin({ provider: { languages: ['js'], highlight: () => new Promise(() => {}) } });
 const mathLoading = createMathPlugin({ adapter: { render: ({ source }) => React.createElement(Text, { accessibilityLabel: 'Loading math renderer', accessibilityState: { busy: true } }, `Loading math renderer: ${source}`) } });
@@ -38,8 +38,8 @@ const SCENARIOS = {
   math: '$$\\begin{matrix}1&2\\\\3&4\\end{matrix}$$',
   mermaid: '```mermaid\nflowchart LR\nA-->B\n```',
   'image-loading': '![Image loading](https://10.255.255.1/streamdown-loading.png)',
-  'image-error': '![Image error](invalid-scheme://streamdown/error.png)',
-  'image-retry': '![Image retry](invalid-scheme://streamdown/retry.png)',
+  'image-error': '![Image error](https://127.0.0.1:1/streamdown-error.png)',
+  'image-retry': '![Image retry](https://127.0.0.1:1/streamdown-retry.png)',
   'code-loading': '```js\nconst pending = true;\n```',
   'code-unsupported': '```brainfuck\n++>---<[.]\n```',
   'code-incomplete': '```typescript\nconst incomplete = true;',
@@ -98,11 +98,14 @@ export default function App() {
   }, [metrics, scenario]);
   const markdown = streaming || benchmarking ? source.slice(0, length) : SCENARIOS[scenario] || STATIC;
   const scenarioPlugins = SCENARIO_PLUGINS[scenario] || PLUGINS;
+  const backgroundColor = theme === 'dark' ? '#111827' : '#ffffff';
+  const foregroundColor = theme === 'dark' ? '#e5e7eb' : '#111827';
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme === 'dark' ? '#111827' : '#ffffff' }} testID="fixture-root">
+    <SafeAreaView style={{ flex: 1, paddingTop: StatusBar.currentHeight || 24, backgroundColor }} testID="fixture-root">
+      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={backgroundColor} />
       <ScrollView contentContainerStyle={{ padding: 16, width: layout === 'wide' ? 720 : 360, maxWidth: '100%', alignSelf: 'center' }}>
-        <Text accessibilityRole="header">Fixture: {scenario}</Text>
-        <Text>Fixture state: {scenario}</Text>
+        <Text accessibilityRole="header" style={{ color: foregroundColor }}>Fixture: {scenario}</Text>
+        <Text style={{ color: foregroundColor }}>Fixture state: {scenario}</Text>
         <Profiler id="streamdown" onRender={(_id, phase, duration) => console.log('STREAMDOWN_BENCHMARK', JSON.stringify({ type: 'react-commit', phase, durationMs: duration }))}>
           <Streamdown
             mode={streamMode ? 'streaming' : 'static'}
@@ -115,8 +118,8 @@ export default function App() {
           >{markdown}</Streamdown>
         </Profiler>
       </ScrollView>
-      <FullscreenModal visible={scenario === 'fullscreen'} label="Fullscreen fixture" closeLabel="Exit fullscreen" capabilities={{}} onClose={() => {}}>
-        <Text>Fullscreen content</Text>
+      <FullscreenModal visible={scenario === 'fullscreen'} label="Fullscreen fixture" closeLabel="Exit fullscreen" capabilities={{}} onClose={() => {}} color={foregroundColor} backgroundColor={backgroundColor}>
+        <Text style={{ color: foregroundColor }}>Fullscreen content</Text>
       </FullscreenModal>
     </SafeAreaView>
   );

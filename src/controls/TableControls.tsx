@@ -10,7 +10,7 @@ import { serializeTable, tableFileRequest } from './serialization';
 import type { StreamdownTranslations } from './translations';
 import { defaultIcons, type IconMap } from './icons';
 
-export function TableControls({ table, children, capabilities, controls, translations, disabled, icons }: {
+export function TableControls({ table, children, capabilities, controls, translations, disabled, icons, color, backgroundColor }: {
   table: TableData;
   children: React.ReactNode;
   capabilities: NativeCapabilities;
@@ -18,6 +18,8 @@ export function TableControls({ table, children, capabilities, controls, transla
   translations: StreamdownTranslations;
   disabled?: boolean;
   icons?: IconMap;
+  color?: string;
+  backgroundColor?: string;
 }) {
   const [fullscreen, setFullscreen] = useState(false);
   const opener = useRef<View>(null);
@@ -27,15 +29,15 @@ export function TableControls({ table, children, capabilities, controls, transla
   if (!copy && !download && !expand) return <>{children}</>;
   const renderActions = (includeFullscreen: boolean) => <View accessibilityRole="toolbar" style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
     {copy ? <>
-      <ActionButton label={translations.copyTableAsMarkdown} icon={icons?.copy ?? defaultIcons.copy} successMessage={translations.copied} disabled={disabled} onAction={() => capabilities.clipboard?.writeText(serializeTable(table, 'markdown')) ?? { status: 'unavailable', error: new Error('Clipboard unavailable') }} />
-      <ActionButton label={translations.copyTableAsCsv} icon={icons?.copy ?? defaultIcons.copy} successMessage={translations.copied} disabled={disabled} onAction={() => capabilities.clipboard?.writeText(serializeTable(table, 'csv')) ?? { status: 'unavailable', error: new Error('Clipboard unavailable') }} />
-      <ActionButton label={translations.copyTableAsTsv} icon={icons?.copy ?? defaultIcons.copy} successMessage={translations.copied} disabled={disabled} onAction={() => capabilities.clipboard?.writeText(serializeTable(table, 'tsv')) ?? { status: 'unavailable', error: new Error('Clipboard unavailable') }} />
+      <ActionButton label={translations.copyTableAsMarkdown} icon={icons?.copy ?? defaultIcons.copy} successMessage={translations.copied} disabled={disabled} color={color} onAction={() => capabilities.clipboard?.writeText(serializeTable(table, 'markdown')) ?? { status: 'unavailable', error: new Error('Clipboard unavailable') }} />
+      <ActionButton label={translations.copyTableAsCsv} icon={icons?.copy ?? defaultIcons.copy} successMessage={translations.copied} disabled={disabled} color={color} onAction={() => capabilities.clipboard?.writeText(serializeTable(table, 'csv')) ?? { status: 'unavailable', error: new Error('Clipboard unavailable') }} />
+      <ActionButton label={translations.copyTableAsTsv} icon={icons?.copy ?? defaultIcons.copy} successMessage={translations.copied} disabled={disabled} color={color} onAction={() => capabilities.clipboard?.writeText(serializeTable(table, 'tsv')) ?? { status: 'unavailable', error: new Error('Clipboard unavailable') }} />
     </> : null}
     {download ? <>
-      <ActionButton label={translations.downloadTableAsCsv} icon={icons?.download ?? defaultIcons.download} disabled={disabled} onAction={() => capabilities.files?.save(tableFileRequest(table, 'csv')) ?? { status: 'unavailable', error: new Error('File saving unavailable') }} />
-      <ActionButton label={translations.downloadTableAsMarkdown} icon={icons?.download ?? defaultIcons.download} disabled={disabled} onAction={() => capabilities.files?.save(tableFileRequest(table, 'markdown')) ?? { status: 'unavailable', error: new Error('File saving unavailable') }} />
+      <ActionButton label={translations.downloadTableAsCsv} icon={icons?.download ?? defaultIcons.download} disabled={disabled} color={color} onAction={() => capabilities.files?.save(tableFileRequest(table, 'csv')) ?? { status: 'unavailable', error: new Error('File saving unavailable') }} />
+      <ActionButton label={translations.downloadTableAsMarkdown} icon={icons?.download ?? defaultIcons.download} disabled={disabled} color={color} onAction={() => capabilities.files?.save(tableFileRequest(table, 'markdown')) ?? { status: 'unavailable', error: new Error('File saving unavailable') }} />
     </> : null}
-    {expand && includeFullscreen ? <ActionButton buttonRef={opener} label={translations.viewFullscreen} icon={icons?.fullscreen ?? defaultIcons.fullscreen} disabled={disabled} onAction={() => { setFullscreen(true); return { status: 'success' }; }} /> : null}
+    {expand && includeFullscreen ? <ActionButton buttonRef={opener} label={translations.viewFullscreen} icon={icons?.fullscreen ?? defaultIcons.fullscreen} disabled={disabled} color={color} onAction={() => { setFullscreen(true); return { status: 'success' }; }} /> : null}
   </View>;
   return (
     <View>
@@ -49,6 +51,8 @@ export function TableControls({ table, children, capabilities, controls, transla
         restoreTarget={opener.current}
         onClose={() => setFullscreen(false)}
         icons={icons}
+        color={color}
+        backgroundColor={backgroundColor}
       ><View>{renderActions(false)}{children}</View></FullscreenModal>
     </View>
   );

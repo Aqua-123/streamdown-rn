@@ -38,9 +38,10 @@ export function SafeImage({ uri, alt, theme, capabilities, controls, translation
     return () => { mounted = false; };
   }, [uri, attempt]);
   if (state === 'failed') {
-    return <View accessibilityRole="alert"><Text>{translations.imageNotAvailable}</Text><ActionButton
+    return <View accessibilityRole="alert"><Text style={{ color: theme.colors.foreground }}>{translations.imageNotAvailable}</Text><ActionButton
       label={translations.retryImage}
       icon={icons?.retry ?? defaultIcons.retry}
+      color={theme.colors.foreground}
       onAction={() => { setState('loading'); setAttempt((value) => value + 1); return { status: 'success' }; }}
     /></View>;
   }
@@ -62,6 +63,7 @@ export function SafeImage({ uri, alt, theme, capabilities, controls, translation
         label={translations.downloadImage}
         icon={icons?.download ?? defaultIcons.download}
         disabled={disabled}
+        color={theme.colors.foreground}
         onAction={async () => capabilities.files!.save(await fetchImageFileRequest(uri, alt || 'image'))}
       /> : null}
     </View>

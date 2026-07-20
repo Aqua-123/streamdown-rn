@@ -41,12 +41,30 @@ function run(command, args, options = {}) {
 }
 function wait(ms) { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms); }
 
+function androidHierarchy(device, entry) {
+  const hierarchyPath = '/sdcard/streamdown-rn-visual.xml';
+  const expected = entry.scenario === 'fullscreen'
+    ? ['Fullscreen fixture', 'Exit fullscreen']
+    : [`Fixture: ${entry.scenario}`];
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    run('adb', ['-s', device, 'shell', 'uiautomator', 'dump', hierarchyPath]);
+    const xml = run('adb', ['-s', device, 'exec-out', 'cat', hierarchyPath]);
+    if (expected.every((value) => xml.includes(value))) return xml;
+    wait(500);
+  }
+  throw new Error(`Accessibility hierarchy missing ${expected.join(' and ')} for ${entry.id}`);
+}
+
 for (const entry of config.cases) {
   const query = new URLSearchParams({ scenario: entry.scenario, theme: entry.theme, direction: entry.direction, layout: entry.layout, ...(entry.checkpoint ? { checkpoint: entry.checkpoint } : {}) }).toString();
   const url = `${scheme}://fixture?${query}`;
   if (platform === 'android') {
     run('adb', ['-s', device, 'shell', 'settings', 'put', 'system', 'font_scale', String(entry.fontScale)]);
-    run('adb', ['-s', device, 'shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', url]);
+    wait(500);
+    assert(appId, 'VISUAL_APP_ID is required for deterministic Android restarts');
+    run('adb', ['-s', device, 'shell', 'am', 'force-stop', appId]);
+    // adb reconstructs a remote shell command, so quote query separators for that shell.
+    run('adb', ['-s', device, 'shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', `'${url}'`, `${appId}/.MainActivity`]);
   } else {
     const size = entry.fontScale >= 2 ? 'accessibility-medium' : entry.fontScale > 1 ? 'extra-large' : 'medium';
     run('xcrun', ['simctl', 'ui', device, 'content_size', size]);
@@ -57,8 +75,7 @@ for (const entry of config.cases) {
   const actual = path.join(root, 'tests/visual/actual', `${platform}-${entry.id}.png`);
   fs.mkdirSync(path.dirname(actual), { recursive: true });
   if (platform === 'android') {
-    const xml = run('adb', ['-s', device, 'shell', 'uiautomator', 'dump', '/dev/tty']);
-    assert(xml.includes(`Fixture: ${entry.scenario}`), `Accessibility hierarchy missing fixture heading for ${entry.id}`);
+    androidHierarchy(device, entry);
     fs.writeFileSync(actual, run('adb', ['-s', device, 'exec-out', 'screencap', '-p'], { encoding: null }));
   } else {
     assert(spawnSync('maestro', ['--version']).status === 0, 'maestro is required for iOS semantic assertions');

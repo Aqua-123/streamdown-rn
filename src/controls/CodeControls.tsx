@@ -7,7 +7,7 @@ import { controlEnabled } from './config';
 import type { StreamdownTranslations } from './translations';
 import { defaultIcons, type IconMap } from './icons';
 
-export function CodeControls({ code, language, capabilities, controls, translations, disabled, icons }: {
+export function CodeControls({ code, language, capabilities, controls, translations, disabled, icons, color }: {
   code: string;
   language?: string | null;
   capabilities: NativeCapabilities;
@@ -15,6 +15,7 @@ export function CodeControls({ code, language, capabilities, controls, translati
   translations: StreamdownTranslations;
   disabled?: boolean;
   icons?: IconMap;
+  color?: string;
 }) {
   const copy = controlEnabled(controls, 'code', 'copy');
   const download = controlEnabled(controls, 'code', 'download');
@@ -26,6 +27,7 @@ export function CodeControls({ code, language, capabilities, controls, translati
         icon={icons?.copy ?? defaultIcons.copy}
         successMessage={translations.copied}
         disabled={disabled}
+        color={color}
         onAction={() => capabilities.clipboard?.writeText(code) ?? {
           status: 'unavailable', error: new Error('Clipboard unavailable'),
         }}
@@ -34,6 +36,7 @@ export function CodeControls({ code, language, capabilities, controls, translati
         label={translations.downloadFile}
         icon={icons?.download ?? defaultIcons.download}
         disabled={disabled}
+        color={color}
         onAction={() => capabilities.files?.save(codeFileRequest(code, language)) ?? {
           status: 'unavailable', error: new Error('File saving unavailable'),
         }}

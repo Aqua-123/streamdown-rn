@@ -12,6 +12,7 @@ export interface ActionButtonProps {
   buttonRef?: React.Ref<View>;
   successMessage?: string;
   resetAfterMs?: number;
+  color?: string;
 }
 
 function resultMessage(result: CapabilityResult): string | null {
@@ -21,7 +22,7 @@ function resultMessage(result: CapabilityResult): string | null {
   } as const)[result.status];
 }
 
-export function ActionButton({ label, icon, disabled, onAction, onResult, buttonRef, successMessage, resetAfterMs = 2000 }: ActionButtonProps) {
+export function ActionButton({ label, icon, disabled, onAction, onResult, buttonRef, successMessage, resetAfterMs = 2000, color }: ActionButtonProps) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -54,9 +55,9 @@ export function ActionButton({ label, icon, disabled, onAction, onResult, button
         onPress={press}
         style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 }}
       >
-        {typeof visual === 'string' || typeof visual === 'number' ? <Text>{visual}</Text> : visual}
+        {typeof visual === 'string' || typeof visual === 'number' ? <Text style={{ color }}>{visual}</Text> : visual}
       </Pressable>
-      {message ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite">{message}</Text> : null}
+      {message ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color }}>{message}</Text> : null}
     </View>
   );
 }

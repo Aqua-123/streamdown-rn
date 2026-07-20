@@ -27,6 +27,15 @@ describe('translations and icons', () => {
     screen.rerender(<Streamdown mode="static" icons={{ copy: <Text testID="next-copy-icon">N</Text> }}>{markdown}</Streamdown>);
     expect(screen.getByTestId('next-copy-icon')).toBeTruthy();
   });
+
+  it('keeps default control glyphs visible in the dark theme', () => {
+    const screen = render(<Streamdown mode="static" theme="dark">{'| A |\n|---|\n| value |\n\n```txt\nhello\n```'}</Streamdown>);
+    expect(screen.getAllByText('↓').every((glyph) => glyph.props.style?.color === '#c9d1d9')).toBe(true);
+    expect(screen.getByText('A').props.style).toEqual(expect.arrayContaining([
+      expect.objectContaining({ color: '#c9d1d9' }),
+      expect.objectContaining({ fontWeight: 'bold' }),
+    ]));
+  });
 });
 
 describe('native pan and zoom seam', () => {

@@ -4,7 +4,7 @@ import type { NativeCapabilities } from '../platform/capabilities';
 import { ActionButton } from './ActionButton';
 import { defaultIcons, type IconMap } from './icons';
 
-export function PanZoomSurface({ children, capabilities, min = 0.5, max = 3, step = 0.25, initialScale = 1, showControls = true, disabled, icons }: {
+export function PanZoomSurface({ children, capabilities, min = 0.5, max = 3, step = 0.25, initialScale = 1, showControls = true, disabled, icons, color }: {
   children: React.ReactNode;
   capabilities: NativeCapabilities;
   min?: number;
@@ -14,6 +14,7 @@ export function PanZoomSurface({ children, capabilities, min = 0.5, max = 3, ste
   showControls?: boolean;
   disabled?: boolean;
   icons?: IconMap;
+  color?: string;
 }) {
   if (!Number.isFinite(min) || !Number.isFinite(max) || min <= 0 || max < min) throw new TypeError('PanZoomSurface requires finite bounds with 0 < min <= max');
   if (!Number.isFinite(step) || step <= 0) throw new TypeError('PanZoomSurface step must be positive and finite');
@@ -42,9 +43,9 @@ export function PanZoomSurface({ children, capabilities, min = 0.5, max = 3, ste
       }}
     />
     {showControls ? <View accessibilityRole="toolbar" style={{ flexDirection: 'row' }}>
-      <ActionButton label="Zoom out" icon={icons?.zoomOut ?? defaultIcons.zoomOut} disabled={disabled || scale <= min} onAction={() => set(scale - step)} />
-      <ActionButton label="Reset zoom" icon={icons?.zoomReset ?? defaultIcons.zoomReset} disabled={disabled || scale === resetScale} onAction={() => set(resetScale)} />
-      <ActionButton label="Zoom in" icon={icons?.zoomIn ?? defaultIcons.zoomIn} disabled={disabled || scale >= max} onAction={() => set(scale + step)} />
+      <ActionButton label="Zoom out" icon={icons?.zoomOut ?? defaultIcons.zoomOut} disabled={disabled || scale <= min} color={color} onAction={() => set(scale - step)} />
+      <ActionButton label="Reset zoom" icon={icons?.zoomReset ?? defaultIcons.zoomReset} disabled={disabled || scale === resetScale} color={color} onAction={() => set(resetScale)} />
+      <ActionButton label="Zoom in" icon={icons?.zoomIn ?? defaultIcons.zoomIn} disabled={disabled || scale >= max} color={color} onAction={() => set(scale + step)} />
     </View> : null}
     {content}
   </View>;

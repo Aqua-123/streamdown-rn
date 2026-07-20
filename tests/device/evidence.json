@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-07-20T22:50:00+05:30",
+  "capturedAt": "2026-07-20T23:57:51+05:30",
   "environment": {
     "host": "Apple M5, macOS 26.5.2, 16 GiB",
     "xcode": "26.5 (17F42)",
@@ -62,10 +62,18 @@
       "platforms": ["ios", "android"],
       "artifacts": ["tests/device/results/expo56-optional-renderers-bundle.json"],
       "details": "Real Shiki JavaScript-regex engine, RaTeX, beautiful-mermaid/react-native-svg, and react-native-webview adapters resolved and bundled on both Metro platforms. No runtime render or resource-budget claim is made."
+    },
+    {
+      "fixture": "current-rn",
+      "scope": "reviewed visual regression",
+      "status": "passed",
+      "platforms": ["android"],
+      "artifacts": ["tests/visual/baselines/android.manifest.json"],
+      "details": "The packed Expo 56 Release-Hermes fixture passed all 24 Android matrix captures with accessibility hierarchy assertions. A second clean compare run passed at 0.001%-0.022% differing pixels per case, below the pinned 0.250% budget."
     }
   ],
   "blockers": [
-    "No reviewed iOS or Android visual baseline exists yet.",
+    "No reviewed iOS visual baseline exists yet; the 24-case Android baseline and compare run passed.",
     "No physical Pixel 8 or iPhone 15 reference device is connected for release-Hermes frame, heap, or startup profiling.",
     "Manual VoiceOver and TalkBack hardware verification has not been performed.",
     "Maestro and Detox are not installed; iOS automated semantic hierarchy assertions are unavailable until one approved runner is installed.",

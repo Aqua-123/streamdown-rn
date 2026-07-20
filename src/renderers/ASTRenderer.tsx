@@ -289,7 +289,7 @@ function renderTable(node: SemanticNode, context: RenderContext, key?: React.Key
     const cells = (row.children ?? []).map((cell, cellIndex) => {
       const value = renderInlineChildren(cell, context);
       return withOverride(cell, context, false, value, () => (
-        <View key={cellIndex} style={{ flex: 1, padding: 8 }}><Text style={rowIndex === 0 ? styles.bold : styles.body}>{value}</Text></View>
+        <View key={cellIndex} style={{ flex: 1, padding: 8 }}><Text style={[styles.body, rowIndex === 0 ? styles.bold : undefined]}>{value}</Text></View>
       ), cellIndex);
     });
     return withOverride(row, context, false, cells, () => (
@@ -310,6 +310,8 @@ function renderTable(node: SemanticNode, context: RenderContext, key?: React.Key
       translations={context.translations ?? defaultTranslations}
       disabled={context.controlsDisabled ?? context.isStreaming}
       icons={context.icons}
+      color={context.theme.colors.foreground}
+      backgroundColor={context.theme.colors.background}
     >{content}</TableControls>;
   }, key);
 }
@@ -374,6 +376,7 @@ function NativeCodeBlock({ node, context }: { node: SemanticNode; context: Rende
         translations={context.translations ?? defaultTranslations}
         disabled={context.controlsDisabled ?? context.isStreaming}
         icons={context.icons}
+        color={context.theme.colors.foreground}
       />
       {node.lang ? <Text style={{ color: context.theme.colors.muted }}>{node.lang}</Text> : null}
       {node.meta ? <Text style={{ color: context.theme.colors.muted }}>{node.meta}</Text> : null}
