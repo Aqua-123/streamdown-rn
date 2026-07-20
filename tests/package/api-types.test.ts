@@ -2,6 +2,7 @@ import type {
   NativeComponentProps,
   StreamdownProps,
   StreamdownRNProps,
+  NativeCapabilities,
 } from '../../src';
 
 const nativeProps: StreamdownProps = {
@@ -10,6 +11,12 @@ const nativeProps: StreamdownProps = {
   components: {
     p: (_props: NativeComponentProps) => null,
   },
+  capabilities: {
+    clipboard: { writeText: async () => ({ status: 'success' }) },
+  } satisfies NativeCapabilities,
+  controls: { code: { copy: true, download: false } },
+  translations: { copyCode: 'Copy' },
+  announceStreaming: { delayMs: 500 },
 };
 const aliasProps: StreamdownRNProps = nativeProps;
 void aliasProps;

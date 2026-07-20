@@ -23,6 +23,8 @@ import {
   StableRootCache,
   useReducedMotion,
 } from './core/streaming';
+import { resolveCapabilities } from './platform/defaults';
+import { resolveTranslations, useStreamingAnnouncement } from './controls';
 
 function rejectDOMProps(props: Record<string, unknown>): void {
   const name = ['className', 'prefix', 'rehypePlugins', 'remarkRehypeOptions']
@@ -51,6 +53,11 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
     onAnimationStart,
     onAnimationEnd,
     instrumentation,
+    capabilities,
+    controls,
+    translations,
+    icons,
+    announceStreaming,
     remarkPlugins,
     allowedTags,
     literalTagContent,
@@ -82,6 +89,14 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
   instrumentationRef.current = instrumentation;
   stableRootCacheRef.current.setInstrumentation(instrumentation);
   const prefersReducedMotion = useReducedMotion(reducedMotion);
+  const nativeCapabilities = useMemo(() => resolveCapabilities(capabilities), [capabilities]);
+  const nativeTranslations = useMemo(() => resolveTranslations(translations), [translations]);
+  const requestedAnnouncementDelay = typeof announceStreaming === 'object' ? announceStreaming.delayMs ?? 400 : 400;
+  const announcementDelay = Number.isFinite(requestedAnnouncementDelay)
+    ? Math.max(250, requestedAnnouncementDelay)
+    : 400;
+  const streamingBusy = mode === 'streaming' && isAnimating && !isComplete;
+  useStreamingAnnouncement(children, Boolean(announceStreaming && streamingBusy), nativeCapabilities, announcementDelay);
   const themeConfig = useMemo<ThemeConfig>(() => getTheme(theme), [theme]);
   const parseOptions = useMemo(() => ({
     after: remarkPlugins,
@@ -248,6 +263,10 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
           allowedTags={allowedTags}
           literalTagContent={literalTagContent}
           dir={dir}
+          capabilities={nativeCapabilities}
+          controls={controls}
+          translations={nativeTranslations}
+          icons={icons}
         />
       </View>
     );
@@ -266,6 +285,10 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
           allowedTags={allowedTags}
           literalTagContent={literalTagContent}
           dir={dir}
+          capabilities={nativeCapabilities}
+          controls={controls}
+          translations={nativeTranslations}
+          icons={icons}
         />
       </View>
     );
@@ -273,6 +296,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
 
   return (
     <View style={style}>
+      {streamingBusy ? <View accessible accessibilityRole="progressbar" accessibilityLabel={nativeTranslations.streamingResponse} accessibilityState={{ busy: true }} style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }} /> : null}
       {registry.blocks.map((block) => (
         <StableBlock
           key={`${generation}:${block.id}`}
@@ -288,6 +312,11 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
           parseOptions={parseOptions}
           rootCache={stableRootCacheRef.current}
           instrumentation={instrumentation}
+          capabilities={nativeCapabilities}
+          controls={controls}
+          translations={nativeTranslations}
+          icons={icons}
+          controlsDisabled={streamingBusy}
         />
       ))}
       <ActiveBlock
@@ -309,6 +338,10 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
         showCaret={Boolean(caret && isAnimating && !isComplete && !deferHeavyContent)}
         caret={caret}
         instrumentation={instrumentation}
+        capabilities={nativeCapabilities}
+        controls={controls}
+        translations={nativeTranslations}
+        icons={icons}
       />
     </View>
   );

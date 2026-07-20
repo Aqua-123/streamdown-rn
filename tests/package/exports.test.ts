@@ -30,10 +30,19 @@ describe('packed package', () => {
       'SkeletonRect',
       'SkeletonCircle',
       'SkeletonNumber',
+      'ActionButton',
+      'FullscreenModal',
+      'NativeLink',
+      'PanZoomSurface',
+      'defaultIcons',
+      'defaultTranslations',
+      'defaultNativeCapabilities',
     ]) {
       expect(api[exportName]).toBeDefined();
     }
     expect(typeof api.sanitizeURL).toBe('function');
     expect(typeof api.sanitizeProps).toBe('function');
+    expect(typeof api.serializeTable).toBe('function');
+    expect(typeof api.resolveCapabilities).toBe('function');
   });
 });

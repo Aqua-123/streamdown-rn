@@ -11,6 +11,8 @@ import type { StyleProp, ViewStyle } from 'react-native';
 import type { PluggableList } from 'unified';
 import type { SecurityPolicyOptions } from './security';
 import type { AnimationConfig, StreamingInstrumentation } from './streaming';
+import type { ControlsConfig, IconMap, StreamdownTranslations } from '../controls';
+import type { NativeCapabilities } from '../platform/capabilities';
 
 // ============================================================================
 // Block Types
@@ -354,6 +356,16 @@ export interface StreamdownProps extends SecurityPolicyOptions {
   onAnimationEnd?: () => void;
   /** Optional bounded counters for benchmarks and regression tests. */
   instrumentation?: StreamingInstrumentation;
+  /** Native action adapters. Clipboard, files, gestures, and focus are opt-in. */
+  capabilities?: NativeCapabilities;
+  /** Show all controls, hide all controls, or configure each renderer family. */
+  controls?: ControlsConfig;
+  /** Partial labels merged with the built-in English labels. */
+  translations?: Partial<StreamdownTranslations>;
+  /** Optional visual replacements; accessible labels remain unchanged. */
+  icons?: IconMap;
+  /** Coalesced screen-reader announcements; disabled by default. */
+  announceStreaming?: boolean | { delayMs?: number };
   /** Custom tag names and the attributes exposed to native overrides. */
   allowedTags?: Readonly<Record<string, readonly string[]>>;
   literalTagContent?: readonly string[];

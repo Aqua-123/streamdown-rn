@@ -17,6 +17,8 @@ import type { SecurityPolicyOptions } from '../core/security';
 import { ASTRenderer, ComponentBlock, extractComponentData } from './ASTRenderer';
 import type { NormalizedAnimationConfig, StreamingInstrumentation } from '../core/streaming';
 import { Text } from 'react-native';
+import type { NativeCapabilities } from '../platform/capabilities';
+import type { ControlsConfig, IconMap, StreamdownTranslations } from '../controls';
 
 interface ActiveBlockProps {
   block: ActiveBlockType | null;
@@ -36,6 +38,10 @@ interface ActiveBlockProps {
   showCaret?: boolean;
   caret?: 'block' | 'circle';
   instrumentation?: StreamingInstrumentation;
+  capabilities?: NativeCapabilities;
+  controls?: ControlsConfig;
+  translations?: StreamdownTranslations;
+  icons?: IconMap;
 }
 
 /**
@@ -62,6 +68,10 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
   showCaret = false,
   caret,
   instrumentation,
+  capabilities,
+  controls,
+  translations,
+  icons,
 }) => {
   instrumentation?.recordActiveRender();
   // No active block — nothing to render
@@ -110,6 +120,10 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
         literalTagContent={literalTagContent}
         dir={dir}
         animation={animation ? { ...animation, from: animationFrom } : undefined}
+        capabilities={capabilities}
+        controls={controls}
+        translations={translations}
+        icons={icons}
       />
       {showCaret && caret ? <Text testID="streamdown-caret">{caret === 'circle' ? ' ●' : ' ▋'}</Text> : null}
       </>

@@ -68,3 +68,35 @@ export {
   type StreamingInstrumentation,
   type StreamingMetrics,
 } from './core/streaming';
+
+export {
+  ActionButton,
+  FullscreenModal,
+  NativeLink,
+  PanZoomSurface,
+  defaultTranslations,
+  defaultIcons,
+  resolveTranslations,
+  codeFileRequest,
+  fetchImageFileRequest,
+  imageFileRequest,
+  sanitizeBasename,
+  serializeTable,
+  tableFileRequest,
+  type ControlsConfig,
+  type IconMap,
+  type IconName,
+  type StreamdownTranslations,
+  type TableFormat,
+} from './controls';
+
+export type {
+  CapabilityResult,
+  CapabilityStatus,
+  LinkApprovalLabels,
+  NativeCapabilities,
+  NativeFileRequest,
+  PanZoomRenderProps,
+} from './platform/capabilities';
+
+export { defaultNativeCapabilities, resolveCapabilities } from './platform/defaults';

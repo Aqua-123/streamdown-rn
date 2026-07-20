@@ -11,6 +11,8 @@ import type { SecurityPolicyOptions } from '../core/security';
 import { parseSemanticDocument, type SemanticParseOptions } from '../core/parser';
 import { ASTRenderer, ComponentBlock } from './ASTRenderer';
 import type { StableRootCache, StreamingInstrumentation } from '../core/streaming';
+import type { NativeCapabilities } from '../platform/capabilities';
+import type { ControlsConfig, IconMap, StreamdownTranslations } from '../controls';
 
 interface StableBlockProps {
   block: StableBlockType;
@@ -25,6 +27,11 @@ interface StableBlockProps {
   parseOptions?: SemanticParseOptions;
   rootCache: StableRootCache;
   instrumentation?: StreamingInstrumentation;
+  capabilities?: NativeCapabilities;
+  controls?: ControlsConfig;
+  translations?: StreamdownTranslations;
+  icons?: IconMap;
+  controlsDisabled?: boolean;
 }
 
 /**
@@ -32,7 +39,7 @@ interface StableBlockProps {
  * U6 owns memoization after all renderer-bearing inputs are instrumented.
  */
 const StableBlockRenderer: React.FC<StableBlockProps> =
-  ({ block, theme, componentRegistry, onError, components, securityPolicy, allowedTags, literalTagContent, dir, parseOptions, rootCache, instrumentation }) => {
+  ({ block, theme, componentRegistry, onError, components, securityPolicy, allowedTags, literalTagContent, dir, parseOptions, rootCache, instrumentation, capabilities, controls, translations, icons, controlsDisabled }) => {
     instrumentation?.recordStableRender();
     // Component blocks don't have AST (custom syntax, not markdown)
     if (block.type === 'component') {
@@ -61,6 +68,11 @@ const StableBlockRenderer: React.FC<StableBlockProps> =
           allowedTags={allowedTags}
           literalTagContent={literalTagContent}
           dir={dir}
+          capabilities={capabilities}
+          controls={controls}
+          translations={translations}
+          icons={icons}
+          controlsDisabled={controlsDisabled}
         />
       );
     }
@@ -83,6 +95,11 @@ export const StableBlock = React.memo(StableBlockRenderer, (previous, next) =>
   previous.parseOptions === next.parseOptions &&
   previous.rootCache === next.rootCache &&
   previous.instrumentation === next.instrumentation
+  && previous.capabilities === next.capabilities
+  && previous.controls === next.controls
+  && previous.translations === next.translations
+  && previous.icons === next.icons
+  && previous.controlsDisabled === next.controlsDisabled
 );
 
 StableBlock.displayName = 'StableBlock';

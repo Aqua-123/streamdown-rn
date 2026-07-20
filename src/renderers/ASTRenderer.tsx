@@ -1,5 +1,5 @@
-import React, { ReactNode, useContext, useEffect, useState } from 'react';
-import { Image, ScrollView, Text, View } from 'react-native';
+import React, { ReactNode, useContext, useEffect } from 'react';
+import { ScrollView, Text, View } from 'react-native';
 import type { Content, Root } from 'mdast';
 import type { Node } from 'unist';
 import type {
@@ -21,6 +21,19 @@ import { detectTextDirection } from '../core/blockSemantics';
 import { getBlockStyles, getTextStyles } from '../themes';
 import { materializeCustomTags } from './semanticTags';
 import { AnimatedRevealText, type NormalizedAnimationConfig } from '../core/streaming';
+import type { NativeCapabilities } from '../platform/capabilities';
+import { resolveCapabilities } from '../platform/defaults';
+import {
+  CodeControls,
+  NativeLink,
+  SafeImage,
+  TableControls,
+  defaultTranslations,
+  type ControlsConfig,
+  type IconMap,
+  type StreamdownTranslations,
+} from '../controls';
+import type { TableData } from '../core/tableSerialization';
 
 type ComponentErrorHandler = (error: Error, componentName?: string) => void;
 type SemanticNode = Node & {
@@ -51,6 +64,11 @@ export interface ASTRendererProps {
   literalTagContent?: readonly string[];
   dir?: 'auto' | 'ltr' | 'rtl';
   animation?: NormalizedAnimationConfig & { from: number };
+  capabilities?: NativeCapabilities;
+  controls?: ControlsConfig;
+  translations?: StreamdownTranslations;
+  icons?: IconMap;
+  controlsDisabled?: boolean;
 }
 
 interface RenderContext extends Omit<ASTRendererProps, 'node'> {
@@ -233,7 +251,7 @@ function renderList(node: SemanticNode, context: RenderContext, key?: React.Key)
     const body = renderChildren(item, context, false);
     return withOverride(item, context, false, body, () => (
       <View key={index} style={{ flexDirection: 'row', marginBottom: context.theme.spacing.inline }}>
-        <Text accessibilityRole={item.checked == null ? undefined : 'checkbox'} accessibilityState={item.checked == null ? undefined : { checked: item.checked }} style={[styles.body, { width: 28 }]}>{marker}</Text>
+        <Text accessibilityRole={item.checked == null ? undefined : 'checkbox'} accessibilityLabel={item.checked == null ? undefined : textValue(item)} accessibilityState={item.checked == null ? undefined : { checked: item.checked }} style={[styles.body, { width: 44, minHeight: 44 }]}>{marker}</Text>
         <View style={{ flexShrink: 1 }}>{body}</View>
       </View>
     ));
@@ -254,19 +272,21 @@ function renderTable(node: SemanticNode, context: RenderContext, key?: React.Key
       <View key={rowIndex} style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: context.theme.colors.border }}>{cells}</View>
     ));
   });
-  return withOverride(node, context, false, rows, () => <View key={key} style={getBlockStyles(context.theme).table}>{rows}</View>);
-}
-
-function AutoSizedImage({ uri, alt, theme }: { uri: string; alt?: string; theme: ThemeConfig }) {
-  const [aspectRatio, setAspectRatio] = useState(16 / 9);
-  useEffect(() => {
-    let mounted = true;
-    Image.getSize(uri, (width, height) => {
-      if (mounted && width && height) setAspectRatio(width / height);
-    }, () => undefined);
-    return () => { mounted = false; };
-  }, [uri]);
-  return <Image source={{ uri }} style={{ width: '100%', aspectRatio, backgroundColor: theme.colors.codeBackground }} resizeMode="contain" accessibilityLabel={alt ?? 'Image'} />;
+  const table: TableData = {
+    headers: (node.children?.[0]?.children ?? []).map(textValue),
+    rows: (node.children ?? []).slice(1).map((row) => (row.children ?? []).map(textValue)),
+  };
+  return withOverride(node, context, false, rows, () => {
+    const content = <View key={key} style={getBlockStyles(context.theme).table}>{rows}</View>;
+    return <TableControls
+      table={table}
+      capabilities={context.capabilities ?? resolveCapabilities()}
+      controls={context.controls}
+      translations={context.translations ?? defaultTranslations}
+      disabled={context.controlsDisabled ?? context.isStreaming}
+      icons={context.icons}
+    >{content}</TableControls>;
+  });
 }
 
 function renderNode(node: SemanticNode, context: RenderContext, inline = false, key?: React.Key): ReactNode {
@@ -327,6 +347,15 @@ function renderNode(node: SemanticNode, context: RenderContext, inline = false, 
       const content = <Text style={[styles.code, { writingDirection: context.direction }]}>{node.value ?? ''}</Text>;
       return withOverride(node, context, false, content, () => (
         <View key={key} style={blocks.codeBlock}>
+          <CodeControls
+            code={node.value ?? ''}
+            language={node.lang}
+            capabilities={context.capabilities ?? resolveCapabilities()}
+            controls={context.controls}
+            translations={context.translations ?? defaultTranslations}
+            disabled={context.controlsDisabled ?? context.isStreaming}
+            icons={context.icons}
+          />
           {node.lang ? <Text style={{ color: context.theme.colors.muted }}>{node.lang}</Text> : null}
           <ScrollView horizontal><Text style={styles.code}>{node.value ?? ''}</Text></ScrollView>
         </View>
@@ -339,7 +368,7 @@ function renderNode(node: SemanticNode, context: RenderContext, inline = false, 
       return children;
     case 'link':
       if (!node.url) return <Text key={key}>{renderInlineChildren(node, context)}</Text>;
-      return withOverride(node, context, true, children, () => <Text key={key} accessibilityRole="link" style={styles.link}>{children}</Text>);
+      return withOverride(node, context, true, children, () => <NativeLink key={key} url={node.url!} capabilities={context.capabilities ?? resolveCapabilities()} resourcePolicy={context.securityPolicy} translations={context.translations} style={styles.link}>{children}</NativeLink>);
     case 'linkReference':
       {
         const definition = node.identifier ? context.definitions.get(node.identifier) : undefined;
@@ -349,14 +378,14 @@ function renderNode(node: SemanticNode, context: RenderContext, inline = false, 
           context,
           true,
           children,
-          () => <Text key={key} accessibilityRole="link" style={styles.link}>{children}</Text>
+          () => <NativeLink key={key} url={definition.url!} capabilities={context.capabilities ?? resolveCapabilities()} resourcePolicy={context.securityPolicy} translations={context.translations} style={styles.link}>{children}</NativeLink>
         );
       }
     case 'image': {
       if (inline) return node.alt ? `[Image: ${node.alt}]` : '';
       const safe = node.url ? sanitizeResourceURL(node.url, 'image', context.securityPolicy) : null;
       if (!safe) return node.alt ? <Text key={key} style={styles.body}>[Image: {node.alt}]</Text> : null;
-      const image = <AutoSizedImage uri={safe} alt={node.alt ?? undefined} theme={context.theme} />;
+      const image = <SafeImage key={safe} uri={safe} alt={node.alt ?? undefined} theme={context.theme} capabilities={context.capabilities ?? resolveCapabilities()} controls={context.controls} translations={context.translations ?? defaultTranslations} icons={context.icons} disabled={context.controlsDisabled ?? context.isStreaming} />;
       return withOverride(node, context, false, null, () => <View key={key}>{image}</View>);
     }
     case 'imageReference':
@@ -372,7 +401,7 @@ function renderNode(node: SemanticNode, context: RenderContext, inline = false, 
           context,
           false,
           null,
-          () => <View key={key}><AutoSizedImage uri={safe} alt={node.alt ?? undefined} theme={context.theme} /></View>
+          () => <View key={key}><SafeImage key={safe} uri={safe} alt={node.alt ?? undefined} theme={context.theme} capabilities={context.capabilities ?? resolveCapabilities()} controls={context.controls} translations={context.translations ?? defaultTranslations} icons={context.icons} disabled={context.controlsDisabled ?? context.isStreaming} /></View>
         );
       }
     case 'footnoteReference':

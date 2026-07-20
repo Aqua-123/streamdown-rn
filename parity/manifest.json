@@ -7233,10 +7233,10 @@
     {
       "upstreamId": "e6e16f2bbf4f3ff60c8c1af998eebbbf11950a2545cf61eae107e84cf86d797d",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/code-block-download.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “CodeBlockDownloadButton > should download code with correct filename and language extension” without relying on DOM output.",
+        "path": "src/controls/__tests__/serialization.test.ts",
+        "assertion": "React Native adaptation of upstream case “CodeBlockDownloadButton > should download code with correct filename and language extension”.",
         "marker": "parity:e6e16f2bbf4f3ff60c8c1af998eebbbf11950a2545cf61eae107e84cf86d797d"
       },
       "evidence": {
@@ -7246,10 +7246,10 @@
     {
       "upstreamId": "ab628a12d550497b2720fae5604c3496fcc780d7890b98ef37739ff447c5fa1d",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/code-block-download.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “CodeBlockDownloadButton > should use .txt extension for unknown languages” without relying on DOM output.",
+        "path": "src/controls/__tests__/serialization.test.ts",
+        "assertion": "React Native adaptation of upstream case “CodeBlockDownloadButton > should use .txt extension for unknown languages”.",
         "marker": "parity:ab628a12d550497b2720fae5604c3496fcc780d7890b98ef37739ff447c5fa1d"
       },
       "evidence": {
@@ -7259,10 +7259,10 @@
     {
       "upstreamId": "97ebb8966bb6928a4bb0ca9d67403d97e5d49476c06bc9900c70ea20c1979651",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/code-block-download.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “CodeBlockDownloadButton > should call onError when save throws” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “CodeBlockDownloadButton > should call onError when save throws”.",
         "marker": "parity:97ebb8966bb6928a4bb0ca9d67403d97e5d49476c06bc9900c70ea20c1979651"
       },
       "evidence": {
@@ -7272,10 +7272,10 @@
     {
       "upstreamId": "4c93ad94a184de9188aa5071ae70023dfc6cc65a38eb825d95f12748af249e8f",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/code-block-download.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “CodeBlockDownloadButton > should be disabled when isAnimating” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “CodeBlockDownloadButton > should be disabled when isAnimating”.",
         "marker": "parity:4c93ad94a184de9188aa5071ae70023dfc6cc65a38eb825d95f12748af249e8f"
       },
       "evidence": {
@@ -7701,10 +7701,10 @@
     {
       "upstreamId": "269d04432066d1280c2dd71918500ca9e34655cccfe81020b2c8eb13143e54ad",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/code-block.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “CodeBlockCopyButton > should copy code to clipboard on click” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “CodeBlockCopyButton > should copy code to clipboard on click”.",
         "marker": "parity:269d04432066d1280c2dd71918500ca9e34655cccfe81020b2c8eb13143e54ad"
       },
       "evidence": {
@@ -7727,10 +7727,10 @@
     {
       "upstreamId": "1dfc4e436e6cfaad77ebfcae74cefb5ccf8a4da6a3751eb3333fc9bece1aacbb",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/code-block.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “CodeBlockCopyButton > should handle clipboard API not available” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “CodeBlockCopyButton > should handle clipboard API not available”.",
         "marker": "parity:1dfc4e436e6cfaad77ebfcae74cefb5ccf8a4da6a3751eb3333fc9bece1aacbb"
       },
       "evidence": {
@@ -7740,10 +7740,10 @@
     {
       "upstreamId": "d2965b26f66379748b0801212f602be0799cbbd5a421414219d29a190a1ef135",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/code-block.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “CodeBlockCopyButton > should handle clipboard write failure” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “CodeBlockCopyButton > should handle clipboard write failure”.",
         "marker": "parity:d2965b26f66379748b0801212f602be0799cbbd5a421414219d29a190a1ef135"
       },
       "evidence": {
@@ -10210,10 +10210,10 @@
     {
       "upstreamId": "41f36a386c21e9a9c10361f4f9cd37536ef41a8bf54585a071566ff8bc9a2fb2",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/icon-context.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “IconProvider > provides default icons when no overrides are given” without relying on DOM output.",
+        "path": "src/controls/__tests__/translations-icons-panzoom.test.tsx",
+        "assertion": "React Native adaptation of upstream case “IconProvider > provides default icons when no overrides are given”.",
         "marker": "parity:41f36a386c21e9a9c10361f4f9cd37536ef41a8bf54585a071566ff8bc9a2fb2"
       },
       "evidence": {
@@ -10223,10 +10223,10 @@
     {
       "upstreamId": "463981f5a5e3969ebcf3e552300e8a5999877c9e2b0c71b211fcf43dc6d2f85c",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/icon-context.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “IconProvider > overrides a specific icon when provided” without relying on DOM output.",
+        "path": "src/controls/__tests__/translations-icons-panzoom.test.tsx",
+        "assertion": "React Native adaptation of upstream case “IconProvider > overrides a specific icon when provided”.",
         "marker": "parity:463981f5a5e3969ebcf3e552300e8a5999877c9e2b0c71b211fcf43dc6d2f85c"
       },
       "evidence": {
@@ -10236,10 +10236,10 @@
     {
       "upstreamId": "8e9091f14f86d336224612e3cee23022df1fb1405b752b1c620b67e38216a012",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/icon-context.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “IconProvider > keeps non-overridden icons as defaults” without relying on DOM output.",
+        "path": "src/controls/__tests__/translations-icons-panzoom.test.tsx",
+        "assertion": "React Native adaptation of upstream case “IconProvider > keeps non-overridden icons as defaults”.",
         "marker": "parity:8e9091f14f86d336224612e3cee23022df1fb1405b752b1c620b67e38216a012"
       },
       "evidence": {
@@ -10262,10 +10262,10 @@
     {
       "upstreamId": "d4a8d13b87b1028d512ecd7051ed9e76d037a351a3375fa5c1e7de65c90dba24",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/icon-context.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “IconProvider rerender / shallowEqual coverage > recalculates value when icons prop changes to a different component” without relying on DOM output.",
+        "path": "src/controls/__tests__/translations-icons-panzoom.test.tsx",
+        "assertion": "React Native adaptation of upstream case “IconProvider rerender / shallowEqual coverage > recalculates value when icons prop changes to a different component”.",
         "marker": "parity:d4a8d13b87b1028d512ecd7051ed9e76d037a351a3375fa5c1e7de65c90dba24"
       },
       "evidence": {
@@ -10444,10 +10444,10 @@
     {
       "upstreamId": "c00225c9df84f3ccf47ca8696c01313c185736676fb43444286e78bdf00e3b9d",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/image-edge-cases.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “ImageComponent edge cases > should show error fallback and hide download on error” without relying on DOM output.",
+        "path": "src/controls/__tests__/image-accessibility.test.tsx",
+        "assertion": "React Native adaptation of upstream case “ImageComponent edge cases > should show error fallback and hide download on error”.",
         "marker": "parity:c00225c9df84f3ccf47ca8696c01313c185736676fb43444286e78bdf00e3b9d"
       },
       "evidence": {
@@ -11510,10 +11510,10 @@
     {
       "upstreamId": "839467b2e467d7311febe88560595f2a2fe8f44582d0e3237ba831b85f87ac9b",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/link-safety.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Link Safety Modal > should call onLinkCheck and skip modal when it returns true” without relying on DOM output.",
+        "path": "src/controls/__tests__/capabilities.test.tsx",
+        "assertion": "React Native adaptation of upstream case “Link Safety Modal > should call onLinkCheck and skip modal when it returns true”.",
         "marker": "parity:839467b2e467d7311febe88560595f2a2fe8f44582d0e3237ba831b85f87ac9b"
       },
       "evidence": {
@@ -11523,10 +11523,10 @@
     {
       "upstreamId": "66746be75f362ef5109f549947b752189916d701e82c2cbbf0441ab327cbf22d",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/link-safety.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Link Safety Modal > should show modal when onLinkCheck returns false” without relying on DOM output.",
+        "path": "src/controls/__tests__/capabilities.test.tsx",
+        "assertion": "React Native adaptation of upstream case “Link Safety Modal > should show modal when onLinkCheck returns false”.",
         "marker": "parity:66746be75f362ef5109f549947b752189916d701e82c2cbbf0441ab327cbf22d"
       },
       "evidence": {
@@ -11536,10 +11536,10 @@
     {
       "upstreamId": "288ee932750c67fe1dcc49127fbe62836d51e9c645353984d2933cdf473c852f",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/link-safety.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Link Safety Modal > should open link when clicking Open link button in modal” without relying on DOM output.",
+        "path": "src/controls/__tests__/capabilities.test.tsx",
+        "assertion": "React Native adaptation of upstream case “Link Safety Modal > should open link when clicking Open link button in modal”.",
         "marker": "parity:288ee932750c67fe1dcc49127fbe62836d51e9c645353984d2933cdf473c852f"
       },
       "evidence": {
@@ -11601,10 +11601,10 @@
     {
       "upstreamId": "5909f6e02f1256031e94fde95019c5af13edcc69ced8edc5c1d48721f72d70eb",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/link-safety.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Link Safety Modal > should work with async onLinkCheck callback” without relying on DOM output.",
+        "path": "src/controls/__tests__/capabilities.test.tsx",
+        "assertion": "React Native adaptation of upstream case “Link Safety Modal > should work with async onLinkCheck callback”.",
         "marker": "parity:5909f6e02f1256031e94fde95019c5af13edcc69ced8edc5c1d48721f72d70eb"
       },
       "evidence": {
@@ -14331,10 +14331,10 @@
     {
       "upstreamId": "d0ebdf2c901e57fdd0f73c2c5f489aaa16825d2390105b596610c591bc1660ca",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/pan-zoom.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “PanZoom > should render children” without relying on DOM output.",
+        "path": "src/controls/__tests__/translations-icons-panzoom.test.tsx",
+        "assertion": "React Native adaptation of upstream case “PanZoom > should render children”.",
         "marker": "parity:d0ebdf2c901e57fdd0f73c2c5f489aaa16825d2390105b596610c591bc1660ca"
       },
       "evidence": {
@@ -14344,10 +14344,10 @@
     {
       "upstreamId": "2cd4c87bde67ba169fa14850ef233892dcb719a8a595772c22edfea6a21e274f",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/pan-zoom.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “PanZoom > should render zoom controls by default” without relying on DOM output.",
+        "path": "src/controls/__tests__/translations-icons-panzoom.test.tsx",
+        "assertion": "React Native adaptation of upstream case “PanZoom > should render zoom controls by default”.",
         "marker": "parity:2cd4c87bde67ba169fa14850ef233892dcb719a8a595772c22edfea6a21e274f"
       },
       "evidence": {
@@ -14370,10 +14370,10 @@
     {
       "upstreamId": "02379a5eaf3d66e955e80ad49bbfe5129675ff08278462f09aeac086b2508ae7",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/pan-zoom.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “PanZoom > should zoom in when zoom in button is clicked” without relying on DOM output.",
+        "path": "src/controls/__tests__/translations-icons-panzoom.test.tsx",
+        "assertion": "React Native adaptation of upstream case “PanZoom > should zoom in when zoom in button is clicked”.",
         "marker": "parity:02379a5eaf3d66e955e80ad49bbfe5129675ff08278462f09aeac086b2508ae7"
       },
       "evidence": {
@@ -14383,10 +14383,10 @@
     {
       "upstreamId": "264e584e034d6ecf8b47b3377a26858b9c06b41fa1a06b93a6faeb6bb20fb26a",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/pan-zoom.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “PanZoom > should zoom out when zoom out button is clicked” without relying on DOM output.",
+        "path": "src/controls/__tests__/translations-icons-panzoom.test.tsx",
+        "assertion": "React Native adaptation of upstream case “PanZoom > should zoom out when zoom out button is clicked”.",
         "marker": "parity:264e584e034d6ecf8b47b3377a26858b9c06b41fa1a06b93a6faeb6bb20fb26a"
       },
       "evidence": {
@@ -14409,10 +14409,10 @@
     {
       "upstreamId": "f86915e114d9050add8eca477bb48d391d4ef5242550825a04e7dc15dcf98045",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/pan-zoom.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “PanZoom > should respect minZoom limit” without relying on DOM output.",
+        "path": "src/controls/__tests__/translations-icons-panzoom.test.tsx",
+        "assertion": "React Native adaptation of upstream case “PanZoom > should respect minZoom limit”.",
         "marker": "parity:f86915e114d9050add8eca477bb48d391d4ef5242550825a04e7dc15dcf98045"
       },
       "evidence": {
@@ -14422,10 +14422,10 @@
     {
       "upstreamId": "05d81c1e058ed1ea2bda6380e9d61df631c832db9e0d10296c15d5987097b32d",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/pan-zoom.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “PanZoom > should respect maxZoom limit” without relying on DOM output.",
+        "path": "src/controls/__tests__/translations-icons-panzoom.test.tsx",
+        "assertion": "React Native adaptation of upstream case “PanZoom > should respect maxZoom limit”.",
         "marker": "parity:05d81c1e058ed1ea2bda6380e9d61df631c832db9e0d10296c15d5987097b32d"
       },
       "evidence": {
@@ -14513,10 +14513,10 @@
     {
       "upstreamId": "b42754dae9de6eb2b23818137a591734379cf578acd5b824e47bff17f5cf7969",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/pan-zoom.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “PanZoom > should handle custom zoom step” without relying on DOM output.",
+        "path": "src/controls/__tests__/translations-icons-panzoom.test.tsx",
+        "assertion": "React Native adaptation of upstream case “PanZoom > should handle custom zoom step”.",
         "marker": "parity:b42754dae9de6eb2b23818137a591734379cf578acd5b824e47bff17f5cf7969"
       },
       "evidence": {
@@ -15917,10 +15917,10 @@
     {
       "upstreamId": "b868c65acef28b7f80ad3f3996f5bd89e9115ca7ff53b1a50b01a78017603196",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/show-controls.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “controls prop > boolean configuration > should hide code block controls when controls is false” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “controls prop > boolean configuration > should hide code block controls when controls is false”.",
         "marker": "parity:b868c65acef28b7f80ad3f3996f5bd89e9115ca7ff53b1a50b01a78017603196"
       },
       "evidence": {
@@ -15930,10 +15930,10 @@
     {
       "upstreamId": "fa7be671051a1c375770411e14af685f2942615729d94c7008fc354156388fde",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/show-controls.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “controls prop > object configuration > should hide only table controls when table is false” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “controls prop > object configuration > should hide only table controls when table is false”.",
         "marker": "parity:fa7be671051a1c375770411e14af685f2942615729d94c7008fc354156388fde"
       },
       "evidence": {
@@ -16099,10 +16099,10 @@
     {
       "upstreamId": "1f6e0a13569e2b6cbd6d8ee0989a5cfb3b2a3a355a721a4c603a01dae91a2e78",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/show-controls.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “controls prop > granular code configuration > should hide only download when code.download is false” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “controls prop > granular code configuration > should hide only download when code.download is false”.",
         "marker": "parity:1f6e0a13569e2b6cbd6d8ee0989a5cfb3b2a3a355a721a4c603a01dae91a2e78"
       },
       "evidence": {
@@ -16879,10 +16879,10 @@
     {
       "upstreamId": "f015083a2af9400dd333abd0d53aa616b1be53595fd0a4d5f9e8018238627bb4",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/table-dropdowns.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “TableDownloadDropdown > should download as CSV when CSV button clicked” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “TableDownloadDropdown > should download as CSV when CSV button clicked”.",
         "marker": "parity:f015083a2af9400dd333abd0d53aa616b1be53595fd0a4d5f9e8018238627bb4"
       },
       "evidence": {
@@ -16892,10 +16892,10 @@
     {
       "upstreamId": "1bb44002a69c22fa9b4f27c43d1ef38342a2c8e09cbafa960c924893c76b3df1",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/table-dropdowns.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “TableDownloadDropdown > should download as Markdown when Markdown button clicked” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “TableDownloadDropdown > should download as Markdown when Markdown button clicked”.",
         "marker": "parity:1bb44002a69c22fa9b4f27c43d1ef38342a2c8e09cbafa960c924893c76b3df1"
       },
       "evidence": {
@@ -16905,10 +16905,10 @@
     {
       "upstreamId": "3d6ab31d58191711adbb0740aa9715ab89f7be8395df52478592d95b1dbf7cbe",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/table-dropdowns.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “TableDownloadDropdown > should call onError when save throws” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “TableDownloadDropdown > should call onError when save throws”.",
         "marker": "parity:3d6ab31d58191711adbb0740aa9715ab89f7be8395df52478592d95b1dbf7cbe"
       },
       "evidence": {
@@ -16983,10 +16983,10 @@
     {
       "upstreamId": "8d502f0f1ebe4a1f087d50dfd396dfe5834e59784f2da18dc539ee2fe4105aeb",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/table-dropdowns.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “TableCopyDropdown > should copy as Markdown when md button clicked” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “TableCopyDropdown > should copy as Markdown when md button clicked”.",
         "marker": "parity:8d502f0f1ebe4a1f087d50dfd396dfe5834e59784f2da18dc539ee2fe4105aeb"
       },
       "evidence": {
@@ -16996,10 +16996,10 @@
     {
       "upstreamId": "ad2072cf2e1e0593afa890b82c75876e10ad9fdac00e8e759a29e92127cf7109",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/table-dropdowns.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “TableCopyDropdown > should copy as CSV when csv button clicked” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “TableCopyDropdown > should copy as CSV when csv button clicked”.",
         "marker": "parity:ad2072cf2e1e0593afa890b82c75876e10ad9fdac00e8e759a29e92127cf7109"
       },
       "evidence": {
@@ -17009,10 +17009,10 @@
     {
       "upstreamId": "be6a60b7cb81d2a6d47f6ca263ae2f733034ae8b7be9c398f346c9a0d52a57a8",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/table-dropdowns.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “TableCopyDropdown > should copy as TSV when tsv button clicked” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “TableCopyDropdown > should copy as TSV when tsv button clicked”.",
         "marker": "parity:be6a60b7cb81d2a6d47f6ca263ae2f733034ae8b7be9c398f346c9a0d52a57a8"
       },
       "evidence": {
@@ -17022,10 +17022,10 @@
     {
       "upstreamId": "a9e4cf5562250ed6c82afdfd81cb85945b59fe7b595be6d7bc8c7091751e9dbd",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/table-dropdowns.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “TableCopyDropdown > should call onError when clipboard API not available” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “TableCopyDropdown > should call onError when clipboard API not available”.",
         "marker": "parity:a9e4cf5562250ed6c82afdfd81cb85945b59fe7b595be6d7bc8c7091751e9dbd"
       },
       "evidence": {
@@ -17074,10 +17074,10 @@
     {
       "upstreamId": "acc46491093e6e48224f9da31f46dc04cc16bfaac5bf7bc2ebd7e9e2c45a0c10",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/table-fullscreen.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “TableFullscreenButton > should render fullscreen button when controls are enabled” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “TableFullscreenButton > should render fullscreen button when controls are enabled”.",
         "marker": "parity:acc46491093e6e48224f9da31f46dc04cc16bfaac5bf7bc2ebd7e9e2c45a0c10"
       },
       "evidence": {
@@ -17113,10 +17113,10 @@
     {
       "upstreamId": "fc2f308a7639b842dd4f560a2404511b162d7ab71b42b9c038b0e9a6104d7681",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/table-fullscreen.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “TableFullscreenButton > should open fullscreen overlay on click” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “TableFullscreenButton > should open fullscreen overlay on click”.",
         "marker": "parity:fc2f308a7639b842dd4f560a2404511b162d7ab71b42b9c038b0e9a6104d7681"
       },
       "evidence": {
@@ -17126,10 +17126,10 @@
     {
       "upstreamId": "7d65f93a40925a0feac1c92f96ba75b682185abadf62cf1577424fee8aba8be4",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/table-fullscreen.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “TableFullscreenButton > should close fullscreen overlay on close button click” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “TableFullscreenButton > should close fullscreen overlay on close button click”.",
         "marker": "parity:7d65f93a40925a0feac1c92f96ba75b682185abadf62cf1577424fee8aba8be4"
       },
       "evidence": {
@@ -17139,10 +17139,10 @@
     {
       "upstreamId": "ffe46b9cca3eaafc0584efc823fc44db9a95e54cb7c04d6770b1d69e4e246cd2",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/table-fullscreen.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “TableFullscreenButton > should close fullscreen overlay on Escape key” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “TableFullscreenButton > should close fullscreen overlay on Escape key”.",
         "marker": "parity:ffe46b9cca3eaafc0584efc823fc44db9a95e54cb7c04d6770b1d69e4e246cd2"
       },
       "evidence": {
@@ -17165,10 +17165,10 @@
     {
       "upstreamId": "e25c3bdb0628dfc682ddedf3edd7a342235e66d186df09ed7b2bbd1858018103",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/table-fullscreen.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “TableFullscreenButton > should disable fullscreen button when isAnimating” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “TableFullscreenButton > should disable fullscreen button when isAnimating”.",
         "marker": "parity:e25c3bdb0628dfc682ddedf3edd7a342235e66d186df09ed7b2bbd1858018103"
       },
       "evidence": {
@@ -17178,10 +17178,10 @@
     {
       "upstreamId": "931f836d1f5410d56e7ed39d0f577726bc8bcf2ffa88a2c7dbe5f2c99afec3ba",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/table-fullscreen.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “TableFullscreenButton > should render table content inside fullscreen overlay” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “TableFullscreenButton > should render table content inside fullscreen overlay”.",
         "marker": "parity:931f836d1f5410d56e7ed39d0f577726bc8bcf2ffa88a2c7dbe5f2c99afec3ba"
       },
       "evidence": {
@@ -17243,10 +17243,10 @@
     {
       "upstreamId": "cda3b65d2ab72004c6d94bdf6551a649a816f39d3f2b5cb7c275c66946b8cb60",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/table-fullscreen.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “TableFullscreenButton > should have aria attributes on fullscreen overlay” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “TableFullscreenButton > should have aria attributes on fullscreen overlay”.",
         "marker": "parity:cda3b65d2ab72004c6d94bdf6551a649a816f39d3f2b5cb7c275c66946b8cb60"
       },
       "evidence": {
@@ -17256,10 +17256,10 @@
     {
       "upstreamId": "54b9b3720aeeaf7bdda8c1d70142deae2e9a03977249dbe68ed55de420e09fce",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/table-fullscreen.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “TableFullscreenButton > should close fullscreen on Escape keyDown on the dialog element itself” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “TableFullscreenButton > should close fullscreen on Escape keyDown on the dialog element itself”.",
         "marker": "parity:54b9b3720aeeaf7bdda8c1d70142deae2e9a03977249dbe68ed55de420e09fce"
       },
       "evidence": {
@@ -17711,10 +17711,10 @@
     {
       "upstreamId": "8f3096717fc1ef319941224adb7c08cf9d7dfff02debdbfd9c949786b558d965",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/translations.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “defaultTranslations > should export defaultTranslations with all required keys” without relying on DOM output.",
+        "path": "src/controls/__tests__/translations-icons-panzoom.test.tsx",
+        "assertion": "React Native adaptation of upstream case “defaultTranslations > should export defaultTranslations with all required keys”.",
         "marker": "parity:8f3096717fc1ef319941224adb7c08cf9d7dfff02debdbfd9c949786b558d965"
       },
       "evidence": {
@@ -17724,10 +17724,10 @@
     {
       "upstreamId": "cd70bc1eec600d5145d787b64b92aee14fca49d97812ec5a7c4cb892b4614ecf",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/translations.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Streamdown translations prop > should use default translations when no translations prop is provided” without relying on DOM output.",
+        "path": "src/controls/__tests__/translations-icons-panzoom.test.tsx",
+        "assertion": "React Native adaptation of upstream case “Streamdown translations prop > should use default translations when no translations prop is provided”.",
         "marker": "parity:cd70bc1eec600d5145d787b64b92aee14fca49d97812ec5a7c4cb892b4614ecf"
       },
       "evidence": {
@@ -17737,10 +17737,10 @@
     {
       "upstreamId": "63b8719bfee1b57274bade70f75851286ba4d81c150d3335d411b89a7df8bb61",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/translations.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Streamdown translations prop > should use custom translations for code block copy button” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “Streamdown translations prop > should use custom translations for code block copy button”.",
         "marker": "parity:63b8719bfee1b57274bade70f75851286ba4d81c150d3335d411b89a7df8bb61"
       },
       "evidence": {
@@ -17776,10 +17776,10 @@
     {
       "upstreamId": "c1a64514e681e3a8ed16e69b488de6af37cd17596635be9e293f407612093e2b",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/translations.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Streamdown translations prop > should support partial translations (only override specific keys)” without relying on DOM output.",
+        "path": "src/controls/__tests__/native-controls.test.tsx",
+        "assertion": "React Native adaptation of upstream case “Streamdown translations prop > should support partial translations (only override specific keys)”.",
         "marker": "parity:c1a64514e681e3a8ed16e69b488de6af37cd17596635be9e293f407612093e2b"
       },
       "evidence": {
@@ -17789,10 +17789,10 @@
     {
       "upstreamId": "60ee9eb9791bf911e0078d1222a09c532c07f9a3ef0702cfe455d38bba0ed5de",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/translations.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “ImageComponent translations > should show default 'Image not available' text when image fails to load” without relying on DOM output.",
+        "path": "src/controls/__tests__/image-accessibility.test.tsx",
+        "assertion": "React Native adaptation of upstream case “ImageComponent translations > should show default 'Image not available' text when image fails to load”.",
         "marker": "parity:60ee9eb9791bf911e0078d1222a09c532c07f9a3ef0702cfe455d38bba0ed5de"
       },
       "evidence": {
@@ -17815,10 +17815,10 @@
     {
       "upstreamId": "e657147a3fb108bddc2891fe3b716c09c1aafc86a199cd5e6f5f37ac57a533e7",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/translations.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “LinkSafetyModal translations > should show default translations in link safety modal” without relying on DOM output.",
+        "path": "src/controls/__tests__/capabilities.test.tsx",
+        "assertion": "React Native adaptation of upstream case “LinkSafetyModal translations > should show default translations in link safety modal”.",
         "marker": "parity:e657147a3fb108bddc2891fe3b716c09c1aafc86a199cd5e6f5f37ac57a533e7"
       },
       "evidence": {
@@ -17828,10 +17828,10 @@
     {
       "upstreamId": "beeb7bbfbec9eba65bd3e5d4f4a46da18006e917dedfa2504d7a5bfaa5c07684",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/translations.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “LinkSafetyModal translations > should use custom translations in link safety modal” without relying on DOM output.",
+        "path": "src/controls/__tests__/capabilities.test.tsx",
+        "assertion": "React Native adaptation of upstream case “LinkSafetyModal translations > should use custom translations in link safety modal”.",
         "marker": "parity:beeb7bbfbec9eba65bd3e5d4f4a46da18006e917dedfa2504d7a5bfaa5c07684"
       },
       "evidence": {
