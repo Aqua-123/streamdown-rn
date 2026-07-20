@@ -219,5 +219,4 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed implementation notes.
 
 ## License
 
-Apache-2.0
-
+Apache-2.0. The source repository's parity oracle inventories the Apache-2.0-licensed Vercel Streamdown test suites at the exact commit documented in `parity/upstream.json`; see `NOTICE` for attribution and `parity/README.md` for reproducible refresh and validation commands.

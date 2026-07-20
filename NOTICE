@@ -1,0 +1,8 @@
+streamdown-rn
+Copyright Dark Research contributors
+
+This product includes parity metadata derived from the test-suite names and
+layout of Vercel Streamdown (https://github.com/vercel/streamdown), pinned at
+commit e5deed330aa4231751a106445d93d62e4716a22f and licensed under Apache-2.0.
+The corresponding source snapshot is reproducibly identified in
+parity/upstream.json; it is not included in the published package.

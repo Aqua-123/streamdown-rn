@@ -15,6 +15,7 @@
         "@react-native/babel-preset": "0.81.5",
         "@testing-library/react-native": "13.3.3",
         "@types/jest": "29.5.14",
+        "@types/node": "26.1.1",
         "@types/prismjs": "^1.26.5",
         "@types/react": "19.1.17",
         "@types/react-test-renderer": "19.1.0",

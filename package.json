@@ -31,7 +31,11 @@
     "build": "tsc -p tsconfig.json",
     "dev": "tsc --watch",
     "test": "jest --runInBand",
-    "type-check": "tsc -p tsconfig.json --noEmit",
+    "test:parity": "jest --runInBand --testMatch='<rootDir>/tests/parity/**/*.test.ts'",
+    "parity:refresh": "bun scripts/parity/inventory.ts --source .reference/streamdown",
+    "parity:validate": "bun scripts/parity/validate.ts",
+    "parity:drift": "bun scripts/parity/check-drift.ts",
+    "type-check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tools.json --noEmit",
     "pack:verify": "node tests/package/verify-pack.mjs"
   },
   "peerDependencies": {
@@ -49,6 +53,7 @@
     "@react-native/babel-preset": "0.81.5",
     "@testing-library/react-native": "13.3.3",
     "@types/jest": "29.5.14",
+    "@types/node": "26.1.1",
     "@types/prismjs": "^1.26.5",
     "@types/react": "19.1.17",
     "@types/react-test-renderer": "19.1.0",
@@ -63,7 +68,8 @@
     "dist/",
     "README.md",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "NOTICE"
   ],
   "engines": {
     "node": ">=20.19.4"
