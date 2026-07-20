@@ -20,6 +20,8 @@ describe('portable block semantics', () => {
     expect(hasIncompleteCodeFence('````js\ncode\n````')).toBe(false);
     expect(hasIncompleteCodeFence('~~~\ncode\n~~~')).toBe(false);
     expect(hasIncompleteCodeFence('inline ``` only')).toBe(false);
+    expect(hasIncompleteCodeFence('```js\ncode\n```not-a-close')).toBe(true);
+    expect(hasIncompleteCodeFence('```js\ncode\n   ```  ')).toBe(false);
   });
 
   it('detects a GFM table only from a pipe delimiter row', () => {

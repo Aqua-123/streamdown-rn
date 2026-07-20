@@ -19,6 +19,9 @@ import type { NormalizedAnimationConfig, StreamingInstrumentation } from '../cor
 import { Text } from 'react-native';
 import type { NativeCapabilities } from '../platform/capabilities';
 import type { ControlsConfig, IconMap, StreamdownTranslations } from '../controls';
+import type { PluginConfig } from '../plugins/renderers';
+import type { ThemeInput } from '../plugins/code';
+import { hasIncompleteCodeFence } from '../core/blockSemantics';
 
 interface ActiveBlockProps {
   block: ActiveBlockType | null;
@@ -42,6 +45,9 @@ interface ActiveBlockProps {
   controls?: ControlsConfig;
   translations?: StreamdownTranslations;
   icons?: IconMap;
+  plugins?: PluginConfig;
+  shikiTheme?: [ThemeInput, ThemeInput];
+  lineNumbers?: boolean;
 }
 
 /**
@@ -72,6 +78,9 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
   controls,
   translations,
   icons,
+  plugins,
+  shikiTheme,
+  lineNumbers,
 }) => {
   instrumentation?.recordActiveRender();
   // No active block — nothing to render
@@ -124,6 +133,10 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
         controls={controls}
         translations={translations}
         icons={icons}
+        plugins={plugins}
+        shikiTheme={shikiTheme}
+        lineNumbers={lineNumbers}
+        codeFenceIncomplete={hasIncompleteCodeFence(block.content)}
       />
       {showCaret && caret ? <Text testID="streamdown-caret">{caret === 'circle' ? ' ●' : ' ▋'}</Text> : null}
       </>

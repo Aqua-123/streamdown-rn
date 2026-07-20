@@ -44,5 +44,37 @@ describe('packed package', () => {
     expect(typeof api.sanitizeProps).toBe('function');
     expect(typeof api.serializeTable).toBe('function');
     expect(typeof api.resolveCapabilities).toBe('function');
+
+    for (const [subpath, expected] of [
+      ['./code', 'createCodePlugin'],
+      ['./cjk', 'createCjkPlugin'],
+      ['./renderers', 'createRendererPlugin'],
+    ] as const) {
+      const entry = manifest.exports[subpath];
+      expect(entry.types).toBe(`./dist/plugins/${subpath.slice(2)}/index.d.ts`);
+      expect(fs.existsSync(path.join(packageRoot as string, entry.default))).toBe(true);
+      expect(require(path.join(packageRoot as string, entry.default))[expected]).toBeDefined();
+    }
+  });
+
+  it('keeps optional plugin implementations out of core runtime files', () => {
+    const packageRoot = process.env.PACKED_PACKAGE_PATH as string;
+    const dist = path.join(packageRoot, 'dist');
+    const coreSources: string[] = [];
+    const visit = (directory: string) => {
+      for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+        const target = path.join(directory, entry.name);
+        if (entry.isDirectory()) {
+          if (target !== path.join(dist, 'plugins')) visit(target);
+        } else if (entry.name.endsWith('.js')) {
+          coreSources.push(fs.readFileSync(target, 'utf8'));
+        }
+      }
+    };
+    visit(dist);
+    const core = coreSources.join('\n');
+    expect(core).not.toMatch(/require\(["'][^"']*plugins\//);
+    expect(core).not.toContain('remark-cjk-friendly');
+    expect(core).not.toMatch(/require\(["']shiki(?:\/|["'])/);
   });
 });

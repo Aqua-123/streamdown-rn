@@ -18,6 +18,19 @@ const run = (command, args, options = {}) => {
   return result.stdout.trim();
 };
 
+const bundleText = (directory) => {
+  const chunks = [];
+  const visit = (current) => {
+    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+      const target = path.join(current, entry.name);
+      if (entry.isDirectory()) visit(target);
+      else chunks.push(fs.readFileSync(target).toString('utf8'));
+    }
+  };
+  visit(directory);
+  return chunks.join('\n');
+};
+
 try {
   run('npm', ['run', 'build']);
   const pack = JSON.parse(run('npm', ['pack', '--json', '--pack-destination', temp]))[0];
@@ -52,6 +65,25 @@ try {
     ],
     { env: { ...process.env, PACKED_PACKAGE_PATH: installedPackage } }
   );
+  const coreBundle = path.join(consumer, 'dist-core');
+  run('npx', ['expo', 'export', '--platform', 'ios', '--output-dir', coreBundle], { cwd: consumer });
+  const coreText = bundleText(coreBundle);
+  assert(!coreText.includes('maxCacheUnits'));
+  assert(!coreText.includes('custom-renderers'));
+
+  fs.writeFileSync(path.join(consumer, 'App.js'), `import React from 'react';
+import { Streamdown } from 'streamdown-rn';
+import { createCodePlugin } from 'streamdown-rn/code';
+import { cjk } from 'streamdown-rn/cjk';
+import { createRendererPlugin } from 'streamdown-rn/renderers';
+const plugins = { code: createCodePlugin(), cjk, renderers: createRendererPlugin([]) };
+export default function App() { return <Streamdown mode="static" plugins={plugins}>{'# packed plugin fixture'}</Streamdown>; }
+`);
+  const pluginBundle = path.join(consumer, 'dist-plugins');
+  run('npx', ['expo', 'export', '--platform', 'ios', '--clear', '--output-dir', pluginBundle], { cwd: consumer });
+  const pluginText = bundleText(pluginBundle);
+  assert(pluginText.includes('maxCacheUnits'));
+  assert(pluginText.includes('custom-renderers'));
   process.stdout.write(`Verified ${pack.filename} (${pack.files.length} files) in Expo 54 fixture.\n`);
 } finally {
   fs.rmSync(temp, { recursive: true, force: true });

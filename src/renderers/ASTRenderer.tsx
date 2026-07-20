@@ -1,5 +1,5 @@
-import React, { ReactNode, useContext, useEffect } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import React, { ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import { ScrollView, Text, View, type TextStyle } from 'react-native';
 import type { Content, Root } from 'mdast';
 import type { Node } from 'unist';
 import type {
@@ -34,8 +34,11 @@ import {
   type StreamdownTranslations,
 } from '../controls';
 import type { TableData } from '../core/tableSerialization';
+import type { CustomRenderer, PluginConfig, RendererPlugin } from '../plugins/renderers';
+import type { HighlightResult, HighlightToken, ThemeInput } from '../plugins/code';
 
 type ComponentErrorHandler = (error: Error, componentName?: string) => void;
+const DEFAULT_CODE_THEMES: [ThemeInput, ThemeInput] = ['github-light', 'github-dark'];
 type SemanticNode = Node & {
   type: string;
   value?: string;
@@ -69,6 +72,10 @@ export interface ASTRendererProps {
   translations?: StreamdownTranslations;
   icons?: IconMap;
   controlsDisabled?: boolean;
+  plugins?: PluginConfig;
+  shikiTheme?: [ThemeInput, ThemeInput];
+  lineNumbers?: boolean;
+  codeFenceIncomplete?: boolean;
 }
 
 interface RenderContext extends Omit<ASTRendererProps, 'node'> {
@@ -289,6 +296,95 @@ function renderTable(node: SemanticNode, context: RenderContext, key?: React.Key
   });
 }
 
+function tokenStyle(token: HighlightToken): TextStyle {
+  return {
+    color: token.color,
+    backgroundColor: token.bgColor,
+    fontStyle: token.fontStyle,
+    fontWeight: token.fontWeight,
+  };
+}
+
+function plainCodeResult(code: string): HighlightResult {
+  return { tokens: code.split('\n').map((line) => [{ content: line }]) };
+}
+
+function findCustomRenderer(plugin: RendererPlugin | undefined, language: string): CustomRenderer | undefined {
+  const normalized = language.toLowerCase();
+  return plugin?.renderers.find(({ language: candidate }) =>
+    (Array.isArray(candidate) ? candidate : [candidate]).some((value) => value.toLowerCase() === normalized)
+  );
+}
+
+function NativeCodeBlock({ node, context }: { node: SemanticNode; context: RenderContext }) {
+  const styles = getTextStyles(context.theme);
+  const blocks = getBlockStyles(context.theme);
+  const code = node.value ?? '';
+  const raw = useMemo(() => plainCodeResult(code), [code]);
+  const [result, setResult] = useState<HighlightResult>(raw);
+  const [loading, setLoading] = useState(false);
+  const plugin = context.plugins?.code;
+  const themes = useMemo(
+    () => plugin?.getThemes() ?? context.shikiTheme ?? DEFAULT_CODE_THEMES,
+    [context.shikiTheme, plugin]
+  );
+
+  useEffect(() => {
+    let active = true;
+    setResult(raw);
+    setLoading(false);
+    if (!plugin || context.codeFenceIncomplete) return () => { active = false; };
+    const highlighted = plugin.highlight({ code, language: node.lang ?? '', themes }, (next) => {
+      if (!active) return;
+      setResult(next);
+      setLoading(false);
+    });
+    if (highlighted) setResult(highlighted);
+    else setLoading(true);
+    return () => { active = false; };
+  }, [code, context.codeFenceIncomplete, node.lang, plugin, raw, themes]);
+
+  const startMatch = node.meta?.match(/(?:^|\s)startLine=(\d+)(?:\s|$)/);
+  const parsedStart = startMatch ? Number.parseInt(startMatch[1], 10) : 1;
+  const startLine = parsedStart >= 1 ? parsedStart : 1;
+  const showLineNumbers = context.lineNumbers !== false && !/(?:^|\s)noLineNumbers(?:\s|$)/.test(node.meta ?? '');
+
+  return (
+    <View style={blocks.codeBlock}>
+      <CodeControls
+        code={code}
+        language={node.lang}
+        capabilities={context.capabilities ?? resolveCapabilities()}
+        controls={context.controls}
+        translations={context.translations ?? defaultTranslations}
+        disabled={context.controlsDisabled ?? context.isStreaming}
+        icons={context.icons}
+      />
+      {node.lang ? <Text style={{ color: context.theme.colors.muted }}>{node.lang}</Text> : null}
+      {node.meta ? <Text style={{ color: context.theme.colors.muted }}>{node.meta}</Text> : null}
+      {loading ? <View accessible accessibilityLabel="Highlighting code" accessibilityState={{ busy: true }} /> : null}
+      <ScrollView horizontal>
+        <View>
+          {result.tokens.map((line, lineIndex) => (
+            <View key={lineIndex} style={{ flexDirection: 'row' }}>
+              {showLineNumbers ? (
+                <Text accessibilityLabel={`Line ${startLine + lineIndex}`} style={[styles.code, { color: context.theme.colors.muted, minWidth: 32 }]}>
+                  {startLine + lineIndex}
+                </Text>
+              ) : null}
+              <Text style={styles.code}>
+                {line.length ? line.map((token, tokenIndex) => (
+                  <Text key={tokenIndex} style={tokenStyle(token)}>{token.content}</Text>
+                )) : ''}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
 function renderNode(node: SemanticNode, context: RenderContext, inline = false, key?: React.Key): ReactNode {
   const styles = getTextStyles(context.theme);
   const blocks = getBlockStyles(context.theme);
@@ -344,21 +440,14 @@ function renderNode(node: SemanticNode, context: RenderContext, inline = false, 
     case 'thematicBreak':
       return withOverride(node, context, false, null, () => <View key={key} style={blocks.horizontalRule} />);
     case 'code': {
+      const custom = findCustomRenderer(context.plugins?.renderers, node.lang ?? '');
+      if (custom) {
+        const Custom = custom.component;
+        return <Custom key={key} code={node.value ?? ''} language={node.lang ?? ''} isIncomplete={Boolean(context.codeFenceIncomplete)} meta={node.meta ?? undefined} />;
+      }
       const content = <Text style={[styles.code, { writingDirection: context.direction }]}>{node.value ?? ''}</Text>;
       return withOverride(node, context, false, content, () => (
-        <View key={key} style={blocks.codeBlock}>
-          <CodeControls
-            code={node.value ?? ''}
-            language={node.lang}
-            capabilities={context.capabilities ?? resolveCapabilities()}
-            controls={context.controls}
-            translations={context.translations ?? defaultTranslations}
-            disabled={context.controlsDisabled ?? context.isStreaming}
-            icons={context.icons}
-          />
-          {node.lang ? <Text style={{ color: context.theme.colors.muted }}>{node.lang}</Text> : null}
-          <ScrollView horizontal><Text style={styles.code}>{node.value ?? ''}</Text></ScrollView>
-        </View>
+        <NativeCodeBlock key={key} node={node} context={context} />
       ));
     }
     case 'table':

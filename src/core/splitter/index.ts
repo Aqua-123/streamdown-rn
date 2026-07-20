@@ -4,6 +4,7 @@ import { updateTagState, INITIAL_INCOMPLETE_STATE } from '../incomplete';
 import { logDebug, logStateSnapshot } from './logger';
 import { processLines } from './processLines';
 import { finalizeBlock } from './finalizeBlock';
+import { hasIncompleteCodeFence } from '../blockSemantics';
 
 const SPLITTER_VERSION = 'char-level-v1';
 
@@ -31,6 +32,16 @@ export function processNewContent(
   }
 
   if (registry.source !== undefined && !fullText.startsWith(registry.source)) {
+    return processNewContent(INITIAL_REGISTRY, fullText);
+  }
+
+  const lastBlock = registry.blocks[registry.blocks.length - 1];
+  const tailAfterLastBlock = lastBlock ? fullText.slice(lastBlock.endPos) : '';
+  if (
+    lastBlock?.type === 'codeBlock' &&
+    !tailAfterLastBlock.includes('\n') &&
+    hasIncompleteCodeFence(fullText.slice(lastBlock.startPos))
+  ) {
     return processNewContent(INITIAL_REGISTRY, fullText);
   }
 
@@ -90,6 +101,7 @@ function processSingleCharacter(
     activeContent,
     tagState: registry.activeTagState,
     activeStartPos: registry.activeBlock?.startPos ?? registry.cursor,
+    canFinalizeCodeBlock: endPos === fullText.length || fullText[endPos] === '\n' || fullText[endPos] === '\r',
   });
 }
 

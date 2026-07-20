@@ -85,6 +85,22 @@ describe('Block Splitter', () => {
   });
   
   describe('Code block detection', () => {
+    it('reopens a closing fence invalidated by a same-line suffix', () => {
+      let registry = processNewContent(INITIAL_REGISTRY, '```js\ncode\n```');
+      expect(registry.blocks).toHaveLength(1);
+      registry = processNewContent(registry, '```js\ncode\n```not-a-close');
+      expect(registry.blocks).toHaveLength(0);
+      expect(registry.activeBlock?.content).toContain('```not-a-close');
+    });
+
+    it('preserves a finalized code block when a later fence is incomplete', () => {
+      let registry = processNewContent(INITIAL_REGISTRY, '```js\none\n```');
+      const stable = registry.blocks[0];
+      registry = processNewContent(registry, '```js\none\n```\n\n```js\ntwo');
+      expect(registry.blocks[0]).toBe(stable);
+      expect(registry.activeBlock?.type).toBe('codeBlock');
+    });
+
     it('should detect code block with language', () => {
       const input = '```typescript\nconst x = 1;\n```\n\n'; // Need double newline to finalize
       const registry = processNewContent(INITIAL_REGISTRY, input);

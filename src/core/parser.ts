@@ -10,6 +10,7 @@ import {
 export interface SemanticPluginOrder {
   before?: PluggableList;
   defaults?: PluggableList;
+  supplied?: PluggableList;
   after?: PluggableList;
   math?: Pluggable;
 }
@@ -47,6 +48,7 @@ export function mergeRemarkPlugins(order: SemanticPluginOrder = {}): PluggableLi
   return [
     ...(order.before ?? []),
     ...(order.defaults ?? DEFAULT_PLUGINS),
+    ...(order.supplied ?? []),
     ...(order.after ?? []),
     ...(order.math ? [order.math] : []),
   ];

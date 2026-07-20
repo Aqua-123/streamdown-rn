@@ -13,6 +13,8 @@ import type { SecurityPolicyOptions } from './security';
 import type { AnimationConfig, StreamingInstrumentation } from './streaming';
 import type { ControlsConfig, IconMap, StreamdownTranslations } from '../controls';
 import type { NativeCapabilities } from '../platform/capabilities';
+import type { PluginConfig } from '../plugins/renderers';
+import type { ThemeInput } from '../plugins/code';
 
 // ============================================================================
 // Block Types
@@ -339,6 +341,12 @@ export interface StreamdownProps extends SecurityPolicyOptions {
   components?: NativeComponents;
   /** Additional remark plugins, applied after the built-in GFM parser. */
   remarkPlugins?: PluggableList;
+  /** Optional code, CJK, and custom-renderer plugins. */
+  plugins?: PluginConfig;
+  /** Light and dark themes supplied to a configured code token provider. */
+  shikiTheme?: [ThemeInput, ThemeInput];
+  /** Show code line numbers unless a fence includes `noLineNumbers`. */
+  lineNumbers?: boolean;
   mode?: 'static' | 'streaming';
   dir?: 'auto' | 'ltr' | 'rtl';
   parseIncompleteMarkdown?: boolean;

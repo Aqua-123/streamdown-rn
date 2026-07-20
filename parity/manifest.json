@@ -4643,7 +4643,7 @@
     {
       "upstreamId": "01ac700ec2cd5bba478b9f35c7ff94883f221629643135da055cbf1f0443ee32",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “cjk > plugin properties > should have correct name and type”.",
@@ -4653,7 +4653,7 @@
     {
       "upstreamId": "c906d5ce289c0d2e0e3d0d0e8fe0f6ce0a4f11631a9219da009b026a390c6a2c",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “cjk > plugin properties > should have remarkPluginsBefore array”.",
@@ -4663,7 +4663,7 @@
     {
       "upstreamId": "c7e27dcaa69fc9a7c5d768e9b1613cb82215adf1ce935223e27905874c4deb75",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “cjk > plugin properties > should have remarkPluginsAfter array”.",
@@ -4673,7 +4673,7 @@
     {
       "upstreamId": "6000d2456072645bb66d50092cbc9bf3a0cf347074a3ef3380aef2179d513bae",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “cjk > plugin properties > should have remarkPlugins array for backwards compatibility”.",
@@ -4683,7 +4683,7 @@
     {
       "upstreamId": "457295d741edf2d7a0c047e98cf271eacf0095d2a7bb3edd8f9db58daf6d0107",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “createCjkPlugin > should create plugin with correct properties”.",
@@ -4693,7 +4693,7 @@
     {
       "upstreamId": "ca1e81b9394798f45a83ea1c12de98724f5775b83103bf73fab033ea69ed0fdd",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “createCjkPlugin > should create independent plugin instances”.",
@@ -4703,7 +4703,7 @@
     {
       "upstreamId": "5ca063cb109f369f51c8fda09ccd0dd6eecb580b68e807ff688394e7ad738fdb",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “CJK autolink boundary splitting > should split autolink at CJK full stop”.",
@@ -4713,7 +4713,7 @@
     {
       "upstreamId": "3e3a15255b80a52d2ef4c3ac71990f2c5ee60176fe1bdfbc4cf99e4c254805a5",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “CJK autolink boundary splitting > should split autolink at ideographic comma”.",
@@ -4723,7 +4723,7 @@
     {
       "upstreamId": "c60ee83effbbd6b2d5f5851bb5f99546f95f19df1ad7136b7afdbe817d93e874",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “CJK autolink boundary splitting > should split autolink at CJK question mark”.",
@@ -4733,7 +4733,7 @@
     {
       "upstreamId": "4083396ec2b3e7ed275d50c018b80d66f296ee38217b8529fb5e9c909195536d",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “CJK autolink boundary splitting > should split autolink at CJK exclamation mark”.",
@@ -4743,7 +4743,7 @@
     {
       "upstreamId": "2449c33fbc6b6b2379ce99e240df54363bd58c199b6073bfe1cfd7cf47fb8e92",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “CJK autolink boundary splitting > should split autolink at CJK colon”.",
@@ -4753,7 +4753,7 @@
     {
       "upstreamId": "159096f32f6da53bbfeae87522236e750b4fffc970b262bc657e6dee27d3fba1",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “CJK autolink boundary splitting > should split autolink at CJK parentheses”.",
@@ -4763,7 +4763,7 @@
     {
       "upstreamId": "2d9836e53ca9b95d2c1ccc872ed223876d7dffae1b68600d18c7318d92110baf",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “CJK autolink boundary splitting > should split autolink at various CJK brackets”.",
@@ -4773,7 +4773,7 @@
     {
       "upstreamId": "fd25811c3c3d363a6659c705e9f3e4a8c72b6d150e1377ab6253fb9571af1bbe",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “CJK autolink boundary splitting > should not split non-autolinks”.",
@@ -4783,7 +4783,7 @@
     {
       "upstreamId": "bd38d586e7ffc155c5c3620de172b7c181b98cea33efd9d6041be6b93ae44f8e",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “CJK autolink boundary splitting > should not split autolinks without CJK punctuation”.",
@@ -4793,7 +4793,7 @@
     {
       "upstreamId": "8faf8b43c6c6ad91964c79a1043fef03816a451c01dde9a8198930f2dcfa5248",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “CJK autolink boundary splitting > should handle multiple autolinks with CJK punctuation”.",
@@ -4803,7 +4803,7 @@
     {
       "upstreamId": "c8c4864eb82ad6215b3d87d3d0cb2af9e02e5d7c24b2c84403c53275f62f0c17",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “CJK autolink boundary splitting > should handle mailto links”.",
@@ -4813,7 +4813,7 @@
     {
       "upstreamId": "0fa0705e31825dd1538cc5cb8bc55a0b5fe4fb478cce92e00820ef445e8d02b0",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “CJK autolink boundary splitting > should handle www links”.",
@@ -4823,7 +4823,7 @@
     {
       "upstreamId": "32e00a58d8003ed0e0a78a8f952d9e26645e153aff8e891fb497ef0114cb7597",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “CJK autolink boundary splitting > should not split if CJK punctuation is at start of URL”.",
@@ -4833,7 +4833,7 @@
     {
       "upstreamId": "e2076b8dca0d22a91ae44f1cc450ec47a72354d95277fa835cb5e055a1e3e379",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “CJK autolink edge cases > should not split links with multiple children (non-autolinks)”.",
@@ -4843,7 +4843,7 @@
     {
       "upstreamId": "b40529f5c1ce60cd98c49f5ace4b066d9008e2619064335c53017f2046199d65",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “CJK autolink edge cases > should not split links where text differs from URL”.",
@@ -4853,7 +4853,7 @@
     {
       "upstreamId": "972071f3fd93957740874dd404da54be70599e27c38ecadfe54ca59a9b9d511e",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “CJK autolink edge cases > should not split non-http/mailto/www URLs”.",
@@ -4863,7 +4863,7 @@
     {
       "upstreamId": "73b9e65bdfc100feea3af85944590261bad37c4c9195515241f740cf22d3927f",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “CJK autolink boundary plugin direct AST tests > should skip link nodes without parent (defensive guard)”.",
@@ -4873,7 +4873,7 @@
     {
       "upstreamId": "02d04a8af15b89aac6f8c51b5ae50b530f2c645c54ee70ffa3e50824d9131c5c",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “CJK autolink boundary plugin direct AST tests > should skip autolink literals without recognized URL prefix”.",
@@ -4883,7 +4883,7 @@
     {
       "upstreamId": "aa093c90fbdc76295e3400f040f1dfea83da9ff6ffb40ef11eaffdcb99fb6fdd",
       "classification": "exact",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-cjk/index.test.test.ts",
         "assertion": "Preserve the observable behavior asserted by upstream case “CJK punctuation boundary characters > should recognize all CJK punctuation characters”.",
@@ -4893,7 +4893,7 @@
     {
       "upstreamId": "26a1bb320329137a4d220e61f6a5842a8437a46b65cfc0993b728ba6349e8e7e",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “code > plugin properties > should have correct name and type” without relying on DOM output.",
@@ -4906,7 +4906,7 @@
     {
       "upstreamId": "6408d5c77236b5faf38eac132fdec1196e0222f433c9fdeded4ce2de618bae8f",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “code > plugin properties > should return default themes” without relying on DOM output.",
@@ -4919,7 +4919,7 @@
     {
       "upstreamId": "e58c28347c0f8137c5002327c0cb50e5c88c0f40c511ede2b3c1c4a83ff6ef5b",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “code > supportsLanguage > should return true for supported languages” without relying on DOM output.",
@@ -4932,7 +4932,7 @@
     {
       "upstreamId": "9bcfd1ec4002f2182a02fdd9255a77d18afd459a1b9e12c0a8076f37a0c56199",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “code > supportsLanguage > should return false for unsupported languages” without relying on DOM output.",
@@ -4945,7 +4945,7 @@
     {
       "upstreamId": "5d6ee781303b3c613b9e4db81de677e6c3539fe3b10bab48f0504512469aeeea",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “code > getSupportedLanguages > should return array of languages” without relying on DOM output.",
@@ -4958,7 +4958,7 @@
     {
       "upstreamId": "f28b4e07e48c6de2601a71a044bf1428475385a7e729b44a5aa50f2f2656150e",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “code > getSupportedLanguages > should include common languages” without relying on DOM output.",
@@ -4971,7 +4971,7 @@
     {
       "upstreamId": "ed0b28b5806aa4b85e6e5286584ea389f4bcdffe1dd80e4d30dc85c068587d48",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “code > highlight > should return null initially and call callback when ready” without relying on DOM output.",
@@ -4984,7 +4984,7 @@
     {
       "upstreamId": "d3e9969a94e32a9d8b42a2ac6222063bdfabd08463797a32fda28b52e1cc5b70",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “code > highlight > should return cached result on subsequent calls” without relying on DOM output.",
@@ -4997,7 +4997,7 @@
     {
       "upstreamId": "d62ad670b44de4f51b08649907f65952ce472c8dcfb1e7f91ab6ad70ca52ff43",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “code > highlight > should work without a callback” without relying on DOM output.",
@@ -5010,7 +5010,7 @@
     {
       "upstreamId": "62c7c0893d5514c5940beb37f9a73198f7b7a5e8302c50b76fe32cf7793b564f",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “code > highlight > should handle code longer than 100 characters” without relying on DOM output.",
@@ -5023,7 +5023,7 @@
     {
       "upstreamId": "e1cc6fb10ff6c50e4c217b0004efa6932fac4cdc67a1b32d65bce37649746b88",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “code > highlight > should notify multiple subscribers for the same code” without relying on DOM output.",
@@ -5036,7 +5036,7 @@
     {
       "upstreamId": "8defd0afac4345aa2a6df697ac7b78d08f36fce78e8b24d47a25920ca7b3e750",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “code > highlight > should fall back to text when language is not loaded” without relying on DOM output.",
@@ -5049,7 +5049,7 @@
     {
       "upstreamId": "24f8c256993a1d11a51d2c2d921523cf5000b857a9aa9519dbe73459da4551a1",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “code > highlight > should fall back to text for unknown/truncated language identifiers” without relying on DOM output.",
@@ -5062,7 +5062,7 @@
     {
       "upstreamId": "f2ada131ca99354ab0ee265a9e046f5904441cac47dbf4ef2510c5247bb7aca4",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “code > highlight > should highlight language aliases using bundled grammars” without relying on DOM output.",
@@ -5075,7 +5075,7 @@
     {
       "upstreamId": "36e219f29319f94374eba967a2729d5b3bf9f4a24946815bee4bed274d3b6999",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “highlight error handling > should handle highlighting errors gracefully” without relying on DOM output.",
@@ -5088,7 +5088,7 @@
     {
       "upstreamId": "41f1924534b0e032a767d118cec13bb219fb8b7b697b2964099c40fef8a47748",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “createCodePlugin > should create plugin with default themes” without relying on DOM output.",
@@ -5101,7 +5101,7 @@
     {
       "upstreamId": "7c7deb247f0f67b750d3e1acd6230681b71a7402c2d656f92675a43c31dd6f62",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “createCodePlugin > should create plugin with custom themes” without relying on DOM output.",
@@ -5114,7 +5114,7 @@
     {
       "upstreamId": "a88b8ca65501f3485c8fccf45ce811e87c0bda906e0ffaffa6faa3d80b49f1e1",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “createCodePlugin > should retain all plugin methods” without relying on DOM output.",
@@ -5127,7 +5127,7 @@
     {
       "upstreamId": "5f39069b19f90c0766c629130933f25c7c8367d30688e42d2d710ed4a4de2ebf",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “createCodePlugin > should create plugin with custom theme objects” without relying on DOM output.",
@@ -5140,7 +5140,7 @@
     {
       "upstreamId": "0049440fc40324ca33c845a74ac4c89912bb1eaeaf2cec207aaa0c97a1ffd805",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “createCodePlugin > should create plugin with mixed built-in and custom themes” without relying on DOM output.",
@@ -5153,7 +5153,7 @@
     {
       "upstreamId": "fce462d901a24c3d758ab1c065e4fa5a058fad2558845ac0e32752538aa110a1",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “createCodePlugin > should use 'custom' fallback when theme object has name undefined” without relying on DOM output.",
@@ -5166,7 +5166,7 @@
     {
       "upstreamId": "8c99f8ddc77b7714024740580002c421cf8aaf4471b6a38f539e5888e67d9d01",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-code/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “createCodePlugin > should highlight code with custom theme objects” without relying on DOM output.",

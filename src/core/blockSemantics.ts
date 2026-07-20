@@ -2,7 +2,7 @@ import { parseSemanticDocument } from './parser';
 
 const FOOTNOTE_REFERENCE = /\[\^[\w-]{1,200}\](?!:)/;
 const FOOTNOTE_DEFINITION = /\[\^[\w-]{1,200}\]:/;
-const CODE_FENCE = /^[ \t]{0,3}(`{3,}|~{3,})/;
+const CODE_FENCE = /^[ \t]{0,3}(`{3,}|~{3,})(.*)$/;
 const TABLE_DELIMITER =
   /^\|?[ \t]*:?-{1,}:?[ \t]*(\|[ \t]*:?-{1,}:?[ \t]*)*\|?$/;
 
@@ -10,12 +10,15 @@ export function hasIncompleteCodeFence(markdown: string): boolean {
   let character: string | undefined;
   let length = 0;
   for (const line of markdown.split('\n')) {
-    const run = CODE_FENCE.exec(line)?.[1];
-    if (!run) continue;
+    const match = CODE_FENCE.exec(line);
+    if (!match) continue;
+    const run = match[1];
+    const suffix = match[2];
     if (!character) {
+      if (run[0] === '`' && suffix.includes('`')) continue;
       character = run[0];
       length = run.length;
-    } else if (run[0] === character && run.length >= length) {
+    } else if (run[0] === character && run.length >= length && suffix.trim() === '') {
       character = undefined;
       length = 0;
     }

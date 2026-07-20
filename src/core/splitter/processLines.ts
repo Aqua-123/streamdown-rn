@@ -12,6 +12,7 @@ interface ProcessArgs {
   activeContent: string;
   tagState: IncompleteTagState;
   activeStartPos: number;
+  canFinalizeCodeBlock: boolean;
 }
 
 export function processLines(args: ProcessArgs): BlockRegistry {
@@ -30,10 +31,11 @@ function handleExplicitClosingBlocks({
   fullText,
   activeContent,
   tagState,
+  canFinalizeCodeBlock,
 }: ProcessArgs): BlockRegistry | null {
   const currentType = registry.activeBlock?.type;
   if (currentType === 'codeBlock') {
-    if (isCodeBlockClosed(activeContent)) {
+    if (canFinalizeCodeBlock && isCodeBlockClosed(activeContent)) {
       const block = finalizeBlock(
         activeContent,
         'codeBlock',
@@ -254,6 +256,7 @@ function handleActiveBlock({
   activeContent,
   tagState,
   activeStartPos,
+  canFinalizeCodeBlock,
 }: ProcessArgs): BlockRegistry {
   if (!registry.activeBlock) {
     const { normalizedContent, trimmedChars } =
@@ -282,6 +285,7 @@ function handleActiveBlock({
       activeContent: normalizedContent,
       tagState,
       activeStartPos: activeStartPos + trimmedChars,
+      canFinalizeCodeBlock,
     });
   }
 
@@ -404,4 +408,3 @@ function consumeLeadingBlocks(args: ProcessArgs): ProcessArgs {
     activeStartPos: startPos,
   };
 }
-

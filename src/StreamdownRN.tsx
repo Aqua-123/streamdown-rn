@@ -25,6 +25,9 @@ import {
 } from './core/streaming';
 import { resolveCapabilities } from './platform/defaults';
 import { resolveTranslations, useStreamingAnnouncement } from './controls';
+import type { ThemeInput } from './plugins/code';
+
+const DEFAULT_CODE_THEMES: [ThemeInput, ThemeInput] = ['github-light', 'github-dark'];
 
 function rejectDOMProps(props: Record<string, unknown>): void {
   const name = ['className', 'prefix', 'rehypePlugins', 'remarkRehypeOptions']
@@ -59,6 +62,9 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
     icons,
     announceStreaming,
     remarkPlugins,
+    plugins,
+    shikiTheme = DEFAULT_CODE_THEMES,
+    lineNumbers = true,
     allowedTags,
     literalTagContent,
     allowedElements,
@@ -99,10 +105,12 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
   useStreamingAnnouncement(children, Boolean(announceStreaming && streamingBusy), nativeCapabilities, announcementDelay);
   const themeConfig = useMemo<ThemeConfig>(() => getTheme(theme), [theme]);
   const parseOptions = useMemo(() => ({
-    after: remarkPlugins,
+    before: plugins?.cjk?.remarkPluginsBefore,
+    supplied: remarkPlugins,
+    after: plugins?.cjk?.remarkPluginsAfter,
     customTags: Object.keys(allowedTags ?? {}),
     literalTags: literalTagContent,
-  }), [allowedTags, literalTagContent, remarkPlugins]);
+  }), [allowedTags, literalTagContent, plugins?.cjk, remarkPlugins]);
   const securityPolicy = useMemo<SecurityPolicyOptions>(() => ({
     allowedElements,
     disallowedElements,
@@ -267,6 +275,9 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
           controls={controls}
           translations={nativeTranslations}
           icons={icons}
+          plugins={plugins}
+          shikiTheme={shikiTheme}
+          lineNumbers={lineNumbers}
         />
       </View>
     );
@@ -289,6 +300,9 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
           controls={controls}
           translations={nativeTranslations}
           icons={icons}
+          plugins={plugins}
+          shikiTheme={shikiTheme}
+          lineNumbers={lineNumbers}
         />
       </View>
     );
@@ -317,6 +331,9 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
           translations={nativeTranslations}
           icons={icons}
           controlsDisabled={streamingBusy}
+          plugins={plugins}
+          shikiTheme={shikiTheme}
+          lineNumbers={lineNumbers}
         />
       ))}
       <ActiveBlock
@@ -342,6 +359,9 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
         controls={controls}
         translations={nativeTranslations}
         icons={icons}
+        plugins={plugins}
+        shikiTheme={shikiTheme}
+        lineNumbers={lineNumbers}
       />
     </View>
   );

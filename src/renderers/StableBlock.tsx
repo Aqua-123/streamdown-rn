@@ -13,6 +13,8 @@ import { ASTRenderer, ComponentBlock } from './ASTRenderer';
 import type { StableRootCache, StreamingInstrumentation } from '../core/streaming';
 import type { NativeCapabilities } from '../platform/capabilities';
 import type { ControlsConfig, IconMap, StreamdownTranslations } from '../controls';
+import type { PluginConfig } from '../plugins/renderers';
+import type { ThemeInput } from '../plugins/code';
 
 interface StableBlockProps {
   block: StableBlockType;
@@ -32,6 +34,9 @@ interface StableBlockProps {
   translations?: StreamdownTranslations;
   icons?: IconMap;
   controlsDisabled?: boolean;
+  plugins?: PluginConfig;
+  shikiTheme?: [ThemeInput, ThemeInput];
+  lineNumbers?: boolean;
 }
 
 /**
@@ -39,7 +44,7 @@ interface StableBlockProps {
  * U6 owns memoization after all renderer-bearing inputs are instrumented.
  */
 const StableBlockRenderer: React.FC<StableBlockProps> =
-  ({ block, theme, componentRegistry, onError, components, securityPolicy, allowedTags, literalTagContent, dir, parseOptions, rootCache, instrumentation, capabilities, controls, translations, icons, controlsDisabled }) => {
+  ({ block, theme, componentRegistry, onError, components, securityPolicy, allowedTags, literalTagContent, dir, parseOptions, rootCache, instrumentation, capabilities, controls, translations, icons, controlsDisabled, plugins, shikiTheme, lineNumbers }) => {
     instrumentation?.recordStableRender();
     // Component blocks don't have AST (custom syntax, not markdown)
     if (block.type === 'component') {
@@ -73,6 +78,9 @@ const StableBlockRenderer: React.FC<StableBlockProps> =
           translations={translations}
           icons={icons}
           controlsDisabled={controlsDisabled}
+          plugins={plugins}
+          shikiTheme={shikiTheme}
+          lineNumbers={lineNumbers}
         />
       );
     }
@@ -100,6 +108,9 @@ export const StableBlock = React.memo(StableBlockRenderer, (previous, next) =>
   && previous.translations === next.translations
   && previous.icons === next.icons
   && previous.controlsDisabled === next.controlsDisabled
+  && previous.plugins === next.plugins
+  && previous.shikiTheme === next.shikiTheme
+  && previous.lineNumbers === next.lineNumbers
 );
 
 StableBlock.displayName = 'StableBlock';

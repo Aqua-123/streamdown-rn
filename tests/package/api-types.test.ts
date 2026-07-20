@@ -4,6 +4,9 @@ import type {
   StreamdownRNProps,
   NativeCapabilities,
 } from '../../src';
+import { createCodePlugin, type TokenProvider } from '../../src/plugins/code';
+import { createCjkPlugin } from '../../src/plugins/cjk';
+import { createRendererPlugin } from '../../src/plugins/renderers';
 
 const nativeProps: StreamdownProps = {
   children: '# native',
@@ -17,6 +20,17 @@ const nativeProps: StreamdownProps = {
   controls: { code: { copy: true, download: false } },
   translations: { copyCode: 'Copy' },
   announceStreaming: { delayMs: 500 },
+  lineNumbers: false,
+  plugins: {
+    code: createCodePlugin({
+      provider: {
+        languages: ['text'],
+        highlight: ({ code }) => ({ tokens: [[{ content: code }]] }),
+      } satisfies TokenProvider,
+    }),
+    cjk: createCjkPlugin(),
+    renderers: createRendererPlugin([]),
+  },
 };
 const aliasProps: StreamdownRNProps = nativeProps;
 void aliasProps;
