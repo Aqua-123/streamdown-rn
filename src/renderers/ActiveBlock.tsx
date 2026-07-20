@@ -15,6 +15,8 @@ import { fixIncompleteMarkdown } from '../core/incomplete';
 import { parseSemanticDocument, type SemanticParseOptions } from '../core/parser';
 import type { SecurityPolicyOptions } from '../core/security';
 import { ASTRenderer, ComponentBlock, extractComponentData } from './ASTRenderer';
+import type { NormalizedAnimationConfig, StreamingInstrumentation } from '../core/streaming';
+import { Text } from 'react-native';
 
 interface ActiveBlockProps {
   block: ActiveBlockType | null;
@@ -29,6 +31,11 @@ interface ActiveBlockProps {
   literalTagContent?: readonly string[];
   dir?: 'auto' | 'ltr' | 'rtl';
   parseIncompleteMarkdown?: boolean;
+  animation?: NormalizedAnimationConfig | null;
+  animationFrom?: number;
+  showCaret?: boolean;
+  caret?: 'block' | 'circle';
+  instrumentation?: StreamingInstrumentation;
 }
 
 /**
@@ -50,7 +57,13 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
   literalTagContent,
   dir,
   parseIncompleteMarkdown = true,
+  animation,
+  animationFrom = 0,
+  showCaret = false,
+  caret,
+  instrumentation,
 }) => {
+  instrumentation?.recordActiveRender();
   // No active block — nothing to render
   if (!block || !block.content.trim()) {
     return null;
@@ -78,11 +91,13 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
     : block.content;
   
   // Parse with remark
+  instrumentation?.recordActiveParse();
   const ast = parseSemanticDocument(fixedContent, parseOptions);
   
   // Render from AST
   if (ast.children.length) {
     return (
+      <>
       <ASTRenderer
         node={ast}
         theme={theme}
@@ -94,7 +109,10 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
         allowedTags={allowedTags}
         literalTagContent={literalTagContent}
         dir={dir}
+        animation={animation ? { ...animation, from: animationFrom } : undefined}
       />
+      {showCaret && caret ? <Text testID="streamdown-caret">{caret === 'circle' ? ' ●' : ' ▋'}</Text> : null}
+      </>
     );
   }
   

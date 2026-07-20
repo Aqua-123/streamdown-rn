@@ -20,6 +20,7 @@ import {
 import { detectTextDirection } from '../core/blockSemantics';
 import { getBlockStyles, getTextStyles } from '../themes';
 import { materializeCustomTags } from './semanticTags';
+import { AnimatedRevealText, type NormalizedAnimationConfig } from '../core/streaming';
 
 type ComponentErrorHandler = (error: Error, componentName?: string) => void;
 type SemanticNode = Node & {
@@ -49,6 +50,7 @@ export interface ASTRendererProps {
   allowedTags?: Readonly<Record<string, readonly string[]>>;
   literalTagContent?: readonly string[];
   dir?: 'auto' | 'ltr' | 'rtl';
+  animation?: NormalizedAnimationConfig & { from: number };
 }
 
 interface RenderContext extends Omit<ASTRendererProps, 'node'> {
@@ -282,7 +284,27 @@ function renderNode(node: SemanticNode, context: RenderContext, inline = false, 
       return withOverride(node, context, false, content, () => <Text key={key} accessibilityRole="header" style={[style, { writingDirection: context.direction }]}>{content}</Text>);
     }
     case 'text':
-      return node.value ?? '';
+      {
+        const value = node.value ?? '';
+        const start = node.position?.start.offset;
+        const from = context.animation?.from;
+        if (start === undefined || from === undefined || start + value.length <= from) return value;
+        const split = Math.max(0, Math.min(value.length, from - start));
+        const suffix = value.slice(split);
+        const parts = context.animation!.sep === 'char'
+          ? Array.from(suffix)
+          : suffix.split(/(\s+)/).filter(Boolean);
+        return <React.Fragment key={key}>{value.slice(0, split)}{parts.map((part, index) => /^\s+$/.test(part)
+          ? part
+          : <AnimatedRevealText
+              key={`${from}:${index}`}
+              animation={context.animation!.animation}
+              delay={index * context.animation!.stagger}
+              duration={context.animation!.duration}
+              easing={context.animation!.easing}
+            >{part}</AnimatedRevealText>
+        )}</React.Fragment>;
+      }
     case 'strong':
       return withOverride(node, context, true, children, () => <Text key={key} style={styles.bold}>{children}</Text>);
     case 'emphasis':

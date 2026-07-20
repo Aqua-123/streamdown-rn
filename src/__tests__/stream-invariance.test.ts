@@ -51,6 +51,13 @@ describe('stream source and semantic invariance', () => {
     expect(after.blocks[0]).toBe(stable);
   });
 
+  it('does not leak incomplete-tag state across an equal-length block boundary', () => {
+    const before = processNewContent(resetRegistry(), '**open\n\n');
+    const after = processNewContent(before, '**open\n\nplain!');
+    expect(after.activeBlock?.content).toBe('plain!');
+    expect(after.activeTagState.stack).toEqual([]);
+  });
+
   it('changes incomplete constructs to their completed semantic form', () => {
     const incomplete = processNewContent(resetRegistry(), '```ts\nconst x = 1');
     const complete = processNewContent(incomplete, '```ts\nconst x = 1\n```');

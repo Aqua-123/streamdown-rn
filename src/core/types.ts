@@ -10,6 +10,7 @@ import type { Content, Node } from 'mdast';
 import type { StyleProp, ViewStyle } from 'react-native';
 import type { PluggableList } from 'unified';
 import type { SecurityPolicyOptions } from './security';
+import type { AnimationConfig, StreamingInstrumentation } from './streaming';
 
 // ============================================================================
 // Block Types
@@ -339,6 +340,20 @@ export interface StreamdownProps extends SecurityPolicyOptions {
   mode?: 'static' | 'streaming';
   dir?: 'auto' | 'ltr' | 'rtl';
   parseIncompleteMarkdown?: boolean;
+  /** Whether the host is currently delivering streamed content. */
+  isAnimating?: boolean;
+  /** Animate only content that became visible in the current append. */
+  animated?: boolean | AnimationConfig;
+  /** Native caret shown while streaming. */
+  caret?: 'block' | 'circle';
+  /** Explicit seam for tests or hosts that already observe reduced motion. */
+  reducedMotion?: boolean;
+  /** Called once for each false-to-true streaming transition. */
+  onAnimationStart?: () => void;
+  /** Called once for each true-to-false streaming transition. */
+  onAnimationEnd?: () => void;
+  /** Optional bounded counters for benchmarks and regression tests. */
+  instrumentation?: StreamingInstrumentation;
   /** Custom tag names and the attributes exposed to native overrides. */
   allowedTags?: Readonly<Record<string, readonly string[]>>;
   literalTagContent?: readonly string[];

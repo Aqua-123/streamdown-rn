@@ -10,6 +10,7 @@ import type { StableBlock as StableBlockType, ThemeConfig, ComponentRegistry, Na
 import type { SecurityPolicyOptions } from '../core/security';
 import { parseSemanticDocument, type SemanticParseOptions } from '../core/parser';
 import { ASTRenderer, ComponentBlock } from './ASTRenderer';
+import type { StableRootCache, StreamingInstrumentation } from '../core/streaming';
 
 interface StableBlockProps {
   block: StableBlockType;
@@ -22,14 +23,17 @@ interface StableBlockProps {
   literalTagContent?: readonly string[];
   dir?: 'auto' | 'ltr' | 'rtl';
   parseOptions?: SemanticParseOptions;
+  rootCache: StableRootCache;
+  instrumentation?: StreamingInstrumentation;
 }
 
 /**
  * StableBlock component — renders finalized blocks from cached AST.
  * U6 owns memoization after all renderer-bearing inputs are instrumented.
  */
-export const StableBlock: React.FC<StableBlockProps> =
-  ({ block, theme, componentRegistry, onError, components, securityPolicy, allowedTags, literalTagContent, dir, parseOptions }) => {
+const StableBlockRenderer: React.FC<StableBlockProps> =
+  ({ block, theme, componentRegistry, onError, components, securityPolicy, allowedTags, literalTagContent, dir, parseOptions, rootCache, instrumentation }) => {
+    instrumentation?.recordStableRender();
     // Component blocks don't have AST (custom syntax, not markdown)
     if (block.type === 'component') {
       return (
@@ -43,10 +47,8 @@ export const StableBlock: React.FC<StableBlockProps> =
       );
     }
     
-    // The legacy cache stores one Content node. Reparse the complete block so
-    // document-wide constructs such as footnotes never lose root siblings.
-    // U6 owns caching the resulting Root once its behavior inputs are measured.
-    const ast = parseSemanticDocument(block.content, parseOptions);
+    // Cache the complete Root so document-wide constructs retain every sibling.
+    const ast = rootCache.get(block, parseOptions, () => parseSemanticDocument(block.content, parseOptions));
     if (ast) {
       return (
         <ASTRenderer
@@ -67,5 +69,20 @@ export const StableBlock: React.FC<StableBlockProps> =
     console.warn('StableBlock has no AST:', block.type, block.id);
     return null;
   };
+
+export const StableBlock = React.memo(StableBlockRenderer, (previous, next) =>
+  previous.block === next.block &&
+  previous.theme === next.theme &&
+  previous.componentRegistry === next.componentRegistry &&
+  previous.onError === next.onError &&
+  previous.components === next.components &&
+  previous.securityPolicy === next.securityPolicy &&
+  previous.allowedTags === next.allowedTags &&
+  previous.literalTagContent === next.literalTagContent &&
+  previous.dir === next.dir &&
+  previous.parseOptions === next.parseOptions &&
+  previous.rootCache === next.rootCache &&
+  previous.instrumentation === next.instrumentation
+);
 
 StableBlock.displayName = 'StableBlock';

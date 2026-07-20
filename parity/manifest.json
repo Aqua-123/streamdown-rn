@@ -6102,27 +6102,27 @@
     {
       "upstreamId": "7d37a5ba3815bdd09ad550d41f9d0737d24564da699eca5b0b9411b3e33329b0",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/caret.test.test.ts",
+        "path": "src/renderers/__tests__/streaming.test.tsx",
         "assertion": "Assert the React Native semantic equivalent of upstream case “Caret Feature > Caret Rendering > should render block caret when caret='block' and isAnimating=true” without relying on DOM output.",
         "marker": "parity:7d37a5ba3815bdd09ad550d41f9d0737d24564da699eca5b0b9411b3e33329b0"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/caret.test.tsx:47 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "React Native renders the block caret as native Text while preserving the upstream visible-state contract."
       }
     },
     {
       "upstreamId": "ffcd56eeedc283b8f42e0ccf5928575fac310f158f81a6dd0853613d1487d440",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/caret.test.test.ts",
+        "path": "src/renderers/__tests__/streaming.test.tsx",
         "assertion": "Assert the React Native semantic equivalent of upstream case “Caret Feature > Caret Rendering > should render circle caret when caret='circle' and isAnimating=true” without relying on DOM output.",
         "marker": "parity:ffcd56eeedc283b8f42e0ccf5928575fac310f158f81a6dd0853613d1487d440"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/caret.test.tsx:70 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "React Native renders the circle caret as native Text while preserving the upstream visible-state contract."
       }
     },
     {
@@ -6193,14 +6193,14 @@
     {
       "upstreamId": "c20c1940c0ffd0d859e00ed5f441ffa2d0d1332d569864401efbb41cc0af70dc",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/caret.test.test.ts",
+        "path": "src/renderers/__tests__/streaming.test.tsx",
         "assertion": "Assert the React Native semantic equivalent of upstream case “Caret Feature > Caret State Changes > should change caret style when caret prop changes with content change” without relying on DOM output.",
         "marker": "parity:c20c1940c0ffd0d859e00ed5f441ffa2d0d1332d569864401efbb41cc0af70dc"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/caret.test.tsx:190 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The native caret changes glyph reactively instead of changing a CSS custom property."
       }
     },
     {
@@ -11666,14 +11666,14 @@
     {
       "upstreamId": "9d37c393b0d6057cc3708f7e10029403ee0fe36c1eef5582ea64fde533b4ba9c",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/list-animation-retrigger.test.test.ts",
+        "path": "src/renderers/__tests__/streaming.test.tsx",
         "assertion": "Assert the React Native semantic equivalent of upstream case “list animation retrigger fix (#410) > sets --sd-duration:0ms on already-rendered content when item text grows” without relying on DOM output.",
         "marker": "parity:9d37c393b0d6057cc3708f7e10029403ee0fe36c1eef5582ea64fde533b4ba9c"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/list-animation-retrigger.test.tsx:72 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The native renderer wraps only the appended suffix in Animated.Text, so previously visible characters cannot retrigger."
       }
     },
     {
@@ -16775,66 +16775,66 @@
     {
       "upstreamId": "99688298181eb2b46dd99eb19cd98232fd5bb6639c3a3a98b71a014c40c3fbcb",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/streamdown.test.test.ts",
+        "path": "src/renderers/__tests__/streaming.test.tsx",
         "assertion": "Assert the React Native semantic equivalent of upstream case “animation callbacks > fires onAnimationStart when isAnimating transitions false → true” without relying on DOM output.",
         "marker": "parity:99688298181eb2b46dd99eb19cd98232fd5bb6639c3a3a98b71a014c40c3fbcb"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/streamdown.test.tsx:280 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "Animation lifecycle callbacks are platform-neutral and are asserted through React Native rerenders."
       }
     },
     {
       "upstreamId": "e767efe890f35ce41ef72e37541c6f99fc9e93e77e9d2065bb3929cedd833249",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/streamdown.test.test.ts",
+        "path": "src/renderers/__tests__/streaming.test.tsx",
         "assertion": "Assert the React Native semantic equivalent of upstream case “animation callbacks > fires onAnimationEnd when isAnimating transitions true → false” without relying on DOM output.",
         "marker": "parity:e767efe890f35ce41ef72e37541c6f99fc9e93e77e9d2065bb3929cedd833249"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/streamdown.test.tsx:297 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "Animation lifecycle callbacks are platform-neutral and are asserted through React Native rerenders."
       }
     },
     {
       "upstreamId": "f8d5cbb329e4ebbc5fc8c69783d8e708f1b3dd5f73f5722351a8c8de0bbf29fe",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/streamdown.test.test.ts",
+        "path": "src/renderers/__tests__/streaming.test.tsx",
         "assertion": "Assert the React Native semantic equivalent of upstream case “animation callbacks > fires onAnimationStart on initial mount when isAnimating={true}” without relying on DOM output.",
         "marker": "parity:f8d5cbb329e4ebbc5fc8c69783d8e708f1b3dd5f73f5722351a8c8de0bbf29fe"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/streamdown.test.tsx:314 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "React Native effects preserve the platform-neutral initial animation-start lifecycle."
       }
     },
     {
       "upstreamId": "be7e35e2e73a2f8835635b99e1db260a7e2877fd62ad1ecdd2792ac0b04636bf",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/streamdown.test.test.ts",
+        "path": "src/renderers/__tests__/streaming.test.tsx",
         "assertion": "Assert the React Native semantic equivalent of upstream case “animation callbacks > does NOT fire onAnimationEnd on initial mount when isAnimating={false}” without relying on DOM output.",
         "marker": "parity:be7e35e2e73a2f8835635b99e1db260a7e2877fd62ad1ecdd2792ac0b04636bf"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/streamdown.test.tsx:324 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "React Native effects preserve the platform-neutral idle-mount lifecycle without an end event."
       }
     },
     {
       "upstreamId": "1fde8592108ed192ae56e16220370d827f262370b1f909c8a4fa237ff5461f22",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/streamdown.test.test.ts",
+        "path": "src/renderers/__tests__/streaming.test.tsx",
         "assertion": "Assert the React Native semantic equivalent of upstream case “animation callbacks > does not fire callbacks when isAnimating is unchanged across re-renders” without relying on DOM output.",
         "marker": "parity:1fde8592108ed192ae56e16220370d827f262370b1f909c8a4fa237ff5461f22"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/streamdown.test.tsx:334 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "React Native rerenders assert unchanged animation state does not repeat callbacks."
       }
     },
     {
@@ -16866,14 +16866,14 @@
     {
       "upstreamId": "1cdea04f848288fe70736cbeb2198d0862018827301946cafa3ee5d527434de2",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/streamdown.test.test.ts",
+        "path": "src/renderers/__tests__/streaming.test.tsx",
         "assertion": "Assert the React Native semantic equivalent of upstream case “animation callbacks > suppresses callbacks in mode=\"static\"” without relying on DOM output.",
         "marker": "parity:1cdea04f848288fe70736cbeb2198d0862018827301946cafa3ee5d527434de2"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/streamdown.test.tsx:425 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "Static React Native rendering suppresses streaming lifecycle callbacks exactly as upstream."
       }
     },
     {

@@ -25,7 +25,10 @@ describe('Streamdown-compatible native API', () => {
     const screen = render(
       <Streamdown isComplete>{'Body[^note]\n\n[^note]: Footnote body'}</Streamdown>
     );
-    expect(screen.getByText('Body[^note]')).toBeTruthy();
+    expect(screen.UNSAFE_getAllByType(Text).some((node) =>
+      Array.isArray(node.props.children) && node.props.children[0] === 'Body'
+    )).toBe(true);
+    expect(screen.getByLabelText('Footnote note')).toBeTruthy();
     expect(screen.getByText('Footnote body')).toBeTruthy();
   });
 

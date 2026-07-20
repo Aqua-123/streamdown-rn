@@ -15,6 +15,14 @@ import { getTheme } from './themes';
 import { StableBlock } from './renderers/StableBlock';
 import { ActiveBlock } from './renderers/ActiveBlock';
 import { ASTRenderer } from './renderers/ASTRenderer';
+import { hasIncompleteCodeFence, hasTable } from './core/blockSemantics';
+import {
+  classifyStreamUpdate,
+  getAnimationWindow,
+  normalizeAnimationConfig,
+  StableRootCache,
+  useReducedMotion,
+} from './core/streaming';
 
 function rejectDOMProps(props: Record<string, unknown>): void {
   const name = ['className', 'prefix', 'rehypePlugins', 'remarkRehypeOptions']
@@ -22,7 +30,7 @@ function rejectDOMProps(props: Record<string, unknown>): void {
   if (name) throw new TypeError(`${name} is DOM-only and is not supported by Streamdown for React Native`);
 }
 
-export const Streamdown: React.FC<StreamdownProps> = (props) => {
+const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
   rejectDOMProps(props as unknown as Record<string, unknown>);
   const {
     children: value,
@@ -36,6 +44,13 @@ export const Streamdown: React.FC<StreamdownProps> = (props) => {
     mode = 'streaming',
     dir = 'auto',
     parseIncompleteMarkdown = true,
+    isAnimating = false,
+    animated,
+    caret,
+    reducedMotion,
+    onAnimationStart,
+    onAnimationEnd,
+    instrumentation,
     remarkPlugins,
     allowedTags,
     literalTagContent,
@@ -52,15 +67,28 @@ export const Streamdown: React.FC<StreamdownProps> = (props) => {
   const children = typeof value === 'string' ? value : '';
   const registryRef = useRef<BlockRegistry>(INITIAL_REGISTRY);
   const contentRef = useRef('');
+  const generationRef = useRef(0);
+  const stableRootCacheRef = useRef(new StableRootCache(128, instrumentation));
   const lastUpdateTimeRef = useRef(performance.now());
   const previousContentRef = useRef('');
+  const previousAnimatingRef = useRef<boolean | null>(null);
+  const onAnimationStartRef = useRef(onAnimationStart);
+  const onAnimationEndRef = useRef(onAnimationEnd);
+  const onErrorRef = useRef(onError);
+  const instrumentationRef = useRef(instrumentation);
+  onAnimationStartRef.current = onAnimationStart;
+  onAnimationEndRef.current = onAnimationEnd;
+  onErrorRef.current = onError;
+  instrumentationRef.current = instrumentation;
+  stableRootCacheRef.current.setInstrumentation(instrumentation);
+  const prefersReducedMotion = useReducedMotion(reducedMotion);
   const themeConfig = useMemo<ThemeConfig>(() => getTheme(theme), [theme]);
   const parseOptions = useMemo(() => ({
     after: remarkPlugins,
     customTags: Object.keys(allowedTags ?? {}),
     literalTags: literalTagContent,
   }), [allowedTags, literalTagContent, remarkPlugins]);
-  const securityPolicy: SecurityPolicyOptions = {
+  const securityPolicy = useMemo<SecurityPolicyOptions>(() => ({
     allowedElements,
     disallowedElements,
     allowElement,
@@ -70,28 +98,105 @@ export const Streamdown: React.FC<StreamdownProps> = (props) => {
     allowedLinkSchemes,
     resolveRelativeUrl,
     dataImages,
-  };
+  }), [
+    allowedElements,
+    disallowedElements,
+    allowElement,
+    unwrapDisallowed,
+    skipHtml,
+    urlTransform,
+    allowedLinkSchemes,
+    resolveRelativeUrl,
+    dataImages,
+  ]);
+  const animationConfig = useMemo(
+    () => normalizeAnimationConfig(animated),
+    [
+      typeof animated === 'object' ? animated.animation : animated,
+      typeof animated === 'object' ? animated.duration : undefined,
+      typeof animated === 'object' ? animated.easing : undefined,
+      typeof animated === 'object' ? animated.sep : undefined,
+      typeof animated === 'object' ? animated.stagger : undefined,
+    ]
+  );
+  const completeRoot = useMemo(
+    () => {
+      if (!(mode === 'static' || isComplete) || !children) return null;
+      instrumentationRef.current?.recordDocumentParse();
+      return parseSemanticDocument(children, parseOptions);
+    },
+    [children, isComplete, mode, parseOptions]
+  );
 
-  const registry = useMemo(() => {
+  const streamState = useMemo(() => {
+    if (mode === 'static') {
+      if (contentRef.current) {
+        registryRef.current = INITIAL_REGISTRY;
+        contentRef.current = '';
+        stableRootCacheRef.current.clear();
+        generationRef.current++;
+        previousContentRef.current = '';
+      }
+      return { registry: INITIAL_REGISTRY, generation: generationRef.current, animationFrom: children.length };
+    }
     if (!children || children.trim().length === 0) {
+      if (contentRef.current) {
+        instrumentation?.recordReset();
+        stableRootCacheRef.current.clear();
+        generationRef.current++;
+        previousContentRef.current = '';
+      }
       registryRef.current = INITIAL_REGISTRY;
       contentRef.current = '';
-      return INITIAL_REGISTRY;
+      return { registry: INITIAL_REGISTRY, generation: generationRef.current, animationFrom: 0 };
     }
+    const previous = contentRef.current;
+    const update = classifyStreamUpdate(previous, children);
     try {
-      if (contentRef.current && !children.startsWith(contentRef.current)) {
+      if (update.kind === 'reset') {
         registryRef.current = INITIAL_REGISTRY;
+        stableRootCacheRef.current.clear();
+        generationRef.current++;
+        instrumentation?.recordReset();
+        previousContentRef.current = '';
+      } else if (update.kind === 'append') {
+        instrumentation?.recordAppend(update.added.length);
       }
       contentRef.current = children;
       let updated = processNewContent(registryRef.current, children);
       if (isComplete && updated.activeBlock) updated = finalizeActiveBlock(updated);
       registryRef.current = updated;
-      return updated;
+      return { registry: updated, generation: generationRef.current, animationFrom: update.from };
     } catch (error) {
-      onError?.(error instanceof Error ? error : new Error(String(error)));
-      return registryRef.current;
+      onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
+      return { registry: registryRef.current, generation: generationRef.current, animationFrom: children.length };
     }
-  }, [children, isComplete, onError]);
+  }, [children, instrumentation, isComplete, mode]);
+  const { registry, generation, animationFrom } = streamState;
+  const animationWindow = getAnimationWindow(
+    children.slice(0, animationFrom),
+    children,
+    Boolean(animationConfig && isAnimating),
+    prefersReducedMotion
+  );
+  const activeContent = registry.activeBlock?.content ?? '';
+  const deferHeavyContent = hasIncompleteCodeFence(activeContent) || hasTable(activeContent);
+
+  useEffect(() => {
+    if (mode === 'static') {
+      previousAnimatingRef.current = null;
+      return;
+    }
+    const previous = previousAnimatingRef.current;
+    previousAnimatingRef.current = isAnimating;
+    if (previous === null) {
+      if (isAnimating) onAnimationStartRef.current?.();
+    } else if (isAnimating && !previous) {
+      onAnimationStartRef.current?.();
+    } else if (!isAnimating && previous) {
+      onAnimationEndRef.current?.();
+    }
+  }, [isAnimating, mode]);
 
   useEffect(() => {
     if (!onDebug || !children) return;
@@ -131,11 +236,28 @@ export const Streamdown: React.FC<StreamdownProps> = (props) => {
   if (!children || children.trim().length === 0) return null;
 
   if (mode === 'static') {
-    const root = parseSemanticDocument(children, parseOptions);
     return (
       <View style={style}>
         <ASTRenderer
-          node={root}
+          node={completeRoot!}
+          theme={themeConfig}
+          componentRegistry={componentRegistry}
+          components={components}
+          onError={onError}
+          securityPolicy={securityPolicy}
+          allowedTags={allowedTags}
+          literalTagContent={literalTagContent}
+          dir={dir}
+        />
+      </View>
+    );
+  }
+
+  if (isComplete) {
+    return (
+      <View style={style}>
+        <ASTRenderer
+          node={completeRoot!}
           theme={themeConfig}
           componentRegistry={componentRegistry}
           components={components}
@@ -153,7 +275,7 @@ export const Streamdown: React.FC<StreamdownProps> = (props) => {
     <View style={style}>
       {registry.blocks.map((block) => (
         <StableBlock
-          key={block.id}
+          key={`${generation}:${block.id}`}
           block={block}
           theme={themeConfig}
           componentRegistry={componentRegistry}
@@ -164,9 +286,12 @@ export const Streamdown: React.FC<StreamdownProps> = (props) => {
           literalTagContent={literalTagContent}
           dir={dir}
           parseOptions={parseOptions}
+          rootCache={stableRootCacheRef.current}
+          instrumentation={instrumentation}
         />
       ))}
       <ActiveBlock
+        key={generation}
         block={registry.activeBlock}
         tagState={registry.activeTagState}
         theme={themeConfig}
@@ -179,11 +304,17 @@ export const Streamdown: React.FC<StreamdownProps> = (props) => {
         literalTagContent={literalTagContent}
         dir={dir}
         parseIncompleteMarkdown={parseIncompleteMarkdown}
+        animation={animationWindow && !deferHeavyContent ? animationConfig : null}
+        animationFrom={Math.max(0, (animationWindow?.from ?? children.length) - (registry.activeBlock?.startPos ?? 0))}
+        showCaret={Boolean(caret && isAnimating && !isComplete && !deferHeavyContent)}
+        caret={caret}
+        instrumentation={instrumentation}
       />
     </View>
   );
 };
 
+export const Streamdown = React.memo(StreamdownComponent);
 Streamdown.displayName = 'Streamdown';
 
 /** Backward-compatible alias. */

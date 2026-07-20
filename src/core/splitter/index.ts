@@ -45,6 +45,16 @@ export function processNewContent(
     currentRegistry = processSingleCharacter(currentRegistry, fullText, i + 1);
   }
 
+  // The splitter needs character-level boundary detection, but incomplete-tag
+  // state is observational only now that Remend owns repair. Scan the final
+  // active block once per append instead of rescanning it for every character.
+  currentRegistry = {
+    ...currentRegistry,
+    activeTagState: currentRegistry.activeBlock
+      ? updateTagState(INITIAL_INCOMPLETE_STATE, currentRegistry.activeBlock.content)
+      : INITIAL_INCOMPLETE_STATE,
+  };
+
   logStateSnapshot('state.after', currentRegistry);
   return { ...currentRegistry, source: fullText };
 }
@@ -67,7 +77,6 @@ function processSingleCharacter(
   const activeContent = registry.activeBlock
     ? registry.activeBlock.content + newContent
     : newContent;
-  const newTagState = updateTagState(registry.activeTagState, activeContent);
   const lines = activeContent.split('\n');
 
   // Create a virtual "fullText" that only goes up to endPos
@@ -79,7 +88,7 @@ function processSingleCharacter(
     fullText: virtualFullText,
     lines,
     activeContent,
-    tagState: newTagState,
+    tagState: registry.activeTagState,
     activeStartPos: registry.activeBlock?.startPos ?? registry.cursor,
   });
 }

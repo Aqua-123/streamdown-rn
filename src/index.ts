@@ -61,3 +61,10 @@ export type {
   DataImagePolicy,
   SemanticElementPredicate,
 } from './core/security';
+
+export {
+  createStreamingInstrumentation,
+  type AnimationConfig,
+  type StreamingInstrumentation,
+  type StreamingMetrics,
+} from './core/streaming';
