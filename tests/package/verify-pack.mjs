@@ -70,20 +70,33 @@ try {
   const coreText = bundleText(coreBundle);
   assert(!coreText.includes('maxCacheUnits'));
   assert(!coreText.includes('custom-renderers'));
+  assert(!coreText.includes('remark-math'));
+  assert(!coreText.includes('Offline WebView adapter'));
 
   fs.writeFileSync(path.join(consumer, 'App.js'), `import React from 'react';
+import { Text } from 'react-native';
 import { Streamdown } from 'streamdown-rn';
 import { createCodePlugin } from 'streamdown-rn/code';
 import { cjk } from 'streamdown-rn/cjk';
 import { createRendererPlugin } from 'streamdown-rn/renderers';
-const plugins = { code: createCodePlugin(), cjk, renderers: createRendererPlugin([]) };
-export default function App() { return <Streamdown mode="static" plugins={plugins}>{'# packed plugin fixture'}</Streamdown>; }
+import { createMathPlugin } from 'streamdown-rn/math';
+import { createMermaidPlugin } from 'streamdown-rn/mermaid';
+import { createOfflineWebViewAdapter } from 'streamdown-rn/mermaid/webview';
+const webview = createOfflineWebViewAdapter({
+  assets: { mermaidJs: 'bundled' },
+  transport: { render: async ({ id }) => JSON.stringify({ id, type: 'rendered', surfaceId: id }), release() {}, dispose() {} },
+  renderSurface: () => null,
+});
+const plugins = { code: createCodePlugin(), cjk, renderers: createRendererPlugin([]), math: createMathPlugin(), mermaid: createMermaidPlugin() };
+export default function App() { return <><Streamdown mode="static" plugins={plugins}>{'# packed plugin fixture'}</Streamdown><Text>{String(Boolean(webview.mathController))}</Text></>; }
 `);
   const pluginBundle = path.join(consumer, 'dist-plugins');
   run('npx', ['expo', 'export', '--platform', 'ios', '--clear', '--output-dir', pluginBundle], { cwd: consumer });
   const pluginText = bundleText(pluginBundle);
   assert(pluginText.includes('maxCacheUnits'));
   assert(pluginText.includes('custom-renderers'));
+  assert(pluginText.includes('singleDollarTextMath'));
+  assert(pluginText.includes("default-src 'none'"));
   process.stdout.write(`Verified ${pack.filename} (${pack.files.length} files) in Expo 54 fixture.\n`);
 } finally {
   fs.rmSync(temp, { recursive: true, force: true });

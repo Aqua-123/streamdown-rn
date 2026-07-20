@@ -1,6 +1,8 @@
 import type { ComponentType } from 'react';
 import type { CjkPlugin } from '../cjk';
 import type { CodeHighlighterPlugin, ThemeInput } from '../code';
+import type { MathPlugin } from '../math';
+import type { DiagramPlugin } from '../mermaid';
 
 export interface CustomRendererProps {
   code: string;
@@ -24,6 +26,8 @@ export interface PluginConfig {
   cjk?: CjkPlugin;
   code?: CodeHighlighterPlugin;
   renderers?: RendererPlugin;
+  math?: MathPlugin;
+  mermaid?: DiagramPlugin;
 }
 
 export interface CodeRenderConfig {

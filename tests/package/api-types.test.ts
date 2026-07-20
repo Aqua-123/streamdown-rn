@@ -7,6 +7,9 @@ import type {
 import { createCodePlugin, type TokenProvider } from '../../src/plugins/code';
 import { createCjkPlugin } from '../../src/plugins/cjk';
 import { createRendererPlugin } from '../../src/plugins/renderers';
+import { createMathPlugin, type MathNativeAdapter } from '../../src/plugins/math';
+import { createMermaidPlugin, type MermaidAdapter } from '../../src/plugins/mermaid';
+import { createOfflineWebViewAdapter, type OfflineWebViewTransport } from '../../src/plugins/mermaid/webview';
 
 const nativeProps: StreamdownProps = {
   children: '# native',
@@ -30,6 +33,8 @@ const nativeProps: StreamdownProps = {
     }),
     cjk: createCjkPlugin(),
     renderers: createRendererPlugin([]),
+    math: createMathPlugin({ adapter: { render: ({ source }) => source } satisfies MathNativeAdapter }),
+    mermaid: createMermaidPlugin({ adapter: { families: ['flowchart'], render: async () => ({ kind: 'native', content: null }) } satisfies MermaidAdapter }),
   },
 };
 const aliasProps: StreamdownRNProps = nativeProps;
@@ -44,3 +49,10 @@ const domPrefix: StreamdownProps = { children: 'text', prefix: 'tw' };
 void domClassName;
 void domRehype;
 void domPrefix;
+
+const transport: OfflineWebViewTransport = {
+  render: async ({ id }) => JSON.stringify({ id, type: 'rendered', surfaceId: id }),
+  release: () => undefined,
+  dispose: () => undefined,
+};
+createOfflineWebViewAdapter({ assets: { mermaidJs: 'bundled' }, transport, renderSurface: () => null });

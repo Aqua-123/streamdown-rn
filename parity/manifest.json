@@ -5179,7 +5179,7 @@
     {
       "upstreamId": "ee60cf470bc9e2341d82738aa3107eb06bdee273b02e6d427873e9f39b46f61e",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-math/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “math > plugin properties > should have correct name and type” without relying on DOM output.",
@@ -5192,7 +5192,7 @@
     {
       "upstreamId": "964f453356a024e5c7701646fd5417486e309048178aaeb4e7d30cb5adad25c5",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-math/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “math > plugin properties > should have remarkPlugin” without relying on DOM output.",
@@ -5205,7 +5205,7 @@
     {
       "upstreamId": "71721b0f0da201b18c157f0b36b524a5af86b5939887fa2d71950d1c0dc34696",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-math/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “math > plugin properties > should have rehypePlugin” without relying on DOM output.",
@@ -5218,7 +5218,7 @@
     {
       "upstreamId": "b6acede60f4f57fd906bd988a9e5d051dd3af2fc39f3ee01cc4d13f3fa5bbed9",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-math/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “math > plugin properties > should have getStyles method” without relying on DOM output.",
@@ -5231,7 +5231,7 @@
     {
       "upstreamId": "353e5123bc9ac7fac3d43d74239eaa1c8741b091f2b73b46c9275da31468db28",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-math/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “createMathPlugin > should create plugin with default options” without relying on DOM output.",
@@ -5244,7 +5244,7 @@
     {
       "upstreamId": "427156f363f3fe7ace24475dcd79bd4e7ec40039029a44422e9cc91e37c5be15",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-math/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “createMathPlugin > should create plugin with singleDollarTextMath option” without relying on DOM output.",
@@ -5257,7 +5257,7 @@
     {
       "upstreamId": "135814dd80d958fa8f78a2e3e0d9460bff03d650417b3f77beb181d3838c8102",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-math/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “createMathPlugin > should create plugin with singleDollarTextMath false by default” without relying on DOM output.",
@@ -5270,7 +5270,7 @@
     {
       "upstreamId": "7ff49bc710af12936987db82b21c6bd6134f574bc24d99d528ca4f4f2a45cede",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-math/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “createMathPlugin > should create plugin with custom errorColor” without relying on DOM output.",
@@ -5283,7 +5283,7 @@
     {
       "upstreamId": "1100e05ab38054b9c16776d8c8dfc9dab37c184753f21c21acb17e093ecb1911",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-math/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “createMathPlugin > should use default errorColor when not specified” without relying on DOM output.",
@@ -5296,7 +5296,7 @@
     {
       "upstreamId": "6ddf2a4cd53d16065cf330547ed622aff510134864a48c9ff6bdf6017076f96e",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-math/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “createMathPlugin > should create independent plugin instances” without relying on DOM output.",
@@ -5309,7 +5309,7 @@
     {
       "upstreamId": "0d9098544aa6625478c9e36de396536d3f0b255e9dd14b957466f51986b0a55c",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-mermaid/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “mermaid > plugin properties > should have correct name and type” without relying on DOM output.",
@@ -5322,7 +5322,7 @@
     {
       "upstreamId": "8e6a6608a570500bcd028af04250fc0f3990cc7693fc152d7a850a8799af301b",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-mermaid/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “mermaid > plugin properties > should have correct language identifier” without relying on DOM output.",
@@ -5335,7 +5335,7 @@
     {
       "upstreamId": "b6395724142a9ce43d6411056fad01d1c5ec4b3ad01a46ac0f430251cd34c192",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-mermaid/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “mermaid > plugin properties > should have getMermaid method” without relying on DOM output.",
@@ -5348,7 +5348,7 @@
     {
       "upstreamId": "fe0e0de2b0a438e65d68426aacde2af674ae43002fb56c096116aed5ab1117d5",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-mermaid/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “mermaid > getMermaid > should return mermaid instance” without relying on DOM output.",
@@ -5361,7 +5361,7 @@
     {
       "upstreamId": "7300384b9fa187178de3aef4df787ba34038f7b9d946e0327d85ba0fa858610a",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-mermaid/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “mermaid > getMermaid > should accept config on getMermaid call” without relying on DOM output.",
@@ -5374,7 +5374,7 @@
     {
       "upstreamId": "294f8a5261eb70e429f660c070cb65075f9e4117a57b6e8a78b435572b9217a7",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-mermaid/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “createMermaidPlugin > should create plugin with default options” without relying on DOM output.",
@@ -5387,7 +5387,7 @@
     {
       "upstreamId": "7eca1de26311d55c501d40093f223a12f12f48965116f26f093537ee513d5794",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-mermaid/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “createMermaidPlugin > should create plugin with custom config” without relying on DOM output.",
@@ -5400,7 +5400,7 @@
     {
       "upstreamId": "7b29e22f86a75f25d311da7a981361ab8599e04059d2bd028595d4c5938783b9",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-mermaid/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “createMermaidPlugin > should create independent plugin instances” without relying on DOM output.",
@@ -5413,7 +5413,7 @@
     {
       "upstreamId": "5708072d39e2f93e47d6f20999186efdc8efb7a7d5b2573db5d2fb10b82e2d17",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-mermaid/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “createMermaidPlugin > should retain all plugin methods” without relying on DOM output.",
@@ -5426,7 +5426,7 @@
     {
       "upstreamId": "5661560910acf089825dfe0303a829f183310e40c0462bbaa9ec8bbd7abf95f3",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-mermaid/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “MermaidInstance > should initialize with config” without relying on DOM output.",
@@ -5439,7 +5439,7 @@
     {
       "upstreamId": "cf7bf716e8f5980cac8d48b0c564e1ffa691816f74fc7febb807334d8f5fb66d",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-mermaid/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “MermaidInstance > should auto-initialize when render is called without explicit initialization” without relying on DOM output.",
@@ -5452,7 +5452,7 @@
     {
       "upstreamId": "d6ed2d9463ed1ea4dfa68ebcedd6d3cb93b14b5f634e2c8fa96b2e32298ecb6e",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-mermaid/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “MermaidInstance > should skip auto-initialization when already initialized” without relying on DOM output.",
@@ -5465,7 +5465,7 @@
     {
       "upstreamId": "83076b9438c8fd67003d8e797eeb47e0505b992108e2b6453fd7823fc0f880ca",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-mermaid/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “MermaidInstance > should render diagram” without relying on DOM output.",
@@ -5478,7 +5478,7 @@
     {
       "upstreamId": "ca5ea6d8f45477d2679047985f69ff9f31d6249bb7a9c77187578bd67e5c2de5",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
         "path": "tests/parity/ports/streamdown-mermaid/index.test.test.ts",
         "assertion": "Assert the React Native semantic equivalent of upstream case “MermaidInstance > should handle invalid diagram gracefully” without relying on DOM output.",

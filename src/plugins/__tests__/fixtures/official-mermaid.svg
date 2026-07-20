@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="120">
+  <style>.node rect{fill:#fff;stroke:#333}.edgePath{stroke:#333}</style>
+  <defs><marker id="arrow" markerWidth="10" markerHeight="10"><path d="M0,0 L10,5 L0,10 z" /></marker></defs>
+  <g class="root"><path class="edgePath" d="M20,60 L280,60" style="marker-end:url(#arrow)" /></g>
+</svg>

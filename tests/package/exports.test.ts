@@ -49,6 +49,9 @@ describe('packed package', () => {
       ['./code', 'createCodePlugin'],
       ['./cjk', 'createCjkPlugin'],
       ['./renderers', 'createRendererPlugin'],
+      ['./math', 'createMathPlugin'],
+      ['./mermaid', 'createMermaidPlugin'],
+      ['./mermaid/webview', 'createOfflineWebViewAdapter'],
     ] as const) {
       const entry = manifest.exports[subpath];
       expect(entry.types).toBe(`./dist/plugins/${subpath.slice(2)}/index.d.ts`);
@@ -76,5 +79,7 @@ describe('packed package', () => {
     expect(core).not.toMatch(/require\(["'][^"']*plugins\//);
     expect(core).not.toContain('remark-cjk-friendly');
     expect(core).not.toMatch(/require\(["']shiki(?:\/|["'])/);
+    expect(core).not.toMatch(/require\(["']remark-math["']\)/);
+    expect(core).not.toMatch(/react-native-(?:svg|webview)/);
   });
 });

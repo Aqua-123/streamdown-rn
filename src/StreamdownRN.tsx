@@ -108,9 +108,10 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
     before: plugins?.cjk?.remarkPluginsBefore,
     supplied: remarkPlugins,
     after: plugins?.cjk?.remarkPluginsAfter,
+    math: plugins?.math?.remarkPlugin,
     customTags: Object.keys(allowedTags ?? {}),
     literalTags: literalTagContent,
-  }), [allowedTags, literalTagContent, plugins?.cjk, remarkPlugins]);
+  }), [allowedTags, literalTagContent, plugins?.cjk, plugins?.math, remarkPlugins]);
   const securityPolicy = useMemo<SecurityPolicyOptions>(() => ({
     allowedElements,
     disallowedElements,

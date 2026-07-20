@@ -28,6 +28,24 @@
       "react-native": "./dist/plugins/renderers/index.js",
       "require": "./dist/plugins/renderers/index.js",
       "default": "./dist/plugins/renderers/index.js"
+    },
+    "./math": {
+      "types": "./dist/plugins/math/index.d.ts",
+      "react-native": "./dist/plugins/math/index.js",
+      "require": "./dist/plugins/math/index.js",
+      "default": "./dist/plugins/math/index.js"
+    },
+    "./mermaid": {
+      "types": "./dist/plugins/mermaid/index.d.ts",
+      "react-native": "./dist/plugins/mermaid/index.js",
+      "require": "./dist/plugins/mermaid/index.js",
+      "default": "./dist/plugins/mermaid/index.js"
+    },
+    "./mermaid/webview": {
+      "types": "./dist/plugins/mermaid/webview/index.d.ts",
+      "react-native": "./dist/plugins/mermaid/webview/index.js",
+      "require": "./dist/plugins/mermaid/webview/index.js",
+      "default": "./dist/plugins/mermaid/webview/index.js"
     }
   },
   "author": "Dark Research <engineering@darkresearch.ai>",
@@ -63,6 +81,7 @@
   "dependencies": {
     "remark": "^15.0.1",
     "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
     "remend": "1.3.0",
     "unified": "^11.0.5"
   },

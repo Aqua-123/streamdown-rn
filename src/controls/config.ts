@@ -2,7 +2,7 @@ export type ControlsConfig = boolean | {
   table?: boolean | { copy?: boolean; download?: boolean; fullscreen?: boolean };
   code?: boolean | { copy?: boolean; download?: boolean };
   image?: boolean | { download?: boolean };
-  mermaid?: boolean | { copy?: boolean; download?: boolean; fullscreen?: boolean; panZoom?: boolean };
+  mermaid?: boolean | { copy?: boolean; share?: boolean; download?: boolean; fullscreen?: boolean; panZoom?: boolean };
 };
 
 type Family = 'table' | 'code' | 'image' | 'mermaid';

@@ -180,14 +180,14 @@ function withOverride(
 
 const INLINE_NODES = new Set([
   'text', 'strong', 'emphasis', 'delete', 'inlineCode', 'link', 'linkReference',
-  'break', 'footnoteReference', 'customTag',
+  'break', 'footnoteReference', 'customTag', 'inlineMath',
 ]);
 const KNOWN_NODES = new Set([
   'root', 'paragraph', 'heading', 'code', 'blockquote', 'list', 'listItem',
   'thematicBreak', 'table', 'tableRow', 'tableCell', 'html', 'text', 'strong',
   'emphasis', 'delete', 'inlineCode', 'link', 'linkReference', 'image',
   'imageReference', 'break', 'footnoteReference', 'footnoteDefinition',
-  'definition', 'yaml', 'toml', 'customTag',
+  'definition', 'yaml', 'toml', 'customTag', 'inlineMath', 'math',
 ]);
 
 function renderChildren(node: SemanticNode, context: RenderContext, inline: boolean): ReactNode {
@@ -429,6 +429,18 @@ function renderNode(node: SemanticNode, context: RenderContext, inline = false, 
       return withOverride(node, context, true, children, () => <Text key={key} style={styles.strikethrough}>{children}</Text>);
     case 'inlineCode':
       return withOverride(node, context, true, node.value, () => <Text key={key} style={styles.code}>{node.value}</Text>);
+    case 'inlineMath': {
+      const source = node.value ?? '';
+      const visual = context.plugins?.math?.render({ source, display: false, errorColor: context.theme.colors.muted });
+      return withOverride(node, context, true, source, () => visual
+        ? <Text key={key} accessibilityLabel={source}>{visual}</Text>
+        : <Text key={key} style={styles.code}>{source}</Text>);
+    }
+    case 'math': {
+      const source = node.value ?? '';
+      const visual = context.plugins?.math?.render({ source, display: true, errorColor: context.theme.colors.muted });
+      return withOverride(node, context, false, source, () => <View key={key} accessibilityLabel={source}>{visual ?? <Text style={styles.code}>{source}</Text>}</View>);
+    }
     case 'break':
       return '\n';
     case 'blockquote':
@@ -444,6 +456,21 @@ function renderNode(node: SemanticNode, context: RenderContext, inline = false, 
       if (custom) {
         const Custom = custom.component;
         return <Custom key={key} code={node.value ?? ''} language={node.lang ?? ''} isIncomplete={Boolean(context.codeFenceIncomplete)} meta={node.meta ?? undefined} />;
+      }
+      if ((node.lang ?? '').toLowerCase() === 'mermaid' && context.plugins?.mermaid) {
+        const Diagram = context.plugins.mermaid.component;
+        return <Diagram
+          key={key}
+          source={node.value ?? ''}
+          plugin={context.plugins.mermaid}
+          theme={context.theme}
+          capabilities={context.capabilities ?? resolveCapabilities()}
+          controls={context.controls}
+          translations={context.translations ?? defaultTranslations}
+          icons={context.icons}
+          disabled={context.controlsDisabled ?? context.isStreaming}
+          incomplete={Boolean(context.codeFenceIncomplete)}
+        />;
       }
       const content = <Text style={[styles.code, { writingDirection: context.direction }]}>{node.value ?? ''}</Text>;
       return withOverride(node, context, false, content, () => (

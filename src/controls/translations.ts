@@ -2,6 +2,7 @@ export interface StreamdownTranslations {
   close: string;
   copied: string;
   copyCode: string;
+  copyDiagram: string;
   copyLink: string;
   copyTable: string;
   copyTableAsCsv: string;
@@ -12,6 +13,7 @@ export interface StreamdownTranslations {
   downloadDiagramAsMmd: string;
   downloadDiagramAsPng: string;
   downloadDiagramAsSvg: string;
+  diagramFullscreen: string;
   downloadImage: string;
   downloadTable: string;
   downloadTableAsCsv: string;
@@ -25,6 +27,8 @@ export interface StreamdownTranslations {
   mermaidFormatPng: string;
   mermaidFormatSvg: string;
   retryImage: string;
+  retryDiagram: string;
+  shareDiagram: string;
   streamingResponse: string;
   tableFullscreen: string;
   tableFormatCsv: string;
@@ -38,6 +42,7 @@ export const defaultTranslations: StreamdownTranslations = {
   close: 'Close',
   copied: 'Copied',
   copyCode: 'Copy Code',
+  copyDiagram: 'Copy diagram',
   copyLink: 'Copy link',
   copyTable: 'Copy table',
   copyTableAsCsv: 'Copy table as CSV',
@@ -48,6 +53,7 @@ export const defaultTranslations: StreamdownTranslations = {
   downloadDiagramAsMmd: 'Download diagram as MMD',
   downloadDiagramAsPng: 'Download diagram as PNG',
   downloadDiagramAsSvg: 'Download diagram as SVG',
+  diagramFullscreen: 'Diagram fullscreen',
   downloadImage: 'Download image',
   downloadTable: 'Download table',
   downloadTableAsCsv: 'Download table as CSV',
@@ -61,6 +67,8 @@ export const defaultTranslations: StreamdownTranslations = {
   mermaidFormatPng: 'PNG',
   mermaidFormatSvg: 'SVG',
   retryImage: 'Retry image',
+  retryDiagram: 'Retry diagram',
+  shareDiagram: 'Share diagram',
   streamingResponse: 'Streaming response',
   tableFullscreen: 'Table fullscreen',
   tableFormatCsv: 'CSV',
