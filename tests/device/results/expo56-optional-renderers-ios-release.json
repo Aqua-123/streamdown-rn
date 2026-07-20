@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-21T01:34:51+05:30",
+  "fixture": "current-rn-optional-renderers",
+  "stack": {
+    "expo": "56.0.16",
+    "reactNative": "0.85.3",
+    "react": "19.2.7",
+    "shiki": "4.3.1",
+    "ratexReactNative": "0.1.13",
+    "beautifulMermaid": "1.1.3",
+    "reactNativeSvg": "15.15.5",
+    "reactNativeWebView": "14.0.1"
+  },
+  "platform": "ios",
+  "configuration": "Release",
+  "engine": "Hermes",
+  "architecture": "new",
+  "target": "iPhone 17 Pro simulator, iOS 26.5 (23F77)",
+  "result": "passed",
+  "commands": {
+    "fixture": "STREAMDOWN_KEEP_OPTIONAL_FIXTURE=1 node tests/package/verify-optional-renderers.mjs",
+    "build": "NODE_ENV=production xcodebuild -workspace streamdownrnexpo56fixture.xcworkspace -scheme streamdownrnexpo56fixture -configuration Release -sdk iphonesimulator -destination id=09BA095C-1865-4E81-8FF1-9097D69AA032 -derivedDataPath /tmp/streamdown-optional-ios-derived CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES ARCHS=arm64 EXCLUDED_ARCHS=x86_64 build",
+    "install": "xcrun simctl install 09BA095C-1865-4E81-8FF1-9097D69AA032 /tmp/streamdown-optional-ios-derived/Build/Products/Release-iphonesimulator/streamdownrnexpo56fixture.app",
+    "launch": "xcrun simctl launch --terminate-running-process 09BA095C-1865-4E81-8FF1-9097D69AA032 ai.darkresearch.streamdownrn.expo56",
+    "semantics": "maestro 2.7.0 test --platform ios --udid 09BA095C-1865-4E81-8FF1-9097D69AA032 --no-reinstall-driver"
+  },
+  "build": {
+    "resultMarker": "** BUILD SUCCEEDED **",
+    "executableBytes": 6601128,
+    "executableSha256": "46e704f03391e206dc4d2326715dc195e10e9bd435872bc83cf75d6cd9d9510f",
+    "mainBundleBytes": 8898523,
+    "mainBundleSha256": "b9508da64982480761a82a97a334b8709db0a04b8764c25884e46385092a68b0"
+  },
+  "runtimeAssertions": [
+    "Shiki JavaScript regex engine completed tokenization and colored TypeScript tokens were visible",
+    "RaTeX native view mounted and rendered x squared",
+    "beautiful-mermaid generated normalized SVG and react-native-svg mounted the A to B arrow diagram",
+    "react-native-webview fired onLoadEnd and visibly rendered the offline full-fidelity adapter content",
+    "Maestro asserted All optional providers ready and Provider beautiful: ready"
+  ],
+  "screenshot": {
+    "sha256": "dc7af52fc5c591e5f81b44f5ea1a8f2ac68d6636090fee1537ca71b712e7ff83",
+    "humanReviewed": true
+  },
+  "limitations": [
+    "Simulator correctness evidence is not physical-device startup, heap-growth, long-block, or frame-budget proof.",
+    "The WebView probe verifies native mount and offline load; the separately tested WebView controller owns CSP, navigation, message, timeout, and teardown enforcement."
+  ]
+}

@@ -75,6 +75,25 @@ describe('device proof contract', () => {
     }
   });
 
+  it('records real optional-provider Release correctness on both platforms', () => {
+    for (const platform of matrix.platforms as string[]) {
+      const result = read(`tests/device/results/expo56-optional-renderers-${platform}-release.json`);
+      expect(result).toMatchObject({
+        fixture: 'current-rn-optional-renderers',
+        platform,
+        configuration: 'Release',
+        engine: 'Hermes',
+        architecture: 'new',
+        result: 'passed',
+        screenshot: { humanReviewed: true },
+      });
+      expect(result.runtimeAssertions.join('\n')).toMatch(/Shiki|shiki/);
+      expect(result.runtimeAssertions.join('\n')).toMatch(/RaTeX|ratex/);
+      expect(result.runtimeAssertions.join('\n')).toMatch(/beautiful/);
+      expect(result.runtimeAssertions.join('\n')).toMatch(/WebView|webview/);
+    }
+  });
+
   it('uses one exact 10 KiB corpus in both packed fixtures', () => {
     const protocol = read('benchmarks/protocol.json');
     const minimum = minimumCorpus(protocol.expandedBytes);

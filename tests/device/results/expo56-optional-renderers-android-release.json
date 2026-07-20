@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-21T01:34:51+05:30",
+  "fixture": "current-rn-optional-renderers",
+  "stack": {
+    "expo": "56.0.16",
+    "reactNative": "0.85.3",
+    "react": "19.2.7",
+    "shiki": "4.3.1",
+    "ratexReactNative": "0.1.13",
+    "beautifulMermaid": "1.1.3",
+    "reactNativeSvg": "15.15.5",
+    "reactNativeWebView": "14.0.1"
+  },
+  "platform": "android",
+  "configuration": "Release",
+  "engine": "Hermes",
+  "architecture": "new",
+  "target": "Pixel_8_2 API 34 arm64 emulator, Android 14, 1080x2400 @420dpi",
+  "result": "passed",
+  "commands": {
+    "fixture": "STREAMDOWN_KEEP_OPTIONAL_FIXTURE=1 node tests/package/verify-optional-renderers.mjs",
+    "build": "NODE_ENV=production ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon",
+    "install": "adb -s emulator-5554 install -r android/app/build/outputs/apk/release/app-release.apk",
+    "launch": "adb -s emulator-5554 shell am start -W -n ai.darkresearch.streamdownrn.expo56/.MainActivity",
+    "semantics": "adb -s emulator-5554 shell uiautomator dump /sdcard/optional.xml"
+  },
+  "build": {
+    "resultMarker": "BUILD SUCCESSFUL",
+    "apkBytes": 38254372,
+    "apkSha256": "06ec8ca4a863cab20d3d63c6ec41681f44855b6a7187f513de28b1fbccd8108f",
+    "mainBundleBytes": 8120984,
+    "hermesLibraries": ["libhermesvm.so", "libhermestooling.so"]
+  },
+  "runtimeAssertions": [
+    "Provider shiki: ready",
+    "Provider ratex: ready",
+    "Provider beautiful: ready",
+    "Provider webview: ready",
+    "All optional providers ready",
+    "No ReactNativeJS error or AndroidRuntime fatal entry was present"
+  ],
+  "screenshot": {
+    "sha256": "c893d7a819a603bad7c94c0baf94f85549e5ec7897e56104e684f948d2c1093f",
+    "humanReviewed": true
+  },
+  "limitations": [
+    "Emulator correctness evidence is not physical-device startup, heap-growth, long-block, or frame-budget proof.",
+    "The WebView probe verifies native mount and offline load; the separately tested WebView controller owns CSP, navigation, message, timeout, and teardown enforcement."
+  ]
+}

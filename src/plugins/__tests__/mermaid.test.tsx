@@ -8,6 +8,7 @@ import {
   createBeautifulMermaidAdapter,
   BEAUTIFUL_MERMAID_FAMILIES,
   detectMermaidFamily,
+  normalizeBeautifulMermaidSvg,
   sanitizeMermaidSvg,
   type MermaidFamily,
 } from '../mermaid';
@@ -34,6 +35,16 @@ describe('mermaid plugin', () => {
       await expect(createMermaidPlugin({ adapter }).render(source)).resolves.toMatchObject({ kind: 'svg', content: expect.anything() });
     }
     expect(provider.render).toHaveBeenCalledTimes(6);
+  });
+
+  it('normalizes beautiful-mermaid browser CSS without weakening generic SVG security', async () => {
+    const browserSvg = '<svg style="--bg:#fff"><style>@import url(https://evil); text { color: red }</style><defs><marker id="arrowhead"><path d="M0 0" /></marker></defs><path marker-end="url(#arrowhead)" stroke="var(--_line)" /></svg>';
+    const normalized = normalizeBeautifulMermaidSvg(browserSvg);
+    expect(normalized).not.toMatch(/<style|\sstyle=|@import|var\(/i);
+    expect(normalized).toContain('stroke="#71717A"');
+    expect(sanitizeMermaidSvg(normalized)).toContain('marker-end="url(#arrowhead)"');
+    expect(() => sanitizeMermaidSvg('<svg><path marker-end="url(https://evil/x)" /></svg>')).toThrow(/unsafe/i);
+    expect(() => sanitizeMermaidSvg('<svg><path marker-end="url(#x)" style="fill:red" /></svg>')).toThrow(/unsafe/i);
   });
 
   it('sanitizes bounded SVG and rejects active content, links, and oversized output', () => {

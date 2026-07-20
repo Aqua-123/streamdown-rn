@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-07-20T23:57:51+05:30",
+  "capturedAt": "2026-07-21T01:34:51+05:30",
   "environment": {
     "host": "Apple M5, macOS 26.5.2, 16 GiB",
     "xcode": "26.5 (17F42)",
@@ -65,6 +65,17 @@
     },
     {
       "fixture": "current-rn",
+      "scope": "real optional renderer Release runtime",
+      "status": "passed-correctness",
+      "platforms": ["ios", "android"],
+      "artifacts": [
+        "tests/device/results/expo56-optional-renderers-ios-release.json",
+        "tests/device/results/expo56-optional-renderers-android-release.json"
+      ],
+      "details": "A fresh packed Expo 56 / React Native 0.85 app auto-linked and rendered real Shiki JavaScript-regex, RaTeX, beautiful-mermaid/react-native-svg, and react-native-webview providers in Release-Hermes. Provider-completion semantics passed on Android UIAutomator and iOS Maestro, fatal logs were empty, and both captures were human reviewed. The run found and fixed beautiful-mermaid browser-CSS incompatibility at the strict native SVG boundary. Physical-device resource budgets remain unclaimed."
+    },
+    {
+      "fixture": "current-rn",
       "scope": "reviewed visual regression",
       "status": "passed",
       "platforms": ["ios", "android"],
@@ -78,8 +89,7 @@
   "blockers": [
     "No physical Pixel 8 or iPhone 15 reference device is connected for release-Hermes frame, heap, or startup profiling.",
     "Manual VoiceOver and TalkBack hardware verification has not been performed.",
-    "The Android emulator streaming characterization exceeded the reference-device p95 budget and is recorded as non-reference evidence, not a pass.",
-    "Real Shiki, RaTeX, beautiful-mermaid, and WebView providers passed Metro bundling only; native Release rendering and resource gates remain unverified."
+    "The Android emulator streaming characterization exceeded the reference-device p95 budget and is recorded as non-reference evidence, not a pass. Optional-provider startup, heap-growth, long-block, and frame budgets are included in the same physical reference-device gate."
   ],
   "status": "blocked"
 }

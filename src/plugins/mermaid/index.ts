@@ -29,11 +29,30 @@ export interface BeautifulMermaidProvider {
   renderSvg(svg: string): ReactNode;
 }
 
+const BEAUTIFUL_MERMAID_COLORS: Readonly<Record<string, string>> = {
+  '--bg': '#FFFFFF', '--fg': '#27272A', '--_text': '#27272A', '--_text-sec': '#52525B',
+  '--_text-muted': '#71717A', '--_text-faint': '#A1A1AA', '--_line': '#71717A',
+  '--_arrow': '#3F3F46', '--_node-fill': '#FAFAFA', '--_node-stroke': '#D4D4D8',
+  '--_group-fill': '#FFFFFF', '--_group-hdr': '#F4F4F5', '--_inner-stroke': '#E4E4E7',
+  '--_key-badge': '#E4E4E7',
+};
+
+/** Converts beautiful-mermaid's browser CSS into the strict, offline SVG subset accepted on native. */
+export function normalizeBeautifulMermaidSvg(svg: string): string {
+  return svg
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, '')
+    .replace(/\sstyle\s*=\s*(?:"[^"]*"|'[^']*')/gi, '')
+    .replace(/var\(\s*(--[\w-]+)(?:\s*,[^)]*)?\)/gi, (_match, name: string) => BEAUTIFUL_MERMAID_COLORS[name] ?? '#27272A');
+}
+
 /** Injects beautiful-mermaid plus react-native-svg without making either a core dependency. */
 export function createBeautifulMermaidAdapter(provider: BeautifulMermaidProvider): MermaidAdapter {
   return {
     families: BEAUTIFUL_MERMAID_FAMILIES,
-    async render(request) { return { kind: 'svg', ...await provider.render(request) }; },
+    async render(request) {
+      const result = await provider.render(request);
+      return { kind: 'svg', ...result, svg: normalizeBeautifulMermaidSvg(result.svg) };
+    },
     renderSvg: provider.renderSvg,
   };
 }
@@ -131,7 +150,8 @@ export function detectMermaidFamily(source: string): MermaidFamily {
 export function sanitizeMermaidSvg(svg: string, maxLength = 1_000_000): string {
   if (svg.length > maxLength) throw new Error('Mermaid SVG is too large');
   if (!/^\s*<svg(?:\s|>)/i.test(svg) || !/<\/svg>\s*$/i.test(svg)) throw new Error('Invalid Mermaid SVG');
-  if (/<(?:script|foreignObject|iframe|object|embed|image|use|style|link|meta|animate|animateMotion|animateTransform|set|filter|fe[a-z]+)\b|\son[a-z]+\s*=|\s(?:href|xlink:href|style|filter|mask|clip-path)\s*=|url\s*\(|@import|<!DOCTYPE|<\?xml|\s[a-z][\w-]*:[\w-]+\s*=/i.test(svg)) {
+  const securityScan = svg.replace(/\smarker-(?:start|mid|end)\s*=\s*["']url\(#[a-z][\w:.-]*\)["']/gi, '');
+  if (/<(?:script|foreignObject|iframe|object|embed|image|use|style|link|meta|animate|animateMotion|animateTransform|set|filter|fe[a-z]+)\b|\son[a-z]+\s*=|\s(?:href|xlink:href|style|filter|mask|clip-path)\s*=|url\s*\(|@import|<!DOCTYPE|<\?xml|\s[a-z][\w-]*:[\w-]+\s*=/i.test(securityScan)) {
     throw new Error('Unsafe Mermaid SVG');
   }
   const unsafeEntity = svg.match(/&(?:#(?:x[\da-f]+|\d+)|[a-z][\w]+);/gi)?.find((entity) => !/^&(amp|lt|gt|quot|apos);$/i.test(entity));

@@ -7,7 +7,7 @@ Untrusted input crosses several independent boundaries:
 - Data images are off by default and, when enabled, remain MIME/size bounded.
 - Dynamic component props and custom-tag attributes are recursively sanitized before trusted host components receive them.
 - Image downloads validate initial and redirect URLs, MIME, declared and actual size, and timeout.
-- Mermaid SVG is size/structure bounded and rejects scripts, external resources, event/style execution, dangerous entities, animation/filter bombs, extreme geometry, and oversized paths.
+- Mermaid SVG is size/structure bounded and rejects scripts, external resources, event/style execution, dangerous entities, animation/filter bombs, extreme geometry, and oversized paths. The beautiful-mermaid adapter removes its browser-only style/import block, resolves known CSS variables to inert native colors, and then passes the result through the same generic sanitizer; only local fragment marker references receive a narrow exception.
 - The offline WebView subpath requires trusted host enforcement of CSP, pinned local assets, navigation/network/file denial, strict message schema, timeouts, retries, and per-surface teardown.
 
 ```tsx verify
