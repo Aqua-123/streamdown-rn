@@ -38,7 +38,7 @@ describe('Mermaid native fullscreen', () => {
     fireEvent.press(screen.getByRole('button', { name: 'View fullscreen' }));
     expect(screen.UNSAFE_getByType(Modal).props).toMatchObject({ transparent: false, visible: true });
     fireEvent.press(screen.getByRole('button', { name: 'Exit fullscreen' }));
-    expect(screen.UNSAFE_getByType(Modal).props.visible).toBe(false);
+    expect(screen.UNSAFE_queryByType(Modal)).toBeNull();
   });
 
   // parity:0f7c1e1ba80470f9a4226cfe914ac9f7f7f94e502fcd539044a0058da6e14ad1
@@ -49,7 +49,7 @@ describe('Mermaid native fullscreen', () => {
     await waitFor(() => expect(screen.getByText('Fullscreen chart')).toBeTruthy());
     fireEvent.press(screen.getByRole('button', { name: 'View fullscreen' }));
     fireEvent(screen.UNSAFE_getByType(Modal), 'requestClose');
-    expect(screen.UNSAFE_getByType(Modal).props.visible).toBe(false);
+    expect(screen.UNSAFE_queryByType(Modal)).toBeNull();
     expect(restore).toHaveBeenCalledTimes(1);
   });
 

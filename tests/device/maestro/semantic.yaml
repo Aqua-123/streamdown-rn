@@ -1,4 +1,6 @@
 appId: ${APP_ID}
 ---
-- assertVisible: "Fixture: ${EXPECTED_SCENARIO}"
-- assertVisible: "Streamdown RN"
+- tapOn:
+    point: "68%,56%"
+- assertVisible: "${EXPECTED_PRIMARY}"
+- assertVisible: "${EXPECTED_SECONDARY}"

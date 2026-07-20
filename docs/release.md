@@ -13,7 +13,7 @@ There are two intentionally different gates.
 - manual VoiceOver and TalkBack evidence;
 - a release changeset.
 
-The gate currently fails by design. Release launch is recorded for Expo 54 and Expo 56 on both iOS simulators and Android emulators. The 24-case Android visual baseline and clean comparison pass include hierarchy assertions; iOS semantics remain visual-only because Maestro/Detox was unavailable. The iOS baseline, physical-device profiling, manual screen readers, and optional-provider runtime rendering remain blocked. The release workflow runs hosted checks and then this stop gate before the Changesets publish action; publish is unreachable while blockers remain.
+The gate currently fails by design. Release launch is recorded for Expo 54 and Expo 56 on both iOS simulators and Android emulators. Reviewed 24-case Android and iOS visual baselines and clean comparisons pass with semantic assertions. Physical-device profiling, manual screen readers, and optional-provider runtime rendering remain blocked. The release workflow runs hosted checks and then this stop gate before the Changesets publish action; publish is unreachable while blockers remain.
 
 Generate the auditable report with:
 

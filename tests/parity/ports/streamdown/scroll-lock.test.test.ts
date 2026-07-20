@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { SafeAreaView, Text } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { FullscreenModal } from '../../../../src/controls';
 
@@ -14,6 +14,11 @@ describe('native modal containment substitutes for body scroll locking', () => {
     fireEvent.press(screen.getByLabelText('Close'));
     expect(close).toHaveBeenCalledTimes(1);
     expect(restore).toHaveBeenCalledWith('opener');
+  });
+
+  it('contains fullscreen content inside the platform safe area', () => {
+    const screen = render(React.createElement(FullscreenModal, { visible: true, label: 'Fullscreen', closeLabel: 'Close', capabilities: {}, onClose: jest.fn(), children: React.createElement(Text, null, 'content') }));
+    expect(screen.UNSAFE_getByType(SafeAreaView)).toBeTruthy();
   });
 
   it('keeps a sibling native modal mounted when one closes', () => {
@@ -35,6 +40,7 @@ describe('native modal containment substitutes for body scroll locking', () => {
     const close = jest.fn();
     const screen = render(React.createElement(FullscreenModal, { visible: false, label: 'Hidden', closeLabel: 'Close', capabilities: {}, onClose: close, children: React.createElement(Text, null, 'hidden') }));
     expect(screen.queryByLabelText('Hidden')).toBeNull();
+    expect(screen.toJSON()).toBeNull();
     expect(close).not.toHaveBeenCalled();
   });
 

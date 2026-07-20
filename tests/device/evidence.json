@@ -67,16 +67,17 @@
       "fixture": "current-rn",
       "scope": "reviewed visual regression",
       "status": "passed",
-      "platforms": ["android"],
-      "artifacts": ["tests/visual/baselines/android.manifest.json"],
-      "details": "The packed Expo 56 Release-Hermes fixture passed all 24 Android matrix captures with accessibility hierarchy assertions. A second clean compare run passed at 0.001%-0.022% differing pixels per case, below the pinned 0.250% budget."
+      "platforms": ["ios", "android"],
+      "artifacts": [
+        "tests/visual/baselines/ios.manifest.json",
+        "tests/visual/baselines/android.manifest.json"
+      ],
+      "details": "The packed Expo 56 Release-Hermes fixture passed 24 reviewed cases per platform with semantic assertions before every capture. Human review caught and corrected fullscreen safe-area overlap. Final clean compares passed at 0.007%-0.046% on iOS and 0.079%-0.130% on Android, below the pinned 0.250% budget."
     }
   ],
   "blockers": [
-    "No reviewed iOS visual baseline exists yet; the 24-case Android baseline and compare run passed.",
     "No physical Pixel 8 or iPhone 15 reference device is connected for release-Hermes frame, heap, or startup profiling.",
     "Manual VoiceOver and TalkBack hardware verification has not been performed.",
-    "Maestro and Detox are not installed; iOS automated semantic hierarchy assertions are unavailable until one approved runner is installed.",
     "The Android emulator streaming characterization exceeded the reference-device p95 budget and is recorded as non-reference evidence, not a pass.",
     "Real Shiki, RaTeX, beautiful-mermaid, and WebView providers passed Metro bundling only; native Release rendering and resource gates remain unverified."
   ],

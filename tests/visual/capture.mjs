@@ -19,20 +19,27 @@ const scheme = process.env.VISUAL_APP_SCHEME;
 assert(scheme, 'VISUAL_APP_SCHEME is required');
 const appId = process.env.VISUAL_APP_ID;
 const update = process.env.REVIEWED_VISUAL_BASELINE_UPDATE === '1';
+const requestedCaseId = process.env.VISUAL_CASE_ID;
 const runtime = process.env.VISUAL_RUNTIME;
 if (update) {
   assert(process.env.BASELINE_REVIEW_ID, 'BASELINE_REVIEW_ID is required for baseline updates');
   assert(runtime, 'VISUAL_RUNTIME is required for baseline updates');
 }
 const baselineManifestPath = path.join(root, 'tests/visual/baselines', `${platform}.manifest.json`);
-const baselineManifest = !update && fs.existsSync(baselineManifestPath)
+const baselineManifest = fs.existsSync(baselineManifestPath)
   ? JSON.parse(fs.readFileSync(baselineManifestPath, 'utf8'))
   : undefined;
 if (!update) {
   assert(baselineManifest, `Missing reviewed baseline manifest ${baselineManifestPath}`);
   assert.equal(baselineManifest.matrixSha256, matrixSha256, 'Visual matrix changed without a reviewed baseline update');
 }
-const artifactHashes = {};
+if (requestedCaseId) {
+  assert(config.cases.some(({ id }) => id === requestedCaseId), `Unknown VISUAL_CASE_ID ${requestedCaseId}`);
+  assert(!update || baselineManifest, 'A reviewed manifest is required for a partial baseline update');
+  assert(!baselineManifest || baselineManifest.matrixSha256 === matrixSha256, 'Visual matrix changed; recapture the complete baseline');
+}
+const selectedCases = requestedCaseId ? config.cases.filter(({ id }) => id === requestedCaseId) : config.cases;
+const artifactHashes = update && requestedCaseId ? { ...baselineManifest.artifacts } : {};
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, { encoding: 'utf8', ...options });
@@ -55,7 +62,7 @@ function androidHierarchy(device, entry) {
   throw new Error(`Accessibility hierarchy missing ${expected.join(' and ')} for ${entry.id}`);
 }
 
-for (const entry of config.cases) {
+for (const entry of selectedCases) {
   const query = new URLSearchParams({ scenario: entry.scenario, theme: entry.theme, direction: entry.direction, layout: entry.layout, ...(entry.checkpoint ? { checkpoint: entry.checkpoint } : {}) }).toString();
   const url = `${scheme}://fixture?${query}`;
   if (platform === 'android') {
@@ -80,7 +87,10 @@ for (const entry of config.cases) {
   } else {
     assert(spawnSync('maestro', ['--version']).status === 0, 'maestro is required for iOS semantic assertions');
     assert(appId, 'VISUAL_APP_ID is required for iOS semantic assertions');
-    run('maestro', ['test', '-e', `APP_ID=${appId}`, '-e', `EXPECTED_SCENARIO=${entry.scenario}`, path.join(root, 'tests/device/maestro/semantic.yaml')]);
+    const expected = entry.scenario === 'fullscreen'
+      ? ['Fullscreen fixture', 'Exit fullscreen']
+      : [`Fixture: ${entry.scenario}`, `Fixture state: ${entry.scenario}`];
+    run('maestro', ['test', '--platform', 'ios', '--udid', device, '--no-reinstall-driver', '-e', `APP_ID=${appId}`, '-e', `EXPECTED_PRIMARY=${expected[0]}`, '-e', `EXPECTED_SECONDARY=${expected[1]}`, path.join(root, 'tests/device/maestro/semantic.yaml')]);
     run('xcrun', ['simctl', 'io', device, 'screenshot', actual]);
   }
   const baseline = path.join(root, 'tests/visual/baselines', `${platform}-${entry.id}.png`);
@@ -95,6 +105,7 @@ for (const entry of config.cases) {
   process.stdout.write(`${platform}-${entry.id}: ${(ratio * 100).toFixed(3)}%\n`);
 }
 if (update) {
+  assert.equal(Object.keys(artifactHashes).length, config.cases.length, 'Reviewed manifest must cover every visual case');
   fs.writeFileSync(baselineManifestPath, `${JSON.stringify({
     schemaVersion: 1,
     reviewId: process.env.BASELINE_REVIEW_ID,

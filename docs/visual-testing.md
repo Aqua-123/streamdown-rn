@@ -9,4 +9,6 @@ Reviewed baselines require both:
 
 Each manifest binds the platform/runtime, matrix hash, review ID, and PNG hashes. Baseline writes require `REVIEWED_VISUAL_BASELINE_UPDATE=1`, `BASELINE_REVIEW_ID`, and `VISUAL_RUNTIME`. Android also requires semantic hierarchy evidence; iOS capture requires Maestro. Manual VoiceOver/TalkBack remains separate.
 
-The Android manifest contains 24 reviewed Release-Hermes emulator baselines. Every case also passed an immediate clean comparison at 0.001%-0.022% differing pixels, below the 0.250% budget, with a native accessibility hierarchy assertion before capture. The iOS manifest remains absent because an approved semantic runner is unavailable, so the cross-platform visual and publish gates remain blocked.
+Once a complete reviewed manifest exists, set `VISUAL_CASE_ID` to recapture one reviewed case after a focused repair. The harness validates the existing matrix and preserves only verified hashes for untouched cases; it still refuses incomplete manifests.
+
+Both manifests contain 24 reviewed baselines from the packed Expo 56 Release-Hermes fixture under review ID `codex-2026-07-20-safe-area`. Human review caught and corrected fullscreen status-bar/Dynamic-Island overlap before acceptance. Final clean comparison passed all Android cases at 0.079%-0.130% and all iOS cases at 0.007%-0.046%, below the 0.250% budget. Android asserted the native accessibility hierarchy before every capture; iOS asserted two scenario-specific elements through Maestro 2.7.0 before every capture.

@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "reviewId": "codex-2026-07-20-android",
-  "capturedAt": "2026-07-20T18:25:38.797Z",
+  "reviewId": "codex-2026-07-20-safe-area",
+  "capturedAt": "2026-07-20T19:13:18.087Z",
   "platform": "android",
   "device": "emulator-5554",
-  "runtime": "Expo 56.0.16 / React Native 0.85.3 / Android 14 API 34 Release Hermes / Pixel_8_2 emulator 1080x2400@420dpi",
+  "runtime": "Expo 56.0.16 / React Native 0.85.3 / Release Hermes / Android 14 API 34 / Pixel_8_2 emulator",
   "matrixSha256": "6715e5b78bb8494bc3c98fe2fc6b41c35546c554208f1722ce4cc6a1e35d045d",
   "artifacts": {
     "android-core-static-light-ltr-narrow-100.png": "380a8094d067b3c8ae7ed109cf47de49c703a9e7cb15ebe22b4548073b0cc864",
@@ -13,7 +13,7 @@
     "android-core-stream-dark-rtl-narrow-100.png": "2aa94f9bfb77cf03b4fd0bc60fbb7b756fceb4f969fe6f56532b6fabd08cb980",
     "android-controls-light-ltr-narrow-130.png": "f6792675b0fee6f3e55d2c9e97189c09485452f791b93986c6dcb15a9f693189",
     "android-interaction-disabled-dark-rtl-wide-200.png": "5ca19614f3b307ec4015f927f79e3a92e77dc5c115365dde5d2913631da6fedf",
-    "android-fullscreen-light-ltr-wide-130.png": "0e161110c09b14788825728e4c977547a8e8cdeaaccf2ba4583d47ea465924ee",
+    "android-fullscreen-light-ltr-wide-130.png": "c02a714225bb4e21facf292352ffa309d9794d124dca04a094f55a148c91fb19",
     "android-fallbacks-dark-ltr-wide-100.png": "1536df6cd821416ac90cae32a507b29450e736fd4c013d7849ee484a3bfb7205",
     "android-image-loading-light-ltr-narrow-100.png": "952b95241512ebacdd0e96c75ce49b01cad21bf8e6078020f10b81a485e71785",
     "android-image-error-dark-rtl-wide-130.png": "920e214bf7f1422e87c978b8e8814294be2e477cf78542fe54d05c8cd47a6541",
