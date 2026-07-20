@@ -47,10 +47,31 @@ describe('device proof contract', () => {
   it('cannot claim completion while declared evidence is blocked', () => {
     if (evidence.status === 'pass') {
       expect(evidence.blockers).toEqual([]);
-      expect(evidence.results).toHaveLength(matrix.hosts.length * matrix.platforms.length);
+      expect(evidence.results.filter((result: { scope: string }) => result.scope === 'Release simulator launch')).toHaveLength(matrix.hosts.length);
     } else {
       expect(evidence.status).toBe('blocked');
       expect(evidence.blockers.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('records native Release evidence for every host and platform', () => {
+    for (const host of matrix.hosts as Array<{ id: string; fixture: string }>) {
+      for (const platform of matrix.platforms as string[]) {
+        const result = read(`tests/device/results/${host.id}-${platform}-release.json`);
+        expect(result).toMatchObject({
+          schemaVersion: 1,
+          fixture: host.id === 'expo56' ? 'current-rn' : host.id,
+          platform,
+          configuration: 'Release',
+          result: 'passed',
+          screenshot: { reviewedBaseline: false },
+        });
+        expect(result.commands.build).toBeTruthy();
+        expect(result.commands.install).toBeTruthy();
+        expect(result.commands.launch).toBeTruthy();
+        expect(result.launch.fatalJavaScriptExceptionObserved).toBe(false);
+        expect(result.launch.processCrashObserved).toBe(false);
+      }
     }
   });
 

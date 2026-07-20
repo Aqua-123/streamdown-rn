@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-07-20T22:30:00+05:30",
+  "capturedAt": "2026-07-20T22:50:00+05:30",
   "environment": {
     "host": "Apple M5, macOS 26.5.2, 16 GiB",
     "xcode": "26.5 (17F42)",
@@ -15,6 +15,7 @@
   "sources": [
     "https://expo.dev/changelog/sdk-56",
     "https://expo.dev/sdk/56",
+    "https://expo.dev/changelog/sdk-54",
     "https://reactnative.dev/versions"
   ],
   "results": [
@@ -23,7 +24,18 @@
       "scope": "packed Metro resolution",
       "status": "passed",
       "platforms": ["ios", "android"],
-      "details": "The packed tarball resolved from an isolated consumer root and bundled the full matrix fixture with plugins for both Metro platforms. Native Release installation was not exercised for this fixture."
+      "details": "The packed tarball resolved from an isolated consumer root and bundled the full matrix fixture with plugins for both Metro platforms."
+    },
+    {
+      "fixture": "expo54",
+      "scope": "Release simulator launch",
+      "status": "passed",
+      "platforms": ["ios", "android"],
+      "artifacts": [
+        "tests/device/results/expo54-ios-release.json",
+        "tests/device/results/expo54-android-release.json"
+      ],
+      "details": "Packed Expo 54 / React Native 0.81 applications built in Release, installed, launched, and visibly rendered the deterministic fixture on the designated iOS and Android simulators; Android also passed native hierarchy assertions."
     },
     {
       "fixture": "current-rn",
@@ -53,7 +65,6 @@
     }
   ],
   "blockers": [
-    "Expo 54 native Release build/install/launch remains unverified; only isolated packed Metro bundling passed.",
     "No reviewed iOS or Android visual baseline exists yet.",
     "No physical Pixel 8 or iPhone 15 reference device is connected for release-Hermes frame, heap, or startup profiling.",
     "Manual VoiceOver and TalkBack hardware verification has not been performed.",

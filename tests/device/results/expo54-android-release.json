@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-20T22:43:00+05:30",
+  "fixture": "expo54",
+  "stack": {
+    "expo": "54.0.36",
+    "reactNative": "0.81.5",
+    "react": "19.1.0"
+  },
+  "platform": "android",
+  "configuration": "Release",
+  "target": "Pixel_8_2 API 34 arm64 emulator, Android 14, 1080x2400 @420dpi",
+  "result": "passed",
+  "commands": {
+    "prebuild": "npx expo prebuild --platform android --no-install --clean",
+    "build": "./gradlew assembleRelease --no-daemon --stacktrace",
+    "install": "adb -s emulator-5554 install -r android/app/build/outputs/apk/release/app-release.apk",
+    "launch": "adb -s emulator-5554 shell am start -W -n ai.darkresearch.streamdownrn.expo54/.MainActivity",
+    "hierarchy": "adb -s emulator-5554 shell uiautomator dump /sdcard/streamdown-expo54.xml"
+  },
+  "build": {
+    "tool": "Gradle 8.14.3 assembleRelease",
+    "resultMarker": "BUILD SUCCESSFUL",
+    "duration": "2m 27s",
+    "actionableTasks": 222,
+    "apkBytes": 57247243,
+    "apkSha256": "07d20c876f637d40566ca1e472dff317218a81b22af1be1709d5e3a008f313b0",
+    "hermesSharedLibraryLoaded": true,
+    "hermesToolingSharedLibraryLoaded": true
+  },
+  "launch": {
+    "deviceId": "emulator-5554",
+    "bundleId": "ai.darkresearch.streamdownrn.expo54",
+    "activity": ".MainActivity",
+    "state": "cold",
+    "totalTimeMs": 1561,
+    "reactNativeMainStarted": true,
+    "fatalJavaScriptExceptionObserved": false,
+    "processCrashObserved": false,
+    "uiautomatorAssertions": [
+      "Fixture: static",
+      "Streamdown RN heading",
+      "checked native semantics task",
+      "table Metric and parity content",
+      "highlighted const hello code",
+      "CJK and RTL text",
+      "Native flowchart"
+    ],
+    "hierarchySha256": "7b15396a72f794d3a2506e4ddc316a93d3124c49670d2b7051bb2eaabe30acb3"
+  },
+  "screenshot": {
+    "width": 1080,
+    "height": 2400,
+    "sha256": "f8e983fec171941e033d03c82bc07554ba7ef2a59342bbb2c4c47276469a97d9",
+    "reviewedBaseline": false
+  },
+  "limitations": [
+    "TalkBack was not manually exercised.",
+    "This emulator run is not reference-device performance evidence.",
+    "The build emitted Expo/React Native deprecation warnings and a remend conditional-exports fallback warning.",
+    "React Native logged the SafeAreaView deprecation; no application fatal or JavaScript exception was observed."
+  ]
+}
