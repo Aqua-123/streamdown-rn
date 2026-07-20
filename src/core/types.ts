@@ -108,6 +108,8 @@ export interface IncompleteTagState {
  * Immutable updates — each token creates a new registry.
  */
 export interface BlockRegistry {
+  /** Exact source snapshot used to distinguish append from replacement updates. */
+  source?: string;
   /** Completed blocks (never change after finalization) */
   blocks: readonly StableBlock[];
   /** Currently streaming block (null if between blocks) */
@@ -125,6 +127,7 @@ export interface BlockRegistry {
  * Note: activeTagState is set to a literal to avoid circular dependency
  */
 export const INITIAL_REGISTRY: BlockRegistry = {
+  source: '',
   blocks: [],
   activeBlock: null,
   activeTagState: {
@@ -368,4 +371,3 @@ export function generateBlockId(type: BlockType, counter: number): string {
                  type === 'component' ? 'cmp' : 'b';
   return `${prefix}-${counter}`;
 }
-

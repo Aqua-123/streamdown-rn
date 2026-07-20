@@ -26,9 +26,15 @@ export function processNewContent(
 
   attachGlobalVersion();
 
-  if (fullText.length <= registry.cursor) {
+  if (registry.source === fullText) {
     return registry;
   }
+
+  if (registry.source !== undefined && !fullText.startsWith(registry.source)) {
+    return processNewContent(INITIAL_REGISTRY, fullText);
+  }
+
+  if (fullText.length <= registry.cursor) return registry;
 
   // Process each new character individually to ensure consistent
   // block boundary detection regardless of chunk size
@@ -40,7 +46,7 @@ export function processNewContent(
   }
 
   logStateSnapshot('state.after', currentRegistry);
-  return currentRegistry;
+  return { ...currentRegistry, source: fullText };
 }
 
 /**
@@ -102,6 +108,7 @@ export function finalizeActiveBlock(registry: BlockRegistry): BlockRegistry {
   );
 
   return {
+    source: registry.source,
     blocks: [...registry.blocks, stableBlock],
     activeBlock: null,
     activeTagState: INITIAL_INCOMPLETE_STATE,
@@ -124,4 +131,3 @@ function attachGlobalVersion() {
     splitterVersion: SPLITTER_VERSION,
   };
 }
-

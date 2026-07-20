@@ -10,6 +10,7 @@
  */
 
 import type { IncompleteTagState } from './types';
+import remend from 'remend';
 
 // ============================================================================
 // Constants
@@ -61,31 +62,17 @@ function addTagToStack(
   return earliestPosition === 0 ? position : earliestPosition;
 }
 
-/**
- * Check if text ends with a pattern (for detecting partial closers)
- */
 function endsWithPartialMarker(text: string, partial: string, full: string): boolean {
   return text.endsWith(partial) && !text.endsWith(full);
 }
 
-/**
- * Extract trailing whitespace from text.
- * Markdown closers must come before whitespace to parse correctly.
- * e.g., "**bold " needs to become "**bold** " not "**bold **"
- * 
- * Only extracts spaces/tabs, NOT newlines - newlines are significant
- * for block-level markdown (code blocks, lists, etc.)
- */
 function extractTrailingWhitespace(text: string): { content: string; whitespace: string } {
-  // Only extract spaces and tabs, not newlines
   const match = text.match(/([ \t]+)$/);
-  if (match) {
-    return {
-      content: text.slice(0, -match[1].length),
-      whitespace: match[1],
-    };
-  }
-  return { content: text, whitespace: '' };
+  if (!match) return { content: text, whitespace: '' };
+  return {
+    content: text.slice(0, -match[1].length),
+    whitespace: match[1],
+  };
 }
 
 // ============================================================================
@@ -388,6 +375,13 @@ export function fixIncompleteMarkdown(
   if (!text || text.length === 0) {
     return text;
   }
+
+  // Remend is the pinned Streamdown repair oracle. State remains in the
+  // signature until U6 replaces the legacy splitter scanner.
+  void state;
+  return remend(text);
+  /* istanbul ignore next -- legacy implementation retained for state migration */
+  if (false) {
   
   let fixed = text;
   const originalLength = text.length;
@@ -415,7 +409,10 @@ export function fixIncompleteMarkdown(
   fixed = hideIncompleteMarkers(fixed);
   
   // Re-add trailing whitespace after closers
-  return fixed + whitespace;
+    return fixed + whitespace;
+  }
+
+  return text;
 }
 
 /**
