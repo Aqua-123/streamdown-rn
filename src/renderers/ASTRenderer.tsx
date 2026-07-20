@@ -1,27 +1,61 @@
-/**
- * AST Renderer
- * 
- * THE single source of truth for rendering MDAST nodes to React Native.
- * Handles all GitHub Flavored Markdown via remark-gfm.
- * 
- * Includes:
- * - All block-level nodes (paragraph, heading, code, blockquote, list, table, hr, image)
- * - All inline nodes (text, strong, emphasis, delete, code, link, break)
- * - Custom component injection via [{c:"Name",p:{...}}] syntax
- * - Syntax highlighting for code blocks
- */
-
-import React, { ReactNode, useState, useEffect, useContext } from 'react';
-import { Text, View, ScrollView, Image, Platform } from 'react-native';
-import SyntaxHighlighter from 'react-native-syntax-highlighter';
-import type { Content, Parent, Table as TableNode, Code as CodeNode, List as ListNode, Image as ImageNode, Link as LinkNode } from 'mdast';
-import type { ThemeConfig, ComponentRegistry, StableBlock } from '../core/types';
-import { getTextStyles, getBlockStyles } from '../themes';
+import React, { ReactNode, useContext, useEffect, useState } from 'react';
+import { Image, ScrollView, Text, View } from 'react-native';
+import type { Content, Root } from 'mdast';
+import type { Node } from 'unist';
+import type {
+  ComponentRegistry,
+  NativeComponents,
+  NativeSemanticData,
+  StableBlock,
+  ThemeConfig,
+} from '../core/types';
 import { extractComponentData, type ComponentData } from '../core/componentParser';
-import { sanitizeProps, sanitizeURL } from '../core/sanitize';
-import { sanitizeResourceURL } from '../core/security';
+import { sanitizeProps } from '../core/sanitize';
+import {
+  applySecurityPolicy,
+  sanitizeResourceURL,
+  type ResourcePolicy,
+  type SecurityPolicyOptions,
+} from '../core/security';
+import { detectTextDirection } from '../core/blockSemantics';
+import { getBlockStyles, getTextStyles } from '../themes';
+import { materializeCustomTags } from './semanticTags';
 
 type ComponentErrorHandler = (error: Error, componentName?: string) => void;
+type SemanticNode = Node & {
+  type: string;
+  value?: string;
+  url?: string;
+  alt?: string | null;
+  depth?: 1 | 2 | 3 | 4 | 5 | 6;
+  ordered?: boolean;
+  start?: number | null;
+  checked?: boolean | null;
+  lang?: string | null;
+  meta?: string | null;
+  identifier?: string;
+  children?: SemanticNode[];
+  data?: { hName?: string; hProperties?: Record<string, unknown>; literal?: boolean };
+};
+
+export interface ASTRendererProps {
+  node: Node;
+  theme: ThemeConfig;
+  componentRegistry?: ComponentRegistry;
+  components?: NativeComponents;
+  isStreaming?: boolean;
+  onError?: ComponentErrorHandler;
+  securityPolicy?: SecurityPolicyOptions;
+  allowedTags?: Readonly<Record<string, readonly string[]>>;
+  literalTagContent?: readonly string[];
+  dir?: 'auto' | 'ltr' | 'rtl';
+}
+
+interface RenderContext extends Omit<ASTRendererProps, 'node'> {
+  direction: 'ltr' | 'rtl';
+  definitions: ReadonlyMap<string, { url?: string; title?: string | null }>;
+}
+
 const ComponentErrorContext = React.createContext<ComponentErrorHandler | undefined>(undefined);
 
 class RegistryErrorBoundary extends React.Component<{
@@ -31,922 +65,436 @@ class RegistryErrorBoundary extends React.Component<{
   onError?: ComponentErrorHandler;
 }, { failed: boolean }> {
   state = { failed: false };
-
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-
-  componentDidCatch(error: Error) {
-    this.props.onError?.(error, this.props.componentName);
-  }
-
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(error: Error) { this.props.onError?.(error, this.props.componentName); }
   componentDidUpdate(previous: Readonly<{ componentName: string }>) {
     if (this.state.failed && previous.componentName !== this.props.componentName) {
       this.setState({ failed: false });
     }
   }
+  render() { return this.state.failed ? this.props.fallback : this.props.children; }
+}
 
-  render() {
-    return this.state.failed ? this.props.fallback : this.props.children;
+function rootFor(node: Node): Root {
+  return node.type === 'root'
+    ? node as Root
+    : { type: 'root', children: [node as Content] };
+}
+
+function textValue(node: SemanticNode): string {
+  if (typeof node.value === 'string') return node.value;
+  return node.children?.map(textValue).join('') ?? '';
+}
+
+function semantic(node: SemanticNode, inline: boolean): NativeSemanticData {
+  return {
+    type: node.type,
+    node,
+    inline,
+    value: node.value,
+    url: node.url,
+    alt: node.alt ?? undefined,
+    depth: node.depth,
+    ordered: node.ordered,
+    checked: node.checked,
+    language: node.lang ?? undefined,
+    metadata: node.meta ?? undefined,
+    identifier: node.identifier,
+    attributes: node.data?.hProperties,
+  };
+}
+
+function elementName(node: SemanticNode): string {
+  if (node.data?.hName) return node.data.hName;
+  switch (node.type) {
+    case 'heading': return `h${node.depth}`;
+    case 'paragraph': return 'p';
+    case 'blockquote': return 'blockquote';
+    case 'code': return 'pre';
+    case 'inlineCode': return 'code';
+    case 'strong': return 'strong';
+    case 'emphasis': return 'em';
+    case 'delete': return 'del';
+    case 'link':
+    case 'linkReference': return 'a';
+    case 'image':
+    case 'imageReference': return 'img';
+    case 'list': return node.ordered ? 'ol' : 'ul';
+    case 'listItem': return 'li';
+    case 'table': return 'table';
+    case 'tableRow': return 'tr';
+    case 'tableCell': return 'td';
+    case 'thematicBreak': return 'hr';
+    case 'break': return 'br';
+    default: return node.type;
   }
 }
 
-// ============================================================================
-// Syntax Highlighting Utilities
-// ============================================================================
-
-/**
- * Map common language aliases to Prism language names
- */
-function normalizeLanguage(lang: string): string {
-  const aliases: Record<string, string> = {
-    'js': 'javascript',
-    'ts': 'typescript',
-    'tsx': 'tsx',
-    'jsx': 'jsx',
-    'py': 'python',
-    'rb': 'ruby',
-    'sh': 'bash',
-    'shell': 'bash',
-    'zsh': 'bash',
-    'yml': 'yaml',
-    'md': 'markdown',
-    'json5': 'json',
-    'dockerfile': 'docker',
-  };
-  return aliases[lang.toLowerCase()] || lang.toLowerCase();
+function overrideFor(node: SemanticNode, context: RenderContext) {
+  if (node.type === 'inlineCode' && context.components?.inlineCode) {
+    return context.components.inlineCode;
+  }
+  return context.components?.[elementName(node)] ??
+    (!KNOWN_NODES.has(node.type) ? context.components?.unknown : undefined);
 }
 
-/**
- * Create Prism syntax style from theme colors
- */
-function createSyntaxStyle(theme: ThemeConfig) {
-  return {
-    'pre[class*="language-"]': {
-      color: theme.colors.syntaxDefault,
-      background: 'transparent',
-    },
-    'token': { color: theme.colors.syntaxDefault },
-    'keyword': { color: theme.colors.syntaxKeyword },
-    'builtin': { color: theme.colors.syntaxOperator },
-    'class-name': { color: theme.colors.syntaxClass },
-    'function': { color: theme.colors.syntaxFunction },
-    'string': { color: theme.colors.syntaxString },
-    'number': { color: theme.colors.syntaxNumber },
-    'operator': { color: theme.colors.syntaxOperator },
-    'comment': { color: theme.colors.syntaxComment },
-    'punctuation': { color: theme.colors.syntaxDefault },
-    'property': { color: theme.colors.syntaxClass },
-    'constant': { color: theme.colors.syntaxNumber },
-    'boolean': { color: theme.colors.syntaxNumber },
-    'tag': { color: theme.colors.syntaxKeyword },
-    'attr-name': { color: theme.colors.syntaxString },
-    'attr-value': { color: theme.colors.syntaxString },
-    'selector': { color: theme.colors.syntaxClass },
-    'regex': { color: theme.colors.syntaxString },
-  };
+function withOverride(
+  node: SemanticNode,
+  context: RenderContext,
+  inline: boolean,
+  children: ReactNode,
+  fallback: () => ReactNode
+): ReactNode {
+  const Override = overrideFor(node, context);
+  return Override
+    ? <Override semantic={semantic(node, inline)}>{children}</Override>
+    : fallback();
 }
 
-// ============================================================================
-// Component Extraction (re-export for backwards compatibility)
-// ============================================================================
+const INLINE_NODES = new Set([
+  'text', 'strong', 'emphasis', 'delete', 'inlineCode', 'link', 'linkReference',
+  'break', 'footnoteReference', 'customTag',
+]);
+const KNOWN_NODES = new Set([
+  'root', 'paragraph', 'heading', 'code', 'blockquote', 'list', 'listItem',
+  'thematicBreak', 'table', 'tableRow', 'tableCell', 'html', 'text', 'strong',
+  'emphasis', 'delete', 'inlineCode', 'link', 'linkReference', 'image',
+  'imageReference', 'break', 'footnoteReference', 'footnoteDefinition',
+  'definition', 'yaml', 'toml', 'customTag',
+]);
 
-export { extractComponentData, type ComponentData };
-
-// ============================================================================
-// Main Component
-// ============================================================================
-
-export interface ASTRendererProps {
-  /** MDAST node to render */
-  node: Content;
-  /** Theme configuration */
-  theme: ThemeConfig;
-  /** Component registry for custom components */
-  componentRegistry?: ComponentRegistry;
-  /** Whether this is streaming (for components) */
-  isStreaming?: boolean;
-  onError?: ComponentErrorHandler;
+function renderChildren(node: SemanticNode, context: RenderContext, inline: boolean): ReactNode {
+  return node.children?.map((child, index) => {
+    if (!inline && INLINE_NODES.has(child.type)) {
+      return <Text key={index}>{renderNode(child, context, true)}</Text>;
+    }
+    return renderNode(child, context, inline, index);
+  }) ?? null;
 }
 
-/**
- * Main AST Renderer Component
- * 
- * Renders a single MDAST node and its children recursively.
- */
-export const ASTRenderer: React.FC<ASTRendererProps> = ({
-  node,
-  theme,
-  componentRegistry,
-  isStreaming = false,
-  onError,
-}) => {
+function renderInlineChildren(node: SemanticNode, context: RenderContext): ReactNode {
+  return node.children?.map((child, index) => {
+    if (child.type === 'image' || child.type === 'imageReference') {
+      return child.alt ? `[Image: ${child.alt}]` : '';
+    }
+    return renderNode(child, context, true, index);
+  }) ?? null;
+}
+
+function renderParagraph(node: SemanticNode, context: RenderContext, key?: React.Key): ReactNode {
+  const styles = getTextStyles(context.theme);
+  const children = node.children ?? [];
+  if (
+    context.componentRegistry &&
+    children.length === 1 &&
+    children[0].type === 'text' &&
+    children[0].value?.trim().startsWith('[{c:') &&
+    children[0].value?.trim().endsWith('}]')
+  ) {
+    const data = extractComponentData(children[0].value, context.securityPolicy);
+    if (data.name) {
+      return (
+        <ComponentBlock
+          key={key}
+          componentName={data.name}
+          props={data.props}
+          style={data.style}
+          children={data.children}
+          componentRegistry={context.componentRegistry}
+          theme={context.theme}
+          isStreaming={context.isStreaming}
+          onError={context.onError}
+          resourcePolicy={context.securityPolicy}
+        />
+      );
+    }
+  }
+  if (children.every((child) => INLINE_NODES.has(child.type))) {
+    const rendered = renderInlineChildren(node, context);
+    return withOverride(node, context, false, rendered, () => (
+      <Text key={key} style={[styles.paragraph, { writingDirection: context.direction }]}>{rendered}</Text>
+    ));
+  }
+  const rendered = children.map((child, index) => INLINE_NODES.has(child.type)
+    ? <Text key={index} style={[styles.paragraph, { writingDirection: context.direction }]}>{renderNode(child, context, true)}</Text>
+    : renderNode(child, context, false, index));
+  return withOverride(node, context, false, rendered, () => <View key={key}>{rendered}</View>);
+}
+
+function renderList(node: SemanticNode, context: RenderContext, key?: React.Key): ReactNode {
+  const styles = getTextStyles(context.theme);
+  const start = node.start ?? 1;
+  const rows = (node.children ?? []).map((item, index) => {
+    const marker = item.checked == null
+      ? (node.ordered ? `${start + index}.` : '•')
+      : (item.checked ? '☑' : '☐');
+    const body = renderChildren(item, context, false);
+    return withOverride(item, context, false, body, () => (
+      <View key={index} style={{ flexDirection: 'row', marginBottom: context.theme.spacing.inline }}>
+        <Text accessibilityRole={item.checked == null ? undefined : 'checkbox'} accessibilityState={item.checked == null ? undefined : { checked: item.checked }} style={[styles.body, { width: 28 }]}>{marker}</Text>
+        <View style={{ flexShrink: 1 }}>{body}</View>
+      </View>
+    ));
+  });
+  return withOverride(node, context, false, rows, () => <View key={key}>{rows}</View>);
+}
+
+function renderTable(node: SemanticNode, context: RenderContext, key?: React.Key): ReactNode {
+  const styles = getTextStyles(context.theme);
+  const rows = (node.children ?? []).map((row, rowIndex) => {
+    const cells = (row.children ?? []).map((cell, cellIndex) => {
+      const value = renderInlineChildren(cell, context);
+      return withOverride(cell, context, false, value, () => (
+        <View key={cellIndex} style={{ flex: 1, padding: 8 }}><Text style={rowIndex === 0 ? styles.bold : styles.body}>{value}</Text></View>
+      ));
+    });
+    return withOverride(row, context, false, cells, () => (
+      <View key={rowIndex} style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: context.theme.colors.border }}>{cells}</View>
+    ));
+  });
+  return withOverride(node, context, false, rows, () => <View key={key} style={getBlockStyles(context.theme).table}>{rows}</View>);
+}
+
+function AutoSizedImage({ uri, alt, theme }: { uri: string; alt?: string; theme: ThemeConfig }) {
+  const [aspectRatio, setAspectRatio] = useState(16 / 9);
+  useEffect(() => {
+    let mounted = true;
+    Image.getSize(uri, (width, height) => {
+      if (mounted && width && height) setAspectRatio(width / height);
+    }, () => undefined);
+    return () => { mounted = false; };
+  }, [uri]);
+  return <Image source={{ uri }} style={{ width: '100%', aspectRatio, backgroundColor: theme.colors.codeBackground }} resizeMode="contain" accessibilityLabel={alt ?? 'Image'} />;
+}
+
+function renderNode(node: SemanticNode, context: RenderContext, inline = false, key?: React.Key): ReactNode {
+  const styles = getTextStyles(context.theme);
+  const blocks = getBlockStyles(context.theme);
+  const children = renderChildren(node, context, inline);
+  switch (node.type) {
+    case 'root':
+      return <View key={key}>{renderChildren(node, context, false)}</View>;
+    case 'paragraph':
+      return renderParagraph(node, context, key);
+    case 'heading': {
+      const style = styles[`heading${node.depth}` as keyof typeof styles];
+      const content = renderInlineChildren(node, context);
+      return withOverride(node, context, false, content, () => <Text key={key} accessibilityRole="header" style={[style, { writingDirection: context.direction }]}>{content}</Text>);
+    }
+    case 'text':
+      return node.value ?? '';
+    case 'strong':
+      return withOverride(node, context, true, children, () => <Text key={key} style={styles.bold}>{children}</Text>);
+    case 'emphasis':
+      return withOverride(node, context, true, children, () => <Text key={key} style={styles.italic}>{children}</Text>);
+    case 'delete':
+      return withOverride(node, context, true, children, () => <Text key={key} style={styles.strikethrough}>{children}</Text>);
+    case 'inlineCode':
+      return withOverride(node, context, true, node.value, () => <Text key={key} style={styles.code}>{node.value}</Text>);
+    case 'break':
+      return '\n';
+    case 'blockquote':
+      return withOverride(node, context, false, children, () => <View key={key} style={blocks.blockquote}>{children}</View>);
+    case 'list':
+      return renderList(node, context, key);
+    case 'listItem':
+      return children;
+    case 'thematicBreak':
+      return withOverride(node, context, false, null, () => <View key={key} style={blocks.horizontalRule} />);
+    case 'code': {
+      const content = <Text style={[styles.code, { writingDirection: context.direction }]}>{node.value ?? ''}</Text>;
+      return withOverride(node, context, false, content, () => (
+        <View key={key} style={blocks.codeBlock}>
+          {node.lang ? <Text style={{ color: context.theme.colors.muted }}>{node.lang}</Text> : null}
+          <ScrollView horizontal><Text style={styles.code}>{node.value ?? ''}</Text></ScrollView>
+        </View>
+      ));
+    }
+    case 'table':
+      return renderTable(node, context, key);
+    case 'tableRow':
+    case 'tableCell':
+      return children;
+    case 'link':
+      if (!node.url) return <Text key={key}>{renderInlineChildren(node, context)}</Text>;
+      return withOverride(node, context, true, children, () => <Text key={key} accessibilityRole="link" style={styles.link}>{children}</Text>);
+    case 'linkReference':
+      {
+        const definition = node.identifier ? context.definitions.get(node.identifier) : undefined;
+        if (!definition?.url) return <Text key={key}>{children}</Text>;
+        return withOverride(
+          { ...node, url: definition.url },
+          context,
+          true,
+          children,
+          () => <Text key={key} accessibilityRole="link" style={styles.link}>{children}</Text>
+        );
+      }
+    case 'image': {
+      if (inline) return node.alt ? `[Image: ${node.alt}]` : '';
+      const safe = node.url ? sanitizeResourceURL(node.url, 'image', context.securityPolicy) : null;
+      if (!safe) return node.alt ? <Text key={key} style={styles.body}>[Image: {node.alt}]</Text> : null;
+      const image = <AutoSizedImage uri={safe} alt={node.alt ?? undefined} theme={context.theme} />;
+      return withOverride(node, context, false, null, () => <View key={key}>{image}</View>);
+    }
+    case 'imageReference':
+      {
+        if (inline) return node.alt ? `[Image: ${node.alt}]` : '';
+        const definition = node.identifier ? context.definitions.get(node.identifier) : undefined;
+        const safe = definition?.url
+          ? sanitizeResourceURL(definition.url, 'image', context.securityPolicy)
+          : null;
+        if (!safe) return node.alt ? <Text key={key}>[Image: {node.alt}]</Text> : null;
+        return withOverride(
+          { ...node, url: safe },
+          context,
+          false,
+          null,
+          () => <View key={key}><AutoSizedImage uri={safe} alt={node.alt ?? undefined} theme={context.theme} /></View>
+        );
+      }
+    case 'footnoteReference':
+      return withOverride(node, context, true, `[${node.identifier}]`, () => <Text key={key}>[{node.identifier}]</Text>);
+    case 'footnoteDefinition': {
+      const content = <><Text style={styles.bold}>[{node.identifier}] </Text>{children}</>;
+      return withOverride(node, context, false, content, () => <View key={key} accessibilityLabel={`Footnote ${node.identifier}`}>{content}</View>);
+    }
+    case 'definition':
+      return null;
+    case 'html':
+    case 'yaml':
+    case 'toml':
+      return <Text key={key} style={[styles.code, { color: context.theme.colors.muted }]}>{node.value ?? ''}</Text>;
+    case 'customTag': {
+      const customChildren = node.data?.literal
+        ? textValue(node)
+        : renderChildren(node, context, inline);
+      return withOverride(node, context, inline, customChildren, () => {
+        if (inline) return <Text key={key}>{customChildren}</Text>;
+        if (node.data?.literal) return <View key={key}><Text>{customChildren}</Text></View>;
+        return <View key={key}>{customChildren}</View>;
+      });
+    }
+    default: {
+      const fallbackChildren = node.children?.length
+        ? renderChildren(node, context, inline)
+        : (inline ? node.value ?? null : <Text>{node.value ?? ''}</Text>);
+      return withOverride(node, context, inline, fallbackChildren, () => fallbackChildren);
+    }
+  }
+}
+
+export const ASTRenderer: React.FC<ASTRendererProps> = ({ node, ...options }) => {
+  const rawRoot = materializeCustomTags(
+    rootFor(node),
+    options.allowedTags,
+    options.literalTagContent,
+    options.securityPolicy
+  );
+  const root = applySecurityPolicy(rawRoot, options.securityPolicy);
+  const direction = options.dir === 'rtl' || options.dir === 'ltr'
+    ? options.dir
+    : detectTextDirection(textValue(root as unknown as SemanticNode));
+  const definitions = new Map<string, { url?: string; title?: string | null }>();
+  for (const child of root.children as unknown as SemanticNode[]) {
+    if (child.type === 'definition' && child.identifier) {
+      definitions.set(child.identifier, { url: child.url, title: (child as { title?: string | null }).title });
+    }
+  }
   return (
-    <ComponentErrorContext.Provider value={onError}>
-      {renderNode(node, theme, componentRegistry, isStreaming)}
+    <ComponentErrorContext.Provider value={options.onError}>
+      {renderNode(root as unknown as SemanticNode, { ...options, direction, definitions })}
     </ComponentErrorContext.Provider>
   );
 };
 
-// ============================================================================
-// Node Rendering
-// ============================================================================
-
-/**
- * Render a single MDAST node
- */
-function renderNode(
-  node: Content,
-  theme: ThemeConfig,
-  componentRegistry?: ComponentRegistry,
-  isStreaming = false,
-  key?: string | number
-): ReactNode {
-  const styles = getTextStyles(theme);
-  const blockStyles = getBlockStyles(theme);
-  
-  switch (node.type) {
-    // ========================================================================
-    // Block-level nodes
-    // ========================================================================
-    
-    case 'paragraph':
-      return (
-        <Text key={key} style={styles.paragraph}>
-          {renderChildren(node, theme, componentRegistry, isStreaming)}
-        </Text>
-      );
-    
-    case 'heading':
-      const headingStyle = styles[`heading${node.depth}` as keyof typeof styles];
-      return (
-        <Text key={key} style={headingStyle}>
-          {renderChildren(node, theme, componentRegistry, isStreaming)}
-        </Text>
-      );
-    
-    case 'code':
-      return renderCodeBlock(node as CodeNode, theme, key);
-    
-    case 'blockquote':
-      return renderBlockquote(node, theme, componentRegistry, isStreaming, key);
-    
-    case 'list':
-      return renderList(node as ListNode, theme, componentRegistry, isStreaming, key);
-    
-    case 'listItem':
-      return (
-        <View key={key} style={{ flexDirection: 'row', marginBottom: 4 }}>
-          <Text style={styles.body}>• </Text>
-          <View style={{ flex: 1 }}>
-            {renderChildren(node, theme, componentRegistry, isStreaming)}
-          </View>
-        </View>
-      );
-    
-    case 'thematicBreak':
-      return (
-        <View key={key} style={blockStyles.horizontalRule} />
-      );
-    
-    case 'table':
-      return renderTable(node as TableNode, theme, componentRegistry, isStreaming, key);
-    
-    case 'html':
-      // Render HTML as plain text (React Native doesn't support HTML)
-      return (
-        <Text key={key} style={[styles.code, { color: theme.colors.muted }]}>
-          {node.value}
-        </Text>
-      );
-    
-    // ========================================================================
-    // Inline (phrasing) nodes
-    // ========================================================================
-    
-    case 'text':
-      // Check if text contains inline component syntax
-      if (node.value.includes('[{c:')) {
-        return renderTextWithComponents(node.value, theme, componentRegistry, isStreaming, key);
-      }
-      return node.value;
-    
-    case 'strong':
-      return (
-        <Text key={key} style={styles.bold}>
-          {renderChildren(node, theme, componentRegistry, isStreaming)}
-        </Text>
-      );
-    
-    case 'emphasis':
-      return (
-        <Text key={key} style={styles.italic}>
-          {renderChildren(node, theme, componentRegistry, isStreaming)}
-        </Text>
-      );
-    
-    case 'delete':
-      // GFM strikethrough
-      return (
-        <Text key={key} style={styles.strikethrough}>
-          {renderChildren(node, theme, componentRegistry, isStreaming)}
-        </Text>
-      );
-    
-    case 'inlineCode':
-      return (
-        <Text key={key} style={styles.code}>
-          {node.value}
-        </Text>
-      );
-    
-    case 'link': {
-      // Sanitize URL to prevent XSS via javascript: or data: protocols
-      const linkNode = node as LinkNode;
-      const safeUrl = sanitizeURL(linkNode.url);
-      
-      // If URL is dangerous, render children as plain text without link styling
-      if (!safeUrl) {
-        return (
-          <Text key={key} style={styles.body}>
-            {renderChildren(node, theme, componentRegistry, isStreaming)}
-          </Text>
-        );
-      }
-      
-      return (
-        <Text
-          key={key}
-          style={styles.link}
-          accessibilityRole="link"
-        >
-          {renderChildren(node, theme, componentRegistry, isStreaming)}
-        </Text>
-      );
-    }
-    
-    case 'image':
-      return renderImage(node as ImageNode, theme, key);
-    
-    case 'break':
-      return '\n';
-    
-    // ========================================================================
-    // GFM-specific nodes (handled above or ignored)
-    // ========================================================================
-    
-    case 'tableRow':
-    case 'tableCell':
-      // Handled by renderTable
-      return null;
-    
-    case 'footnoteReference':
-      return (
-        <Text key={key} style={{ fontSize: 12 }}>
-          [{node.identifier}]
-        </Text>
-      );
-    
-    case 'footnoteDefinition':
-      return null; // Footnotes rendered separately
-    
-    // ========================================================================
-    // Fallback
-    // ========================================================================
-    
-    default:
-      console.warn('Unhandled MDAST node type:', (node as Content).type);
-      return null;
-  }
-}
-
-/**
- * Render children of a parent node
- */
-function renderChildren(
-  node: Parent,
-  theme: ThemeConfig,
-  componentRegistry?: ComponentRegistry,
-  isStreaming = false
-): ReactNode {
-  if (!('children' in node) || !node.children) {
-    return null;
-  }
-  
-  return node.children.map((child, index) =>
-    renderNode(child as Content, theme, componentRegistry, isStreaming, index)
-  );
-}
-
-// ============================================================================
-// Specialized Renderers
-// ============================================================================
-
-/**
- * Render a code block with syntax highlighting
- */
-function renderCodeBlock(
-  node: CodeNode,
-  theme: ThemeConfig,
-  key?: string | number
-): ReactNode {
-  const blockStyles = getBlockStyles(theme);
-  const code = node.value.replace(/\n+$/, ''); // Trim trailing newlines
-  const language = node.lang || 'text';
-  const normalizedLanguage = normalizeLanguage(language);
-  const syntaxStyle = createSyntaxStyle(theme);
-  
-  return (
-    <View key={key} style={blockStyles.codeBlock}>
-      {language && language !== 'text' && (
-        <Text style={{
-          color: theme.colors.muted,
-          fontSize: 12,
-          marginBottom: 8,
-          fontFamily: theme.fonts.mono,
-        }}>
-          {language}
-        </Text>
-      )}
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ flexGrow: 1 }}
-      >
-        <SyntaxHighlighter
-          language={normalizedLanguage}
-          style={syntaxStyle}
-          highlighter="prism"
-          customStyle={{
-            backgroundColor: 'transparent',
-            padding: 0,
-            margin: 0,
-          }}
-          fontSize={14}
-          fontFamily={Platform.select({
-            ios: 'Menlo',
-            android: 'monospace',
-            web: 'monospace',
-            default: 'monospace',
-          })}
-          PreTag={View as any}
-          CodeTag={Text as any}
-        >
-          {code}
-        </SyntaxHighlighter>
-      </ScrollView>
-    </View>
-  );
-}
-
-/**
- * Render a list (ordered or unordered)
- */
-function renderList(
-  node: ListNode,
-  theme: ThemeConfig,
-  componentRegistry?: ComponentRegistry,
-  isStreaming = false,
-  key?: string | number
-): ReactNode {
-  const styles = getTextStyles(theme);
-  const ordered = node.ordered ?? false;
-  
-  return (
-    <View key={key} style={{ marginBottom: theme.spacing.block }}>
-      {node.children.map((item, index) => (
-        <View key={index} style={{ flexDirection: 'row', marginBottom: 4 }}>
-          <Text style={[styles.body, { width: 24 }]}>
-            {ordered ? `${index + 1}.` : '•'}
-          </Text>
-          <View style={{ flex: 1 }}>
-            {item.children.map((child, childIndex) =>
-              renderListItemChild(child as Content, theme, componentRegistry, isStreaming, childIndex)
-            )}
-          </View>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-/**
- * Render a child node inside a list item.
- * Strips paragraph margins to prevent double-spacing in lists.
- */
-function renderListItemChild(
-  node: Content,
-  theme: ThemeConfig,
-  componentRegistry?: ComponentRegistry,
-  isStreaming = false,
-  key?: string | number
-): ReactNode {
-  const styles = getTextStyles(theme);
-  
-  // For paragraphs inside list items, render without margin
-  if (node.type === 'paragraph') {
-    return (
-      <Text key={key} style={[styles.body, { marginBottom: 0 }]}>
-        {renderChildren(node, theme, componentRegistry, isStreaming)}
-      </Text>
-    );
-  }
-  
-  // For nested lists, render with reduced margin
-  if (node.type === 'list') {
-    return (
-      <View key={key} style={{ marginTop: 4, marginBottom: 0 }}>
-        {renderList(node as ListNode, theme, componentRegistry, isStreaming)}
-      </View>
-    );
-  }
-  
-  // For other types, use normal rendering
-  return renderNode(node, theme, componentRegistry, isStreaming, key);
-}
-
-/**
- * Render a blockquote.
- * Strips paragraph margins to prevent extra spacing at the end.
- */
-function renderBlockquote(
-  node: { children?: Content[] },
-  theme: ThemeConfig,
-  componentRegistry?: ComponentRegistry,
-  isStreaming = false,
-  key?: string | number
-): ReactNode {
-  const styles = getTextStyles(theme);
-  const blockStyles = getBlockStyles(theme);
-  
-  return (
-    <View key={key} style={blockStyles.blockquote}>
-      {node.children?.map((child, index) => {
-        // For paragraphs inside blockquotes, render without bottom margin
-        if (child.type === 'paragraph') {
-          return (
-            <Text key={index} style={[styles.body, { marginBottom: 0 }]}>
-              {renderChildren(child, theme, componentRegistry, isStreaming)}
-            </Text>
-          );
-        }
-        // For other types, use normal rendering
-        return renderNode(child, theme, componentRegistry, isStreaming, index);
-      })}
-    </View>
-  );
-}
-
-/**
- * Render a table
- */
-function renderTable(
-  node: TableNode,
-  theme: ThemeConfig,
-  componentRegistry?: ComponentRegistry,
-  isStreaming = false,
-  key?: string | number
-): ReactNode {
-  const styles = getTextStyles(theme);
-  const rows = node.children;
-  
-  if (rows.length === 0) return null;
-  
-  const headerRow = rows[0];
-  const bodyRows = rows.slice(1);
-  
-  return (
-    <View key={key} style={{ marginBottom: theme.spacing.block }}>
-      {/* Header */}
-      <View style={{ 
-        flexDirection: 'row', 
-        borderBottomWidth: 2, 
-        borderBottomColor: theme.colors.border,
-        paddingBottom: 8,
-        marginBottom: 8,
-      }}>
-        {headerRow.children.map((cell, cellIndex) => (
-          <View key={cellIndex} style={{ flex: 1, paddingHorizontal: 8 }}>
-            <Text style={[styles.bold, { fontSize: 14 }]}>
-              {cell.children.map((child, childIndex) =>
-                renderNode(child as Content, theme, componentRegistry, isStreaming, childIndex)
-              )}
-            </Text>
-          </View>
-        ))}
-      </View>
-      
-      {/* Body */}
-      {bodyRows.map((row, rowIndex) => (
-        <View key={rowIndex} style={{ 
-          flexDirection: 'row',
-          borderBottomWidth: 1,
-          borderBottomColor: theme.colors.border,
-          paddingVertical: 8,
-        }}>
-          {row.children.map((cell, cellIndex) => (
-            <View key={cellIndex} style={{ flex: 1, paddingHorizontal: 8 }}>
-              <Text style={styles.body}>
-                {cell.children.map((child, childIndex) =>
-                  renderNode(child as Content, theme, componentRegistry, isStreaming, childIndex)
-                )}
-              </Text>
-            </View>
-          ))}
-        </View>
-      ))}
-    </View>
-  );
-}
-
-/**
- * Auto-sized image component that fetches dimensions and renders with correct aspect ratio
- */
-function AutoSizedImage({
-  uri,
-  alt,
-  theme,
-}: {
-  uri: string;
-  alt?: string;
-  theme: ThemeConfig;
-}) {
-  const [aspectRatio, setAspectRatio] = useState<number>(16 / 9); // Default fallback
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-
-    Image.getSize(
-      uri,
-      (width, height) => {
-        if (mounted && width && height) {
-          setAspectRatio(width / height);
-          setLoaded(true);
-        }
-      },
-      () => {
-        // On error, keep default aspect ratio
-        if (mounted) {
-          setLoaded(true);
-        }
-      }
-    );
-
-    return () => {
-      mounted = false;
-    };
-  }, [uri]);
-
-  return (
-    <Image
-      source={{ uri }}
-      style={{
-        width: '100%',
-        aspectRatio,
-        borderRadius: 8,
-        backgroundColor: theme.colors.codeBackground,
-        opacity: loaded ? 1 : 0.5,
-      }}
-      resizeMode="cover"
-      accessibilityLabel={alt || 'Image'}
-    />
-  );
-}
-
-/**
- * Render an image
- * URL is sanitized to prevent XSS via javascript: or data: protocols
- */
-function renderImage(
-  node: ImageNode,
-  theme: ThemeConfig,
-  key?: string | number
-): ReactNode {
-  const styles = getTextStyles(theme);
-
-  if (!node.url) {
-    return null;
-  }
-
-  // Sanitize URL to prevent XSS
-  const safeUrl = sanitizeResourceURL(node.url, 'image');
-  if (!safeUrl) {
-    // Dangerous URL - render alt text only as a fallback
-    if (node.alt) {
-      return (
-        <View key={key} style={{ marginVertical: theme.spacing.block }}>
-          <Text style={[styles.body, { color: theme.colors.muted, textAlign: 'center' }]}>
-            [Image: {node.alt}]
-          </Text>
-        </View>
-      );
-    }
-    return null;
-  }
-
-  return (
-    <View key={key} style={{ marginVertical: theme.spacing.block }}>
-      <AutoSizedImage uri={safeUrl} alt={node.alt ?? undefined} theme={theme} />
-    </View>
-  );
-}
-
-/**
- * Render text that may contain inline component syntax
- */
-function renderTextWithComponents(
-  text: string,
-  theme: ThemeConfig,
-  componentRegistry?: ComponentRegistry,
-  isStreaming = false,
-  key?: string | number
-): ReactNode {
-  // Look for inline components
-  const componentMatch = text.match(/\[\{c:\s*"([^"]+)"\s*,\s*p:\s*(\{[\s\S]*?\})\s*\}\]/);
-  
-  if (!componentMatch) {
-    return text;
-  }
-  
-  const before = text.slice(0, componentMatch.index);
-  const after = text.slice(componentMatch.index! + componentMatch[0].length);
-  
-  const { name, props } = extractComponentData(componentMatch[0]);
-  
-  if (!componentRegistry) {
-    return (
-      <>
-        {before}
-        <Text style={{ color: theme.colors.muted }}>⚠️ [{name}]</Text>
-        {after}
-      </>
-    );
-  }
-  
-  const componentDef = componentRegistry.get(name);
-  if (!componentDef) {
-    return (
-      <>
-        {before}
-        <Text style={{ color: theme.colors.muted }}>⚠️ [{name}]</Text>
-        {after}
-      </>
-    );
-  }
-  
-  return (
-    <>
-      {before}
-      <ValidatedRegistryComponent
-        key={key}
-        componentName={name}
-        componentRegistry={componentRegistry}
-        componentDef={componentDef}
-        props={props}
-        isInline
-        isStreaming={isStreaming}
-        theme={theme}
-      />
-      {renderTextWithComponents(after, theme, componentRegistry, isStreaming, `${key}-after`)}
-    </>
-  );
-}
-
-// ============================================================================
-// Block-level Component Renderer (for StableBlock with type='component')
-// ============================================================================
+export { extractComponentData, type ComponentData };
 
 export interface ComponentBlockProps {
   theme: ThemeConfig;
   componentRegistry?: ComponentRegistry;
-  /** StableBlock input */
   block?: StableBlock;
-  /** Direct component name (when not using block) */
   componentName?: string;
-  /** Direct props (when not using block) */
   props?: Record<string, unknown>;
-  /** CSS Grid-like style for layout positioning */
   style?: Record<string, unknown>;
-  /** Direct children (when not using block) */
   children?: ComponentData[];
-  /** Whether streaming (for active blocks) */
   isStreaming?: boolean;
   onError?: ComponentErrorHandler;
+  resourcePolicy?: ResourcePolicy;
 }
 
-/**
- * Render error/fallback states for components.
- */
-function renderComponentError(theme: ThemeConfig, message: string): ReactNode {
-  return (
-    <View style={{
-      padding: 12,
-      backgroundColor: theme.colors.codeBackground,
-      borderRadius: 8,
-      marginBottom: theme.spacing.block,
-    }}>
-      <Text style={{ color: theme.colors.muted }}>{message}</Text>
-    </View>
-  );
+function componentError(theme: ThemeConfig, message: string): ReactNode {
+  return <View style={{ padding: 12, backgroundColor: theme.colors.codeBackground, marginBottom: theme.spacing.block }}><Text style={{ color: theme.colors.muted }}>{message}</Text></View>;
 }
 
 function ValidatedRegistryComponent({
-  componentName,
-  componentRegistry,
-  componentDef,
-  props,
-  style,
-  children,
-  isStreaming,
-  isInline = false,
-  theme,
-  onError: directOnError,
+  componentName, componentRegistry, props, style, children, isStreaming, theme,
+  onError: directOnError, resourcePolicy,
 }: {
   componentName: string;
   componentRegistry: ComponentRegistry;
-  componentDef: NonNullable<ReturnType<ComponentRegistry['get']>>;
   props: Record<string, unknown>;
   style?: Record<string, unknown>;
   children?: ReactNode;
   isStreaming: boolean;
-  isInline?: boolean;
   theme: ThemeConfig;
   onError?: ComponentErrorHandler;
+  resourcePolicy?: ResourcePolicy;
 }) {
-  const contextOnError = useContext(ComponentErrorContext);
-  const onError = directOnError ?? contextOnError;
-  const safeProps = sanitizeProps(props);
-  const safeStyle = style ? sanitizeProps(style) : undefined;
+  const onError = directOnError ?? useContext(ComponentErrorContext);
+  const definition = componentRegistry.get(componentName);
+  const safeProps = sanitizeProps(props, resourcePolicy);
+  const safeStyle = style ? sanitizeProps(style, resourcePolicy) : undefined;
   let validationError: Error | null = null;
-
   try {
     const result = componentRegistry.validate(componentName, safeProps);
-    if (!result.valid) {
-      validationError = new Error(
-        `Invalid props for ${componentName}: ${result.errors.join(', ')}`
-      );
-    }
+    if (!result.valid) validationError = new Error(`Invalid props for ${componentName}: ${result.errors.join(', ')}`);
   } catch (error) {
     validationError = error instanceof Error ? error : new Error(String(error));
   }
-
   useEffect(() => {
     if (validationError) onError?.(validationError, componentName);
   }, [componentName, onError, validationError?.message]);
-
-  const fallback = isInline
-    ? <Text style={{ color: theme.colors.muted }}>⚠️ [{componentName}]</Text>
-    : renderComponentError(theme, `⚠️ Invalid component: ${componentName}`);
-  if (validationError) return fallback;
-
-  const Component = isStreaming && componentDef.skeletonComponent
-    ? componentDef.skeletonComponent
-    : componentDef.component;
-  const rendered = (
-    <Component
-      {...safeProps}
-      {...(isInline ? { _isInline: true } : {})}
-      style={{ ...(safeProps.style as object), ...safeStyle }}
-      _isStreaming={isStreaming}
-    >
-      {children}
-    </Component>
-  );
-
+  const fallback = componentError(theme, `⚠️ Invalid component: ${componentName}`);
+  if (!definition || validationError) return fallback;
+  const Component = isStreaming && definition.skeletonComponent
+    ? definition.skeletonComponent
+    : definition.component;
   return (
-    <RegistryErrorBoundary
-      componentName={componentName}
-      fallback={fallback}
-      onError={onError}
-    >
-      {rendered}
+    <RegistryErrorBoundary componentName={componentName} fallback={fallback} onError={onError}>
+      <Component {...safeProps} style={{ ...(safeProps.style as object), ...safeStyle }} _isStreaming={isStreaming}>{children}</Component>
     </RegistryErrorBoundary>
   );
 }
 
-/**
- * Render a block-level custom component with skeleton and children support.
- */
-export const ComponentBlock: React.FC<ComponentBlockProps> = React.memo(
-  ({ 
-    theme, 
-    componentRegistry, 
-    block, 
-    componentName: directName, 
-    props: directProps,
-    style: directStyle,
-    children: directChildren,
-    isStreaming = false,
-    onError,
-  }) => {
-    // Extract component data from block or direct props
-    let componentName: string;
-    let props: Record<string, unknown>;
-    let style: Record<string, unknown> | undefined;
-    let children: ComponentData[] | undefined;
-    
-    if (block) {
-      const meta = block.meta as { type: 'component'; name: string; props: Record<string, unknown> };
-      if (meta.name) {
-        componentName = meta.name;
-        props = meta.props || {};
-      } else {
-        const extracted = extractComponentData(block.content);
-        componentName = extracted.name;
-        props = extracted.props;
-        style = extracted.style;
-        children = extracted.children;
-      }
-    } else {
-      componentName = directName ?? '';
-      props = directProps ?? {};
-      style = directStyle;
-      children = directChildren;
-    }
-    
-    // No component name yet (still streaming) - render nothing
-    // The component will appear once we have enough to show its skeleton
-    if (!componentName) {
-      return null;
-    }
-    
-    // No registry provided
-    if (!componentRegistry) {
-      return renderComponentError(theme, '⚠️ No component registry provided');
-    }
-    
-    // Component not found
-    const componentDef = componentRegistry.get(componentName);
-    if (!componentDef) {
-      return renderComponentError(theme, `⚠️ Unknown component: ${componentName}`);
-    }
-    
-    // Render children recursively if present, passing style for layout
-    const renderedChildren = children?.length ? (
-      children.map((child, index) => (
-        <ComponentBlock
-          key={index}
-          theme={theme}
-          componentRegistry={componentRegistry}
-          componentName={child.name}
-          props={child.props}
-          style={child.style}
-          children={child.children}
-          isStreaming={isStreaming}
-          onError={onError}
-        />
-      ))
-    ) : undefined;
-    
-    return (
-      <View style={{ marginBottom: theme.spacing.block }}>
-        <ValidatedRegistryComponent
-          componentName={componentName}
-          componentRegistry={componentRegistry}
-          componentDef={componentDef}
-          props={props}
-          style={style}
-          isStreaming={isStreaming}
-          theme={theme}
-          onError={onError}
-        >
-          {renderedChildren}
-        </ValidatedRegistryComponent>
-      </View>
-    );
-  },
-  (prev, next) => {
-    if (prev.block && next.block) {
-      return prev.block.contentHash === next.block.contentHash &&
-        prev.componentRegistry === next.componentRegistry &&
-        prev.onError === next.onError;
-    }
-    return (
-      prev.componentName === next.componentName &&
-      prev.isStreaming === next.isStreaming &&
-      prev.componentRegistry === next.componentRegistry &&
-      prev.onError === next.onError &&
-      JSON.stringify(prev.props) === JSON.stringify(next.props) &&
-      JSON.stringify(prev.children) === JSON.stringify(next.children)
-    );
-  }
-);
+export const ComponentBlock: React.FC<ComponentBlockProps> = ({
+  theme, componentRegistry, block, componentName: directName, props: directProps,
+  style: directStyle, children: directChildren, isStreaming = false, onError,
+  resourcePolicy,
+}) => {
+  const extracted = block ? extractComponentData(block.content, resourcePolicy) : undefined;
+  const name = directName ?? extracted?.name ?? '';
+  const props = directProps ?? extracted?.props ?? {};
+  const style = directStyle ?? extracted?.style;
+  const children = directChildren ?? extracted?.children;
+  if (!name) return null;
+  if (!componentRegistry) return componentError(theme, '⚠️ No component registry provided');
+  if (!componentRegistry.get(name)) return componentError(theme, `⚠️ Unknown component: ${name}`);
+  const renderedChildren = children?.map((child, index) => (
+    <ComponentBlock key={index} theme={theme} componentRegistry={componentRegistry} componentName={child.name} props={child.props} style={child.style} children={child.children} isStreaming={isStreaming} onError={onError} resourcePolicy={resourcePolicy} />
+  ));
+  return (
+    <View style={{ marginBottom: theme.spacing.block }}>
+      <ValidatedRegistryComponent componentName={name} componentRegistry={componentRegistry} props={props} style={style} isStreaming={isStreaming} theme={theme} onError={onError} resourcePolicy={resourcePolicy}>{renderedChildren}</ValidatedRegistryComponent>
+    </View>
+  );
+};
 
-ComponentBlock.displayName = 'ComponentBlock';
-
-// ============================================================================
-// Exports
-// ============================================================================
-
-/**
- * Render a complete MDAST tree (for testing)
- */
 export function renderAST(
   nodes: Content[],
   theme: ThemeConfig,
   componentRegistry?: ComponentRegistry,
   isStreaming = false
 ): ReactNode {
-  return nodes.map((node, index) => renderNode(node, theme, componentRegistry, isStreaming, index));
+  return <ASTRenderer node={{ type: 'root', children: nodes } as Root} theme={theme} componentRegistry={componentRegistry} isStreaming={isStreaming} />;
 }

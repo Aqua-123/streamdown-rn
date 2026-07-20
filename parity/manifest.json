@@ -5608,10 +5608,10 @@
     {
       "upstreamId": "009f2e05f85169fcc07ba7b7ab2bd42288ead87272080c09d3c49639bca247a6",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/allowed-tags.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “literalTagContent prop > should render underscore content as plain text (not emphasis)” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 009f2e05f85169fcc07ba7b7ab2bd42288ead87272080c09d3c49639bca247a6.",
         "marker": "parity:009f2e05f85169fcc07ba7b7ab2bd42288ead87272080c09d3c49639bca247a6"
       },
       "evidence": {
@@ -5634,10 +5634,10 @@
     {
       "upstreamId": "a0353681b696bcfac6ad847300510ef87ce78a4e36a7237033edea278ca5162c",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/allowed-tags.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “literalTagContent prop > should render bold, inline code and other markdown as plain text” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case a0353681b696bcfac6ad847300510ef87ce78a4e36a7237033edea278ca5162c.",
         "marker": "parity:a0353681b696bcfac6ad847300510ef87ce78a4e36a7237033edea278ca5162c"
       },
       "evidence": {
@@ -5673,10 +5673,10 @@
     {
       "upstreamId": "089ee5a75045a308bf72e86aeb2d635adce07cddcb97e7ad28ed92fad7874c6c",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/allowed-tags.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “literalTagContent prop > should render entire content when literalTagContent tag has double newlines” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 089ee5a75045a308bf72e86aeb2d635adce07cddcb97e7ad28ed92fad7874c6c.",
         "marker": "parity:089ee5a75045a308bf72e86aeb2d635adce07cddcb97e7ad28ed92fad7874c6c"
       },
       "evidence": {
@@ -11159,10 +11159,10 @@
     {
       "upstreamId": "b36c8b0aa44c89cbfcdeba0d838ff7775924c7a0cac98e2083ec91c0db5091e1",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/inline-code.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “inlineCode virtual component > should render custom inlineCode for inline code spans” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case b36c8b0aa44c89cbfcdeba0d838ff7775924c7a0cac98e2083ec91c0db5091e1.",
         "marker": "parity:b36c8b0aa44c89cbfcdeba0d838ff7775924c7a0cac98e2083ec91c0db5091e1"
       },
       "evidence": {
@@ -11172,10 +11172,10 @@
     {
       "upstreamId": "e89287687df6b96896af4db803ca03305ccffd95c451324aabaea90896841030",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/inline-code.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “inlineCode virtual component > should not affect block code rendering” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case e89287687df6b96896af4db803ca03305ccffd95c451324aabaea90896841030.",
         "marker": "parity:e89287687df6b96896af4db803ca03305ccffd95c451324aabaea90896841030"
       },
       "evidence": {
@@ -11185,10 +11185,10 @@
     {
       "upstreamId": "daeb0f1e44ae09cc24439fc67a03507c9d8147a652ac35947b5283a461a3f1f0",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/inline-code.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “inlineCode virtual component > should allow overriding both code and inlineCode independently” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case daeb0f1e44ae09cc24439fc67a03507c9d8147a652ac35947b5283a461a3f1f0.",
         "marker": "parity:daeb0f1e44ae09cc24439fc67a03507c9d8147a652ac35947b5283a461a3f1f0"
       },
       "evidence": {
@@ -11796,10 +11796,10 @@
     {
       "upstreamId": "4d57a8d4d0edf1c6feb77b2a707cb2ed8f836605c99d47e0221c8ae8b89ec237",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Basic Rendering > should render simple text” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 4d57a8d4d0edf1c6feb77b2a707cb2ed8f836605c99d47e0221c8ae8b89ec237.",
         "marker": "parity:4d57a8d4d0edf1c6feb77b2a707cb2ed8f836605c99d47e0221c8ae8b89ec237"
       },
       "evidence": {
@@ -11809,10 +11809,10 @@
     {
       "upstreamId": "b89953afc624006d57757d415836b6fbb2cb4a3cecbe756393a8f10ebd458d5b",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Basic Rendering > should render empty string” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case b89953afc624006d57757d415836b6fbb2cb4a3cecbe756393a8f10ebd458d5b.",
         "marker": "parity:b89953afc624006d57757d415836b6fbb2cb4a3cecbe756393a8f10ebd458d5b"
       },
       "evidence": {
@@ -11822,10 +11822,10 @@
     {
       "upstreamId": "0e70f9b9fc480fe813887a0164ecf840699ec8965d7d4ab730c0700cb229b524",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Basic Rendering > should handle undefined children” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 0e70f9b9fc480fe813887a0164ecf840699ec8965d7d4ab730c0700cb229b524.",
         "marker": "parity:0e70f9b9fc480fe813887a0164ecf840699ec8965d7d4ab730c0700cb229b524"
       },
       "evidence": {
@@ -11835,10 +11835,10 @@
     {
       "upstreamId": "ce67798bdb833ae44961398d60e4879bca76ebd2833c402c8776a0812edc6af7",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Basic Rendering > should render bold text” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case ce67798bdb833ae44961398d60e4879bca76ebd2833c402c8776a0812edc6af7.",
         "marker": "parity:ce67798bdb833ae44961398d60e4879bca76ebd2833c402c8776a0812edc6af7"
       },
       "evidence": {
@@ -11848,10 +11848,10 @@
     {
       "upstreamId": "085e18c1dbb1f3509d40faffc7d6be2dc52b8174f2d2bd4b54cc76894c5bf506",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Basic Rendering > should render italic text” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 085e18c1dbb1f3509d40faffc7d6be2dc52b8174f2d2bd4b54cc76894c5bf506.",
         "marker": "parity:085e18c1dbb1f3509d40faffc7d6be2dc52b8174f2d2bd4b54cc76894c5bf506"
       },
       "evidence": {
@@ -11861,10 +11861,10 @@
     {
       "upstreamId": "4c045b62dd832157f97d354a0c4579ed04e2129171a49cd597df8227b9bc0d90",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Basic Rendering > should render headings” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 4c045b62dd832157f97d354a0c4579ed04e2129171a49cd597df8227b9bc0d90.",
         "marker": "parity:4c045b62dd832157f97d354a0c4579ed04e2129171a49cd597df8227b9bc0d90"
       },
       "evidence": {
@@ -11874,10 +11874,10 @@
     {
       "upstreamId": "6597cc3b75a1671c4d1214b02c47752c7dd23ba414d7462b7237794fa5b4bdee",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Basic Rendering > should render multiple heading levels” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 6597cc3b75a1671c4d1214b02c47752c7dd23ba414d7462b7237794fa5b4bdee.",
         "marker": "parity:6597cc3b75a1671c4d1214b02c47752c7dd23ba414d7462b7237794fa5b4bdee"
       },
       "evidence": {
@@ -11887,10 +11887,10 @@
     {
       "upstreamId": "92d730a1a0b48b0c7203ad6bf4f6a26eb549e3cf8283efaf18cc52a55b3612bc",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Basic Rendering > should render paragraphs” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 92d730a1a0b48b0c7203ad6bf4f6a26eb549e3cf8283efaf18cc52a55b3612bc.",
         "marker": "parity:92d730a1a0b48b0c7203ad6bf4f6a26eb549e3cf8283efaf18cc52a55b3612bc"
       },
       "evidence": {
@@ -11900,10 +11900,10 @@
     {
       "upstreamId": "d66c96079f0deca84157991042e582ebfced2774f2725f72ffc0eb573f9f954b",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Basic Rendering > should render lists” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case d66c96079f0deca84157991042e582ebfced2774f2725f72ffc0eb573f9f954b.",
         "marker": "parity:d66c96079f0deca84157991042e582ebfced2774f2725f72ffc0eb573f9f954b"
       },
       "evidence": {
@@ -11913,10 +11913,10 @@
     {
       "upstreamId": "10b6bb15a8953e5306627f89ab031c9ec83e7f9ca330b03114af9c64adf38c32",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Basic Rendering > should render ordered lists” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 10b6bb15a8953e5306627f89ab031c9ec83e7f9ca330b03114af9c64adf38c32.",
         "marker": "parity:10b6bb15a8953e5306627f89ab031c9ec83e7f9ca330b03114af9c64adf38c32"
       },
       "evidence": {
@@ -11926,10 +11926,10 @@
     {
       "upstreamId": "90a261dacb5f034d3b924d9bed4a521ba76b3445d7dd546f202a64c4971a03b6",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Basic Rendering > should render links” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 90a261dacb5f034d3b924d9bed4a521ba76b3445d7dd546f202a64c4971a03b6.",
         "marker": "parity:90a261dacb5f034d3b924d9bed4a521ba76b3445d7dd546f202a64c4971a03b6"
       },
       "evidence": {
@@ -11939,10 +11939,10 @@
     {
       "upstreamId": "44debf647774f3ec7d00ed0bb14524408cda02ef222a2407da84e67fb5146aeb",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Basic Rendering > should render inline code” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 44debf647774f3ec7d00ed0bb14524408cda02ef222a2407da84e67fb5146aeb.",
         "marker": "parity:44debf647774f3ec7d00ed0bb14524408cda02ef222a2407da84e67fb5146aeb"
       },
       "evidence": {
@@ -11952,10 +11952,10 @@
     {
       "upstreamId": "00b427856f61e92537555c337060723e33f21f4f4993c18f4f02f37d1a6371da",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Basic Rendering > should render fenced code blocks” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 00b427856f61e92537555c337060723e33f21f4f4993c18f4f02f37d1a6371da.",
         "marker": "parity:00b427856f61e92537555c337060723e33f21f4f4993c18f4f02f37d1a6371da"
       },
       "evidence": {
@@ -11965,10 +11965,10 @@
     {
       "upstreamId": "9130152338e6bd77fcce90a6abdc15a43842b2df4fbaea83762c98965e522268",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Basic Rendering > should render indented code blocks (4 spaces)” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 9130152338e6bd77fcce90a6abdc15a43842b2df4fbaea83762c98965e522268.",
         "marker": "parity:9130152338e6bd77fcce90a6abdc15a43842b2df4fbaea83762c98965e522268"
       },
       "evidence": {
@@ -11978,10 +11978,10 @@
     {
       "upstreamId": "d2c3c15c36bee163801631f88bf6ee718582dcc20739d16726086b9832254ebf",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Basic Rendering > should render single-line indented code blocks” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case d2c3c15c36bee163801631f88bf6ee718582dcc20739d16726086b9832254ebf.",
         "marker": "parity:d2c3c15c36bee163801631f88bf6ee718582dcc20739d16726086b9832254ebf"
       },
       "evidence": {
@@ -11991,10 +11991,10 @@
     {
       "upstreamId": "5a39580744a68be1df5abdd55140a8fe3bb17efeb47adb82e8488848572a3804",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Basic Rendering > should render blockquotes” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 5a39580744a68be1df5abdd55140a8fe3bb17efeb47adb82e8488848572a3804.",
         "marker": "parity:5a39580744a68be1df5abdd55140a8fe3bb17efeb47adb82e8488848572a3804"
       },
       "evidence": {
@@ -12004,10 +12004,10 @@
     {
       "upstreamId": "6cc5e912430930045859d8bb8c2719ab7e161fc720474f278ee15b8e7f4f906b",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Basic Rendering > should render horizontal rules” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 6cc5e912430930045859d8bb8c2719ab7e161fc720474f278ee15b8e7f4f906b.",
         "marker": "parity:6cc5e912430930045859d8bb8c2719ab7e161fc720474f278ee15b8e7f4f906b"
       },
       "evidence": {
@@ -12017,10 +12017,10 @@
     {
       "upstreamId": "78363612de6a879c1fe592991b46b21526dc1d0b88434a8491e092e2b026c5fc",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Custom Components > should use custom component for h1” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 78363612de6a879c1fe592991b46b21526dc1d0b88434a8491e092e2b026c5fc.",
         "marker": "parity:78363612de6a879c1fe592991b46b21526dc1d0b88434a8491e092e2b026c5fc"
       },
       "evidence": {
@@ -12030,10 +12030,10 @@
     {
       "upstreamId": "e555465eb98c32ea7604979252f7e4ada61e2dd05c8c804c2052e55928283ec7",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Custom Components > should use custom component for paragraph” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case e555465eb98c32ea7604979252f7e4ada61e2dd05c8c804c2052e55928283ec7.",
         "marker": "parity:e555465eb98c32ea7604979252f7e4ada61e2dd05c8c804c2052e55928283ec7"
       },
       "evidence": {
@@ -12043,10 +12043,10 @@
     {
       "upstreamId": "f5fc4b8681396534bd30ab244bc51d59ec0b3ec706188db2d9daae3cac32a9ec",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Custom Components > should use custom component for links” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case f5fc4b8681396534bd30ab244bc51d59ec0b3ec706188db2d9daae3cac32a9ec.",
         "marker": "parity:f5fc4b8681396534bd30ab244bc51d59ec0b3ec706188db2d9daae3cac32a9ec"
       },
       "evidence": {
@@ -12056,10 +12056,10 @@
     {
       "upstreamId": "bb978d6dc22f0891c5984c7437b605f7a63cdfdf2a92c4213238f8e238f7bbf1",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Custom Components > should use custom component for code” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case bb978d6dc22f0891c5984c7437b605f7a63cdfdf2a92c4213238f8e238f7bbf1.",
         "marker": "parity:bb978d6dc22f0891c5984c7437b605f7a63cdfdf2a92c4213238f8e238f7bbf1"
       },
       "evidence": {
@@ -12069,10 +12069,10 @@
     {
       "upstreamId": "b386b86e598ea2b1a41090fdfdd6f4e8508b2071233523a136b5dc8a70dd4990",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Custom Components > should pass node prop to custom components” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case b386b86e598ea2b1a41090fdfdd6f4e8508b2071233523a136b5dc8a70dd4990.",
         "marker": "parity:b386b86e598ea2b1a41090fdfdd6f4e8508b2071233523a136b5dc8a70dd4990"
       },
       "evidence": {
@@ -12082,10 +12082,10 @@
     {
       "upstreamId": "b588e9fbf050697ff0d47032d266216d40fa022d31045e19bb3b45a3931c99b1",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Custom Components > should handle multiple custom components” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case b588e9fbf050697ff0d47032d266216d40fa022d31045e19bb3b45a3931c99b1.",
         "marker": "parity:b588e9fbf050697ff0d47032d266216d40fa022d31045e19bb3b45a3931c99b1"
       },
       "evidence": {
@@ -12095,10 +12095,10 @@
     {
       "upstreamId": "cdc3860d5ae5fe7c59647f5ad11a9894756cc3c04124c68b05a967bc277234e8",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Plugin Support > should accept remark plugins” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case cdc3860d5ae5fe7c59647f5ad11a9894756cc3c04124c68b05a967bc277234e8.",
         "marker": "parity:cdc3860d5ae5fe7c59647f5ad11a9894756cc3c04124c68b05a967bc277234e8"
       },
       "evidence": {
@@ -12212,10 +12212,10 @@
     {
       "upstreamId": "8316482eb496e815117253879b556efc59b6eda78fe4d0e2dc302d2312814ff5",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Processor Caching > should create new processor for different plugins” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 8316482eb496e815117253879b556efc59b6eda78fe4d0e2dc302d2312814ff5.",
         "marker": "parity:8316482eb496e815117253879b556efc59b6eda78fe4d0e2dc302d2312814ff5"
       },
       "evidence": {
@@ -12251,10 +12251,10 @@
     {
       "upstreamId": "8a2faf41874efe915ac8ebdb1eba521c550cff4017e80587d916b68dfe16f623",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Complex Markdown > should render nested lists” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 8a2faf41874efe915ac8ebdb1eba521c550cff4017e80587d916b68dfe16f623.",
         "marker": "parity:8a2faf41874efe915ac8ebdb1eba521c550cff4017e80587d916b68dfe16f623"
       },
       "evidence": {
@@ -12264,10 +12264,10 @@
     {
       "upstreamId": "7ab222ba3dcc3f0e886c041036ba0781f72644af3d5553202a171255c7801b1f",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Complex Markdown > should render tables” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 7ab222ba3dcc3f0e886c041036ba0781f72644af3d5553202a171255c7801b1f.",
         "marker": "parity:7ab222ba3dcc3f0e886c041036ba0781f72644af3d5553202a171255c7801b1f"
       },
       "evidence": {
@@ -12277,10 +12277,10 @@
     {
       "upstreamId": "d66e79c4a68f8144620131feb8a1e4f3f5363c90cbb5b6e3a64d85612845b475",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Complex Markdown > should render mixed content” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case d66e79c4a68f8144620131feb8a1e4f3f5363c90cbb5b6e3a64d85612845b475.",
         "marker": "parity:d66e79c4a68f8144620131feb8a1e4f3f5363c90cbb5b6e3a64d85612845b475"
       },
       "evidence": {
@@ -12290,10 +12290,10 @@
     {
       "upstreamId": "445907946ef11a48e60893034321bcc86af250a4ddb23650c778b1db043fa1fb",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Complex Markdown > should handle code blocks with language” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 445907946ef11a48e60893034321bcc86af250a4ddb23650c778b1db043fa1fb.",
         "marker": "parity:445907946ef11a48e60893034321bcc86af250a4ddb23650c778b1db043fa1fb"
       },
       "evidence": {
@@ -12303,10 +12303,10 @@
     {
       "upstreamId": "4c53c514cdad88b070495f1712715e84b06f1977fef326f5cd3beca968c9c9af",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Complex Markdown > should handle multiple paragraphs” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 4c53c514cdad88b070495f1712715e84b06f1977fef326f5cd3beca968c9c9af.",
         "marker": "parity:4c53c514cdad88b070495f1712715e84b06f1977fef326f5cd3beca968c9c9af"
       },
       "evidence": {
@@ -12316,10 +12316,10 @@
     {
       "upstreamId": "d3c425d951309b950c819610653a87840f3e85af1bff31c983fd7adecf4236d1",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > Complex Markdown > should handle line breaks” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case d3c425d951309b950c819610653a87840f3e85af1bff31c983fd7adecf4236d1.",
         "marker": "parity:d3c425d951309b950c819610653a87840f3e85af1bff31c983fd7adecf4236d1"
       },
       "evidence": {
@@ -16372,10 +16372,10 @@
     {
       "upstreamId": "f81f91f2374f7b8f07de2b96aa0adbdb6f8087d3f02a80875939a4704fc3bb58",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/streamdown-coverage.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Block memoization > should re-render when components keys change” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case f81f91f2374f7b8f07de2b96aa0adbdb6f8087d3f02a80875939a4704fc3bb58.",
         "marker": "parity:f81f91f2374f7b8f07de2b96aa0adbdb6f8087d3f02a80875939a4704fc3bb58"
       },
       "evidence": {
@@ -16385,10 +16385,10 @@
     {
       "upstreamId": "ccc184ce2057743c19c90a3b273a972d6d1b91a667acdc97054fc46dc3098683",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/streamdown-coverage.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Block memoization > should re-render when components values change” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case ccc184ce2057743c19c90a3b273a972d6d1b91a667acdc97054fc46dc3098683.",
         "marker": "parity:ccc184ce2057743c19c90a3b273a972d6d1b91a667acdc97054fc46dc3098683"
       },
       "evidence": {
@@ -16411,10 +16411,10 @@
     {
       "upstreamId": "55e5fa893caa735626d408e1a5d4c9f5cfdde21eb9f6fbf7e3f4241da1ca9288",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/streamdown-coverage.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Block memoization > should re-render when remarkPlugins change” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/native-renderer.test.tsx",
+        "assertion": "Assert the React Native semantic rendering equivalent for pinned upstream case 55e5fa893caa735626d408e1a5d4c9f5cfdde21eb9f6fbf7e3f4241da1ca9288.",
         "marker": "parity:55e5fa893caa735626d408e1a5d4c9f5cfdde21eb9f6fbf7e3f4241da1ca9288"
       },
       "evidence": {

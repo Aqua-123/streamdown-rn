@@ -6,7 +6,9 @@
  */
 
 import React from 'react';
-import type { StableBlock as StableBlockType, ThemeConfig, ComponentRegistry } from '../core/types';
+import type { StableBlock as StableBlockType, ThemeConfig, ComponentRegistry, NativeComponents } from '../core/types';
+import type { SecurityPolicyOptions } from '../core/security';
+import { parseSemanticDocument, type SemanticParseOptions } from '../core/parser';
 import { ASTRenderer, ComponentBlock } from './ASTRenderer';
 
 interface StableBlockProps {
@@ -14,16 +16,20 @@ interface StableBlockProps {
   theme: ThemeConfig;
   componentRegistry?: ComponentRegistry;
   onError?: (error: Error, componentName?: string) => void;
+  components?: NativeComponents;
+  securityPolicy?: SecurityPolicyOptions;
+  allowedTags?: Readonly<Record<string, readonly string[]>>;
+  literalTagContent?: readonly string[];
+  dir?: 'auto' | 'ltr' | 'rtl';
+  parseOptions?: SemanticParseOptions;
 }
 
 /**
  * StableBlock component — renders finalized blocks from cached AST.
- * 
- * Uses React.memo with contentHash comparison for efficient updates.
- * The block prop is immutable — once finalized, content never changes.
+ * U6 owns memoization after all renderer-bearing inputs are instrumented.
  */
-export const StableBlock: React.FC<StableBlockProps> = React.memo(
-  ({ block, theme, componentRegistry, onError }) => {
+export const StableBlock: React.FC<StableBlockProps> =
+  ({ block, theme, componentRegistry, onError, components, securityPolicy, allowedTags, literalTagContent, dir, parseOptions }) => {
     // Component blocks don't have AST (custom syntax, not markdown)
     if (block.type === 'component') {
       return (
@@ -32,18 +38,27 @@ export const StableBlock: React.FC<StableBlockProps> = React.memo(
           theme={theme}
           componentRegistry={componentRegistry}
           onError={onError}
+          resourcePolicy={securityPolicy}
         />
       );
     }
     
-    // Render from cached AST
-    if (block.ast) {
+    // The legacy cache stores one Content node. Reparse the complete block so
+    // document-wide constructs such as footnotes never lose root siblings.
+    // U6 owns caching the resulting Root once its behavior inputs are measured.
+    const ast = parseSemanticDocument(block.content, parseOptions);
+    if (ast) {
       return (
         <ASTRenderer
-          node={block.ast}
+          node={ast}
           theme={theme}
           componentRegistry={componentRegistry}
           onError={onError}
+          components={components}
+          securityPolicy={securityPolicy}
+          allowedTags={allowedTags}
+          literalTagContent={literalTagContent}
+          dir={dir}
         />
       );
     }
@@ -51,13 +66,6 @@ export const StableBlock: React.FC<StableBlockProps> = React.memo(
     // Fallback if no AST (shouldn't happen for stable blocks)
     console.warn('StableBlock has no AST:', block.type, block.id);
     return null;
-  },
-  // Re-render if block content or theme changes
-  (prev, next) =>
-    prev.block.contentHash === next.block.contentHash &&
-    prev.theme === next.theme &&
-    prev.componentRegistry === next.componentRegistry &&
-    prev.onError === next.onError
-);
+  };
 
 StableBlock.displayName = 'StableBlock';

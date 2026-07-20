@@ -6,7 +6,10 @@
  */
 
 import type { ComponentType, ReactNode } from 'react';
-import type { Content } from 'mdast';
+import type { Content, Node } from 'mdast';
+import type { StyleProp, ViewStyle } from 'react-native';
+import type { PluggableList } from 'unified';
+import type { SecurityPolicyOptions } from './security';
 
 // ============================================================================
 // Block Types
@@ -290,15 +293,55 @@ export interface DebugSnapshot {
 /**
  * Props for the main StreamdownRN component
  */
-export interface StreamdownRNProps {
+export interface NativeSemanticData {
+  type: string;
+  node: Readonly<Node>;
+  inline: boolean;
+  value?: string;
+  url?: string;
+  alt?: string;
+  depth?: HeadingLevel;
+  ordered?: boolean;
+  checked?: boolean | null;
+  language?: string;
+  metadata?: string;
+  identifier?: string;
+  attributes?: Readonly<Record<string, unknown>>;
+}
+
+export interface NativeComponentProps {
+  children?: ReactNode;
+  semantic: NativeSemanticData;
+}
+
+export type NativeComponents = Record<
+  string,
+  ComponentType<NativeComponentProps> | undefined
+> & {
+  inlineCode?: ComponentType<NativeComponentProps>;
+  unknown?: ComponentType<NativeComponentProps>;
+};
+
+/** Platform-neutral Streamdown options with explicit native substitutions. */
+export interface StreamdownProps extends SecurityPolicyOptions {
   /** Markdown content (streaming or complete) */
-  children: string;
+  children?: string;
   /** Component registry for {{c:...}} syntax */
   componentRegistry?: ComponentRegistry;
   /** Theme name or custom config */
   theme?: 'dark' | 'light' | ThemeConfig;
   /** Container style */
-  style?: object;
+  style?: StyleProp<ViewStyle>;
+  /** Native semantic component overrides (never DOM intrinsic strings). */
+  components?: NativeComponents;
+  /** Additional remark plugins, applied after the built-in GFM parser. */
+  remarkPlugins?: PluggableList;
+  mode?: 'static' | 'streaming';
+  dir?: 'auto' | 'ltr' | 'rtl';
+  parseIncompleteMarkdown?: boolean;
+  /** Custom tag names and the attributes exposed to native overrides. */
+  allowedTags?: Readonly<Record<string, readonly string[]>>;
+  literalTagContent?: readonly string[];
   /** Error callback for component failures */
   onError?: (error: Error, componentName?: string) => void;
   /** 
@@ -314,7 +357,14 @@ export interface StreamdownRNProps {
    * transition from skeleton to final state.
    */
   isComplete?: boolean;
+  /** DOM-only Streamdown options are rejected instead of silently ignored. */
+  className?: never;
+  prefix?: never;
+  rehypePlugins?: never;
+  remarkRehypeOptions?: never;
 }
+
+export type StreamdownRNProps = StreamdownProps;
 
 /**
  * Props passed to block renderers

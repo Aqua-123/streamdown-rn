@@ -10,9 +10,10 @@
  */
 
 import React from 'react';
-import type { ActiveBlock as ActiveBlockType, ThemeConfig, ComponentRegistry, IncompleteTagState } from '../core/types';
+import type { ActiveBlock as ActiveBlockType, ThemeConfig, ComponentRegistry, IncompleteTagState, NativeComponents } from '../core/types';
 import { fixIncompleteMarkdown } from '../core/incomplete';
-import { parseBlockContent } from '../core/parser';
+import { parseSemanticDocument, type SemanticParseOptions } from '../core/parser';
+import type { SecurityPolicyOptions } from '../core/security';
 import { ASTRenderer, ComponentBlock, extractComponentData } from './ASTRenderer';
 
 interface ActiveBlockProps {
@@ -21,6 +22,13 @@ interface ActiveBlockProps {
   theme: ThemeConfig;
   componentRegistry?: ComponentRegistry;
   onError?: (error: Error, componentName?: string) => void;
+  components?: NativeComponents;
+  parseOptions?: SemanticParseOptions;
+  securityPolicy?: SecurityPolicyOptions;
+  allowedTags?: Readonly<Record<string, readonly string[]>>;
+  literalTagContent?: readonly string[];
+  dir?: 'auto' | 'ltr' | 'rtl';
+  parseIncompleteMarkdown?: boolean;
 }
 
 /**
@@ -35,6 +43,13 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
   theme,
   componentRegistry,
   onError,
+  components,
+  parseOptions,
+  securityPolicy,
+  allowedTags,
+  literalTagContent,
+  dir,
+  parseIncompleteMarkdown = true,
 }) => {
   // No active block — nothing to render
   if (!block || !block.content.trim()) {
@@ -43,7 +58,7 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
   
   // Special handling for component blocks (don't use remark)
   if (block.type === 'component') {
-    const { name, props } = extractComponentData(block.content);
+    const { name, props } = extractComponentData(block.content, securityPolicy);
     return (
       <ComponentBlock
         componentName={name}
@@ -52,18 +67,21 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
         theme={theme}
         componentRegistry={componentRegistry}
         onError={onError}
+        resourcePolicy={securityPolicy}
       />
     );
   }
   
   // Fix incomplete markdown for format-as-you-type UX
-  const fixedContent = fixIncompleteMarkdown(block.content, tagState);
+  const fixedContent = parseIncompleteMarkdown
+    ? fixIncompleteMarkdown(block.content, tagState)
+    : block.content;
   
   // Parse with remark
-  const ast = parseBlockContent(fixedContent);
+  const ast = parseSemanticDocument(fixedContent, parseOptions);
   
   // Render from AST
-  if (ast) {
+  if (ast.children.length) {
     return (
       <ASTRenderer
         node={ast}
@@ -71,6 +89,11 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
         componentRegistry={componentRegistry}
         isStreaming={true}
         onError={onError}
+        components={components}
+        securityPolicy={securityPolicy}
+        allowedTags={allowedTags}
+        literalTagContent={literalTagContent}
+        dir={dir}
       />
     );
   }

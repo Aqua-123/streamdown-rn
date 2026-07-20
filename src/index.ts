@@ -10,7 +10,7 @@
 // Main Component
 // ============================================================================
 
-export { StreamdownRN, default } from './StreamdownRN';
+export { Streamdown, StreamdownRN, default } from './StreamdownRN';
 
 // ============================================================================
 // Skeleton Primitives (for building component skeletons)
@@ -41,7 +41,11 @@ export {
 
 export type {
   // Component props
+  StreamdownProps,
   StreamdownRNProps,
+  NativeComponents,
+  NativeComponentProps,
+  NativeSemanticData,
   
   // Component injection (for custom component registries)
   ComponentDefinition,
@@ -50,3 +54,10 @@ export type {
   // Debug/Observability
   DebugSnapshot,
 } from './core/types';
+
+export type {
+  SecurityPolicyOptions,
+  ResourcePolicy,
+  DataImagePolicy,
+  SemanticElementPredicate,
+} from './core/security';

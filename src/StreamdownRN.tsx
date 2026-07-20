@@ -1,130 +1,110 @@
-/**
- * StreamdownRN - Streaming Markdown Renderer for React Native
- * 
- * High-performance streaming markdown renderer optimized for AI responses.
- * Uses block-level stability to minimize re-renders during streaming.
- * 
- * Architecture:
- * - Completed blocks are memoized and NEVER re-render
- * - Only the active (currently streaming) block re-renders on new tokens
- * - Block boundaries are detected incrementally
- */
-
-import React, { useRef, useMemo, useEffect } from 'react';
-import { View, ViewStyle } from 'react-native';
-
+import React, { useEffect, useMemo, useRef } from 'react';
+import { View } from 'react-native';
 import type {
-  StreamdownRNProps,
   BlockRegistry,
-  ThemeConfig,
   DebugSnapshot,
+  StreamdownProps,
+  ThemeConfig,
 } from './core/types';
+import type { SecurityPolicyOptions } from './core/security';
 import { INITIAL_REGISTRY } from './core/types';
 import { processNewContent, finalizeActiveBlock } from './core/splitter';
 import { fixIncompleteMarkdown } from './core/incomplete';
+import { parseSemanticDocument } from './core/parser';
 import { getTheme } from './themes';
 import { StableBlock } from './renderers/StableBlock';
 import { ActiveBlock } from './renderers/ActiveBlock';
+import { ASTRenderer } from './renderers/ASTRenderer';
 
-/**
- * StreamdownRN Component
- * 
- * Main entry point for streaming markdown rendering.
- * 
- * @example
- * ```tsx
- * <StreamdownRN theme="dark">
- *   {streamingMarkdownContent}
- * </StreamdownRN>
- * ```
- */
-export const StreamdownRN: React.FC<StreamdownRNProps> = React.memo(({
-  children,
-  componentRegistry,
-  theme = 'dark',
-  style,
-  onError,
-  onDebug,
-  isComplete = false,
-}) => {
-  // Persistent registry reference — survives across renders
+function rejectDOMProps(props: Record<string, unknown>): void {
+  const name = ['className', 'prefix', 'rehypePlugins', 'remarkRehypeOptions']
+    .find((key) => props[key] !== undefined);
+  if (name) throw new TypeError(`${name} is DOM-only and is not supported by Streamdown for React Native`);
+}
+
+export const Streamdown: React.FC<StreamdownProps> = (props) => {
+  rejectDOMProps(props as unknown as Record<string, unknown>);
+  const {
+    children: value,
+    componentRegistry,
+    components,
+    theme = 'dark',
+    style,
+    onError,
+    onDebug,
+    isComplete = false,
+    mode = 'streaming',
+    dir = 'auto',
+    parseIncompleteMarkdown = true,
+    remarkPlugins,
+    allowedTags,
+    literalTagContent,
+    allowedElements,
+    disallowedElements,
+    allowElement,
+    unwrapDisallowed,
+    skipHtml,
+    urlTransform,
+    allowedLinkSchemes,
+    resolveRelativeUrl,
+    dataImages,
+  } = props;
+  const children = typeof value === 'string' ? value : '';
   const registryRef = useRef<BlockRegistry>(INITIAL_REGISTRY);
+  const contentRef = useRef('');
+  const lastUpdateTimeRef = useRef(performance.now());
+  const previousContentRef = useRef('');
+  const themeConfig = useMemo<ThemeConfig>(() => getTheme(theme), [theme]);
+  const parseOptions = useMemo(() => ({
+    after: remarkPlugins,
+    customTags: Object.keys(allowedTags ?? {}),
+    literalTags: literalTagContent,
+  }), [allowedTags, literalTagContent, remarkPlugins]);
+  const securityPolicy: SecurityPolicyOptions = {
+    allowedElements,
+    disallowedElements,
+    allowElement,
+    unwrapDisallowed,
+    skipHtml,
+    urlTransform,
+    allowedLinkSchemes,
+    resolveRelativeUrl,
+    dataImages,
+  };
 
-  // Track content for change detection (important for FlashList recycling!)
-  const contentRef = useRef<string>('');
-
-  // Debug tracking refs
-  const lastUpdateTimeRef = useRef<number>(performance.now());
-  const previousContentRef = useRef<string>('');
-
-  // Resolve theme configuration
-  const themeConfig = useMemo<ThemeConfig>(() => {
-    return getTheme(theme);
-  }, [theme]);
-
-  // Process new content incrementally
-  // This is the core optimization: only processes NEW tokens
   const registry = useMemo(() => {
-    // Handle empty content
     if (!children || children.trim().length === 0) {
       registryRef.current = INITIAL_REGISTRY;
       contentRef.current = '';
       return INITIAL_REGISTRY;
     }
-
     try {
-      // CRITICAL FIX: Detect if content has completely changed (not just appended)
-      // This happens when FlashList recycles a component with new data.
-      // If new content doesn't start with the previous content, we must reset.
-      const previousContent = contentRef.current;
-      const isStreamingContinuation = previousContent.length > 0 &&
-        children.startsWith(previousContent);
-
-      if (!isStreamingContinuation && previousContent.length > 0) {
-        // Content has changed completely - reset registry
+      if (contentRef.current && !children.startsWith(contentRef.current)) {
         registryRef.current = INITIAL_REGISTRY;
       }
-
-      // Update content ref
       contentRef.current = children;
-
-      // Process from where we left off (or from beginning if reset)
       let updated = processNewContent(registryRef.current, children);
-
-      // When streaming is complete, finalize the active block
-      // This ensures the last block is properly memoized and components
-      // transition from skeleton to final state
-      if (isComplete && updated.activeBlock) {
-        updated = finalizeActiveBlock(updated);
-      }
-
+      if (isComplete && updated.activeBlock) updated = finalizeActiveBlock(updated);
       registryRef.current = updated;
       return updated;
     } catch (error) {
-      // Report error but don't crash
       onError?.(error instanceof Error ? error : new Error(String(error)));
       return registryRef.current;
     }
-  }, [children, onError, isComplete]);
-  
-  // Emit debug snapshot when content changes (effect to avoid render-time side effects)
+  }, [children, isComplete, onError]);
+
   useEffect(() => {
     if (!onDebug || !children) return;
-    
     const now = performance.now();
-    const deltaMs = now - lastUpdateTimeRef.current;
     const previousContent = previousContentRef.current;
-    const newChars = children.slice(previousContent.length);
-    
-    // Build debug snapshot
     const snapshot: DebugSnapshot = {
       position: registry.cursor,
       totalLength: children.length,
-      newChars,
-      newCharsCount: newChars.length,
+      newChars: children.slice(previousContent.length),
+      newCharsCount: Math.max(0, children.length - previousContent.length),
       registry: {
         stableBlockCount: registry.blocks.length,
-        stableBlocks: registry.blocks.map(block => ({
+        stableBlocks: registry.blocks.map((block) => ({
           id: block.id,
           type: block.type,
           contentLength: block.content.length,
@@ -137,67 +117,75 @@ export const StreamdownRN: React.FC<StreamdownRNProps> = React.memo(({
         } : null,
         tagState: { ...registry.activeTagState },
       },
-      fixedContent: registry.activeBlock 
+      fixedContent: registry.activeBlock
         ? fixIncompleteMarkdown(registry.activeBlock.content, registry.activeTagState)
         : null,
       timestamp: now,
-      deltaMs,
+      deltaMs: now - lastUpdateTimeRef.current,
     };
-    
-    // Emit snapshot
     onDebug(snapshot);
-    
-    // Update refs for next iteration
     lastUpdateTimeRef.current = now;
     previousContentRef.current = children;
   }, [children, onDebug, registry]);
-  
-  // Handle empty content
-  if (!children || children.trim().length === 0) {
-    return null;
+
+  if (!children || children.trim().length === 0) return null;
+
+  if (mode === 'static') {
+    const root = parseSemanticDocument(children, parseOptions);
+    return (
+      <View style={style}>
+        <ASTRenderer
+          node={root}
+          theme={themeConfig}
+          componentRegistry={componentRegistry}
+          components={components}
+          onError={onError}
+          securityPolicy={securityPolicy}
+          allowedTags={allowedTags}
+          literalTagContent={literalTagContent}
+          dir={dir}
+        />
+      </View>
+    );
   }
-  
-  // Container style
-  const containerStyle: ViewStyle = {
-    flex: 1,
-    ...(style as ViewStyle),
-  };
-  
+
   return (
-    <View style={containerStyle}>
-      {/* Stable blocks — memoized, never re-render */}
-      {registry.blocks.map(block => (
+    <View style={style}>
+      {registry.blocks.map((block) => (
         <StableBlock
           key={block.id}
           block={block}
           theme={themeConfig}
           componentRegistry={componentRegistry}
+          components={components}
           onError={onError}
+          securityPolicy={securityPolicy}
+          allowedTags={allowedTags}
+          literalTagContent={literalTagContent}
+          dir={dir}
+          parseOptions={parseOptions}
         />
       ))}
-      
-      {/* Active block — re-renders on each token */}
       <ActiveBlock
         block={registry.activeBlock}
         tagState={registry.activeTagState}
         theme={themeConfig}
         componentRegistry={componentRegistry}
+        components={components}
         onError={onError}
+        parseOptions={parseOptions}
+        securityPolicy={securityPolicy}
+        allowedTags={allowedTags}
+        literalTagContent={literalTagContent}
+        dir={dir}
+        parseIncompleteMarkdown={parseIncompleteMarkdown}
       />
     </View>
   );
-}, (prev, next) => {
-  // Custom comparison for memo
-  // Re-render if content, theme, or isComplete changes
-  return (
-    prev.children === next.children &&
-    prev.theme === next.theme &&
-    prev.isComplete === next.isComplete &&
-    prev.componentRegistry === next.componentRegistry &&
-    prev.onError === next.onError
-  );
-});
+};
 
-StreamdownRN.displayName = 'StreamdownRN';
+Streamdown.displayName = 'Streamdown';
 
-export default StreamdownRN;
+/** Backward-compatible alias. */
+export const StreamdownRN = Streamdown;
+export default Streamdown;

@@ -20,9 +20,11 @@ describe('packed package', () => {
     }
 
     const api = require(path.join(packageRoot as string, rootExport.default));
-    expect(api.default).toBe(api.StreamdownRN);
+    expect(api.default).toBe(api.Streamdown);
+    expect(api.StreamdownRN).toBe(api.Streamdown);
     for (const exportName of [
       'StreamdownRN',
+      'Streamdown',
       'Skeleton',
       'SkeletonText',
       'SkeletonRect',
