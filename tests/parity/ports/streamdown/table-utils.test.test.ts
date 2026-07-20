@@ -1,12 +1,21 @@
+
 import {
   escapeMarkdownTableCell,
   type TableData,
   tableDataToCSV,
   tableDataToMarkdown,
   tableDataToTSV,
+  tableDataFromSemanticRows,
 } from "../../../../src/core/tableSerialization";
 
 describe("Table Utils", () => {
+  describe('tableDataFromSemanticRows', () => {
+    it('extracts trimmed headers, rows, and empty cells without DOM sections', () => {
+      expect(tableDataFromSemanticRows([[' Name ', ''], [' Ada ', ' 42 ']])).toEqual({ headers: ['Name', ''], rows: [['Ada', '42']] });
+      expect(tableDataFromSemanticRows([['Ada', '42']], false)).toEqual({ headers: [], rows: [['Ada', '42']] });
+      expect(tableDataFromSemanticRows([['Name']], true)).toEqual({ headers: ['Name'], rows: [] });
+    });
+  });
   describe("tableDataToCSV", () => {
     it("should convert simple table data to CSV", () => {
       const data: TableData = {

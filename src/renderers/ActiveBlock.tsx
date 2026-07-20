@@ -48,6 +48,7 @@ interface ActiveBlockProps {
   plugins?: PluginConfig;
   shikiTheme?: [ThemeInput, ThemeInput];
   lineNumbers?: boolean;
+  isAnimating?: boolean;
 }
 
 /**
@@ -81,6 +82,7 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
   plugins,
   shikiTheme,
   lineNumbers,
+  isAnimating = false,
 }) => {
   instrumentation?.recordActiveRender();
   // No active block — nothing to render
@@ -95,7 +97,7 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
       <ComponentBlock
         componentName={name}
         props={props}
-        isStreaming={true}
+        isStreaming={isAnimating}
         theme={theme}
         componentRegistry={componentRegistry}
         onError={onError}
@@ -121,7 +123,7 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
         node={ast}
         theme={theme}
         componentRegistry={componentRegistry}
-        isStreaming={true}
+        isStreaming={isAnimating}
         onError={onError}
         components={components}
         securityPolicy={securityPolicy}

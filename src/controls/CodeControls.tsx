@@ -24,6 +24,7 @@ export function CodeControls({ code, language, capabilities, controls, translati
       {copy ? <ActionButton
         label={translations.copyCode}
         icon={icons?.copy ?? defaultIcons.copy}
+        successMessage={translations.copied}
         disabled={disabled}
         onAction={() => capabilities.clipboard?.writeText(code) ?? {
           status: 'unavailable', error: new Error('Clipboard unavailable'),

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 import type {
   BlockRegistry,
   DebugSnapshot,
@@ -10,7 +10,7 @@ import type { SecurityPolicyOptions } from './core/security';
 import { INITIAL_REGISTRY } from './core/types';
 import { processNewContent, finalizeActiveBlock } from './core/splitter';
 import { fixIncompleteMarkdown } from './core/incomplete';
-import { parseSemanticDocument } from './core/parser';
+import { normalizeHtmlIndentation, parseSemanticDocument } from './core/parser';
 import { getTheme } from './themes';
 import { StableBlock } from './renderers/StableBlock';
 import { ActiveBlock } from './renderers/ActiveBlock';
@@ -47,8 +47,9 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
     onDebug,
     isComplete = false,
     mode = 'streaming',
-    dir = 'auto',
+    dir,
     parseIncompleteMarkdown = true,
+    normalizeHtmlIndentation: shouldNormalizeHtmlIndentation = false,
     isAnimating = false,
     animated,
     caret,
@@ -77,7 +78,10 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
     resolveRelativeUrl,
     dataImages,
   } = props;
-  const children = typeof value === 'string' ? value : '';
+  const rawChildren = typeof value === 'string' ? value : '';
+  const children = shouldNormalizeHtmlIndentation
+    ? normalizeHtmlIndentation(rawChildren)
+    : rawChildren;
   const registryRef = useRef<BlockRegistry>(INITIAL_REGISTRY);
   const contentRef = useRef('');
   const generationRef = useRef(0);
@@ -205,6 +209,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
   );
   const activeContent = registry.activeBlock?.content ?? '';
   const deferHeavyContent = hasIncompleteCodeFence(activeContent) || hasTable(activeContent);
+  const showCaret = Boolean(caret && isAnimating && !isComplete && mode === 'streaming' && !deferHeavyContent);
 
   useEffect(() => {
     if (mode === 'static') {
@@ -257,7 +262,13 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
     previousContentRef.current = children;
   }, [children, onDebug, registry]);
 
-  if (!children || children.trim().length === 0) return null;
+  if (!children || children.trim().length === 0) {
+    return showCaret ? (
+      <View style={style}>
+        <Text testID="streamdown-caret">{caret === 'circle' ? ' ●' : ' ▋'}</Text>
+      </View>
+    ) : null;
+  }
 
   if (mode === 'static') {
     return (
@@ -353,8 +364,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
         parseIncompleteMarkdown={parseIncompleteMarkdown}
         animation={animationWindow && !deferHeavyContent ? animationConfig : null}
         animationFrom={Math.max(0, (animationWindow?.from ?? children.length) - (registry.activeBlock?.startPos ?? 0))}
-        showCaret={Boolean(caret && isAnimating && !isComplete && !deferHeavyContent)}
-        caret={caret}
+        showCaret={false}
         instrumentation={instrumentation}
         capabilities={nativeCapabilities}
         controls={controls}
@@ -363,7 +373,9 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
         plugins={plugins}
         shikiTheme={shikiTheme}
         lineNumbers={lineNumbers}
+        isAnimating={isAnimating}
       />
+      {showCaret ? <Text testID="streamdown-caret">{caret === 'circle' ? ' ●' : ' ▋'}</Text> : null}
     </View>
   );
 };

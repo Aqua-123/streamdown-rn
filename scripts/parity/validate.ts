@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { extname, resolve } from "node:path";
 import {
   type Inventory,
   type Manifest,
@@ -15,6 +15,24 @@ export interface ValidationOptions { projectRoot?: string; sourceRoot?: string; 
 function required(value: unknown, message: string, errors: string[]): value is string {
   if (typeof value !== "string" || value.trim() === "") { errors.push(message); return false; }
   return true;
+}
+
+function executableFiles(path: string): string[] {
+  if (!existsSync(path)) return [];
+  if (!statSync(path).isDirectory()) return [path];
+  return readdirSync(path).flatMap((entry) => executableFiles(resolve(path, entry)));
+}
+
+function markerCounts(root: string, manifest: Manifest): Map<string, number> {
+  const extensions = new Set([".js", ".jsx", ".ts", ".tsx"]);
+  const files = [resolve(root, "src"), resolve(root, "tests")]
+    .flatMap(executableFiles)
+    .filter((path) => extensions.has(extname(path)));
+  const source = files.map((path) => readFileSync(path, "utf8")).join("\n");
+  return new Map(manifest.entries.map((entry) => [
+    entry.target.marker,
+    source.split(entry.target.marker).length - 1,
+  ]));
 }
 
 function validateEntry(entry: ManifestEntry, root: string, errors: string[]): void {
@@ -57,9 +75,13 @@ export function validateParity(inventory: Inventory, manifest: Manifest, options
     if (actual !== declared) errors.push(`inventory packageCounts.${packageName} is ${declared}; expected ${actual}`);
   }
   const mapped = new Map<string, number>();
+  const markers = markerCounts(root, manifest);
   for (const entry of manifest.entries) {
     mapped.set(entry.upstreamId, (mapped.get(entry.upstreamId) ?? 0) + 1);
     validateEntry(entry, root, errors);
+    const markerCount = markers.get(entry.target.marker) ?? 0;
+    if (markerCount !== 1)
+      errors.push(`${entry.upstreamId}: target marker must occur exactly once in executable source; found ${markerCount}`);
     if (!expected.has(entry.upstreamId)) errors.push(`${entry.upstreamId}: mapping does not exist in pinned inventory`);
   }
   for (const [id, testCase] of expected) {

@@ -9,7 +9,7 @@ import type { StreamdownTranslations } from './translations';
 import { fetchImageFileRequest } from './serialization';
 import { defaultIcons, type IconMap } from './icons';
 
-export function SafeImage({ uri, alt, theme, capabilities, controls, translations, icons, disabled }: {
+export function SafeImage({ uri, alt, theme, capabilities, controls, translations, icons, disabled, onLoad, onError, width, height }: {
   uri: string;
   alt?: string;
   theme: ThemeConfig;
@@ -18,6 +18,10 @@ export function SafeImage({ uri, alt, theme, capabilities, controls, translation
   translations: StreamdownTranslations;
   icons?: IconMap;
   disabled?: boolean;
+  onLoad?: () => void;
+  onError?: (error?: unknown) => void;
+  width?: number;
+  height?: number;
 }) {
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<'loading' | 'loaded' | 'failed'>('loading');
@@ -46,15 +50,15 @@ export function SafeImage({ uri, alt, theme, capabilities, controls, translation
       <Image
         key={`${uri}:${attempt}`}
         source={{ uri }}
-        style={[{ width: '100%', aspectRatio, backgroundColor: theme.colors.codeBackground }]}
+        style={[{ width: width ?? '100%', height, aspectRatio: height ? undefined : aspectRatio, backgroundColor: theme.colors.codeBackground }]}
         resizeMode="contain"
         accessible={!decorative}
         accessibilityRole={decorative ? undefined : 'image'}
         accessibilityLabel={decorative ? undefined : alt}
-        onLoad={() => setState('loaded')}
-        onError={() => setState('failed')}
+        onLoad={() => { setState('loaded'); onLoad?.(); }}
+        onError={(event) => { setState('failed'); onError?.(event); }}
       />
-      {state === 'loaded' && controlEnabled(controls, 'image', 'download') && capabilities.files ? <ActionButton
+      {(state === 'loaded' || Boolean(width && height)) && controlEnabled(controls, 'image', 'download') && capabilities.files ? <ActionButton
         label={translations.downloadImage}
         icon={icons?.download ?? defaultIcons.download}
         disabled={disabled}

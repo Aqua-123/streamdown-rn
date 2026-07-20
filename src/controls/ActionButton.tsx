@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import type { CapabilityResult } from '../platform/capabilities';
 import { failedCapability } from '../platform/capabilities';
@@ -10,6 +10,8 @@ export interface ActionButtonProps {
   onAction: () => Promise<CapabilityResult> | CapabilityResult;
   onResult?: (result: CapabilityResult) => void;
   buttonRef?: React.Ref<View>;
+  successMessage?: string;
+  resetAfterMs?: number;
 }
 
 function resultMessage(result: CapabilityResult): string | null {
@@ -19,9 +21,11 @@ function resultMessage(result: CapabilityResult): string | null {
   } as const)[result.status];
 }
 
-export function ActionButton({ label, icon, disabled, onAction, onResult, buttonRef }: ActionButtonProps) {
+export function ActionButton({ label, icon, disabled, onAction, onResult, buttonRef, successMessage, resetAfterMs = 2000 }: ActionButtonProps) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (resetTimer.current) clearTimeout(resetTimer.current); }, []);
   const press = async () => {
     if (busy || disabled) return;
     setBusy(true);
@@ -32,7 +36,10 @@ export function ActionButton({ label, icon, disabled, onAction, onResult, button
       result = 'then' in Object(value) ? await value : value as CapabilityResult;
     } catch (error) { result = failedCapability(error); }
     setBusy(false);
-    setMessage(resultMessage(result));
+    const nextMessage = result.status === 'success' ? successMessage ?? null : resultMessage(result);
+    setMessage(nextMessage);
+    if (resetTimer.current) clearTimeout(resetTimer.current);
+    if (nextMessage && result.status === 'success') resetTimer.current = setTimeout(() => setMessage(null), resetAfterMs);
     onResult?.(result);
   };
   const visual = icon ?? label;

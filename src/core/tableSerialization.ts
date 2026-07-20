@@ -3,6 +3,13 @@ export interface TableData {
   rows: string[][];
 }
 
+export function tableDataFromSemanticRows(rows: readonly (readonly string[])[], firstRowIsHeader = true): TableData {
+  const normalized = rows.map((row) => row.map((cell) => cell.trim()));
+  return firstRowIsHeader
+    ? { headers: normalized[0] ? [...normalized[0]] : [], rows: normalized.slice(1).map((row) => [...row]) }
+    : { headers: [], rows: normalized.map((row) => [...row]) };
+}
+
 function escapeDelimited(value: string, delimiter: string): string {
   if (!value.includes(delimiter) && !/["\n\r]/.test(value)) return value;
   return `"${value.replace(/"/g, '""')}"`;

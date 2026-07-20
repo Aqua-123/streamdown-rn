@@ -39,6 +39,21 @@ import type { HighlightResult, HighlightToken, ThemeInput } from '../plugins/cod
 
 type ComponentErrorHandler = (error: Error, componentName?: string) => void;
 const DEFAULT_CODE_THEMES: [ThemeInput, ThemeInput] = ['github-light', 'github-dark'];
+
+// Kept local so the core runtime does not load the optional renderers subpath.
+function selectCustomRenderer(
+  plugin: RendererPlugin | readonly CustomRenderer[] | undefined,
+  language: string
+): CustomRenderer | undefined {
+  const normalized = language.toLowerCase();
+  const renderers = Array.isArray(plugin)
+    ? plugin as readonly CustomRenderer[]
+    : (plugin as RendererPlugin | undefined)?.renderers;
+  return renderers?.find(({ language: candidate }) =>
+    (Array.isArray(candidate) ? candidate : [candidate])
+      .some((value) => value.toLowerCase() === normalized)
+  );
+}
 type SemanticNode = Node & {
   type: string;
   value?: string;
@@ -79,7 +94,7 @@ export interface ASTRendererProps {
 }
 
 interface RenderContext extends Omit<ASTRendererProps, 'node'> {
-  direction: 'ltr' | 'rtl';
+  direction?: 'ltr' | 'rtl';
   definitions: ReadonlyMap<string, { url?: string; title?: string | null }>;
 }
 
@@ -152,6 +167,7 @@ function elementName(node: SemanticNode): string {
     case 'tableRow': return 'tr';
     case 'tableCell': return 'td';
     case 'thematicBreak': return 'hr';
+    case 'footnoteReference': return 'sup';
     case 'break': return 'br';
     default: return node.type;
   }
@@ -170,11 +186,12 @@ function withOverride(
   context: RenderContext,
   inline: boolean,
   children: ReactNode,
-  fallback: () => ReactNode
+  fallback: () => ReactNode,
+  key?: React.Key
 ): ReactNode {
   const Override = overrideFor(node, context);
   return Override
-    ? <Override semantic={semantic(node, inline)}>{children}</Override>
+    ? <Override key={key} semantic={semantic(node, inline)}>{children}</Override>
     : fallback();
 }
 
@@ -240,12 +257,12 @@ function renderParagraph(node: SemanticNode, context: RenderContext, key?: React
     const rendered = renderInlineChildren(node, context);
     return withOverride(node, context, false, rendered, () => (
       <Text key={key} style={[styles.paragraph, { writingDirection: context.direction }]}>{rendered}</Text>
-    ));
+    ), key);
   }
   const rendered = children.map((child, index) => INLINE_NODES.has(child.type)
     ? <Text key={index} style={[styles.paragraph, { writingDirection: context.direction }]}>{renderNode(child, context, true)}</Text>
     : renderNode(child, context, false, index));
-  return withOverride(node, context, false, rendered, () => <View key={key}>{rendered}</View>);
+  return withOverride(node, context, false, rendered, () => <View key={key}>{rendered}</View>, key);
 }
 
 function renderList(node: SemanticNode, context: RenderContext, key?: React.Key): ReactNode {
@@ -261,9 +278,9 @@ function renderList(node: SemanticNode, context: RenderContext, key?: React.Key)
         <Text accessibilityRole={item.checked == null ? undefined : 'checkbox'} accessibilityLabel={item.checked == null ? undefined : textValue(item)} accessibilityState={item.checked == null ? undefined : { checked: item.checked }} style={[styles.body, { width: 44, minHeight: 44 }]}>{marker}</Text>
         <View style={{ flexShrink: 1 }}>{body}</View>
       </View>
-    ));
+    ), index);
   });
-  return withOverride(node, context, false, rows, () => <View key={key}>{rows}</View>);
+  return withOverride(node, context, false, rows, () => <View key={key}>{rows}</View>, key);
 }
 
 function renderTable(node: SemanticNode, context: RenderContext, key?: React.Key): ReactNode {
@@ -273,11 +290,11 @@ function renderTable(node: SemanticNode, context: RenderContext, key?: React.Key
       const value = renderInlineChildren(cell, context);
       return withOverride(cell, context, false, value, () => (
         <View key={cellIndex} style={{ flex: 1, padding: 8 }}><Text style={rowIndex === 0 ? styles.bold : styles.body}>{value}</Text></View>
-      ));
+      ), cellIndex);
     });
     return withOverride(row, context, false, cells, () => (
       <View key={rowIndex} style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: context.theme.colors.border }}>{cells}</View>
-    ));
+    ), rowIndex);
   });
   const table: TableData = {
     headers: (node.children?.[0]?.children ?? []).map(textValue),
@@ -286,6 +303,7 @@ function renderTable(node: SemanticNode, context: RenderContext, key?: React.Key
   return withOverride(node, context, false, rows, () => {
     const content = <View key={key} style={getBlockStyles(context.theme).table}>{rows}</View>;
     return <TableControls
+      key={key}
       table={table}
       capabilities={context.capabilities ?? resolveCapabilities()}
       controls={context.controls}
@@ -293,15 +311,16 @@ function renderTable(node: SemanticNode, context: RenderContext, key?: React.Key
       disabled={context.controlsDisabled ?? context.isStreaming}
       icons={context.icons}
     >{content}</TableControls>;
-  });
+  }, key);
 }
 
 function tokenStyle(token: HighlightToken): TextStyle {
+  const providerStyle = token.htmlStyle;
   return {
-    color: token.color,
-    backgroundColor: token.bgColor,
-    fontStyle: token.fontStyle,
-    fontWeight: token.fontWeight,
+    color: providerStyle?.color ?? token.color,
+    backgroundColor: providerStyle?.['background-color'] ?? token.bgColor,
+    fontStyle: providerStyle?.['font-style'] === 'italic' ? 'italic' : token.fontStyle,
+    fontWeight: providerStyle?.['font-weight'] === 'bold' ? 'bold' : token.fontWeight,
   };
 }
 
@@ -309,18 +328,14 @@ function plainCodeResult(code: string): HighlightResult {
   return { tokens: code.split('\n').map((line) => [{ content: line }]) };
 }
 
-function findCustomRenderer(plugin: RendererPlugin | undefined, language: string): CustomRenderer | undefined {
-  const normalized = language.toLowerCase();
-  return plugin?.renderers.find(({ language: candidate }) =>
-    (Array.isArray(candidate) ? candidate : [candidate]).some((value) => value.toLowerCase() === normalized)
-  );
-}
-
 function NativeCodeBlock({ node, context }: { node: SemanticNode; context: RenderContext }) {
   const styles = getTextStyles(context.theme);
   const blocks = getBlockStyles(context.theme);
   const code = node.value ?? '';
-  const raw = useMemo(() => plainCodeResult(code), [code]);
+  // Match Streamdown's visible-code contract: terminal newlines remain available
+  // to copy/download controls, but do not create empty rendered rows.
+  const displayCode = useMemo(() => code.replace(/\n+$/, ''), [code]);
+  const raw = useMemo(() => plainCodeResult(displayCode), [displayCode]);
   const [result, setResult] = useState<HighlightResult>(raw);
   const [loading, setLoading] = useState(false);
   const plugin = context.plugins?.code;
@@ -334,7 +349,7 @@ function NativeCodeBlock({ node, context }: { node: SemanticNode; context: Rende
     setResult(raw);
     setLoading(false);
     if (!plugin || context.codeFenceIncomplete) return () => { active = false; };
-    const highlighted = plugin.highlight({ code, language: node.lang ?? '', themes }, (next) => {
+    const highlighted = plugin.highlight({ code: displayCode, language: node.lang ?? '', themes }, (next) => {
       if (!active) return;
       setResult(next);
       setLoading(false);
@@ -342,7 +357,7 @@ function NativeCodeBlock({ node, context }: { node: SemanticNode; context: Rende
     if (highlighted) setResult(highlighted);
     else setLoading(true);
     return () => { active = false; };
-  }, [code, context.codeFenceIncomplete, node.lang, plugin, raw, themes]);
+  }, [context.codeFenceIncomplete, displayCode, node.lang, plugin, raw, themes]);
 
   const startMatch = node.meta?.match(/(?:^|\s)startLine=(\d+)(?:\s|$)/);
   const parsedStart = startMatch ? Number.parseInt(startMatch[1], 10) : 1;
@@ -350,7 +365,7 @@ function NativeCodeBlock({ node, context }: { node: SemanticNode; context: Rende
   const showLineNumbers = context.lineNumbers !== false && !/(?:^|\s)noLineNumbers(?:\s|$)/.test(node.meta ?? '');
 
   return (
-    <View style={blocks.codeBlock}>
+    <View style={[blocks.codeBlock, result.bg ? { backgroundColor: result.bg } : undefined]}>
       <CodeControls
         code={code}
         language={node.lang}
@@ -372,7 +387,7 @@ function NativeCodeBlock({ node, context }: { node: SemanticNode; context: Rende
                   {startLine + lineIndex}
                 </Text>
               ) : null}
-              <Text style={styles.code}>
+              <Text style={[styles.code, result.fg ? { color: result.fg } : undefined]}>
                 {line.length ? line.map((token, tokenIndex) => (
                   <Text key={tokenIndex} style={tokenStyle(token)}>{token.content}</Text>
                 )) : ''}
@@ -397,7 +412,7 @@ function renderNode(node: SemanticNode, context: RenderContext, inline = false, 
     case 'heading': {
       const style = styles[`heading${node.depth}` as keyof typeof styles];
       const content = renderInlineChildren(node, context);
-      return withOverride(node, context, false, content, () => <Text key={key} accessibilityRole="header" style={[style, { writingDirection: context.direction }]}>{content}</Text>);
+      return withOverride(node, context, false, content, () => <Text key={key} accessibilityRole="header" style={[style, { writingDirection: context.direction }]}>{content}</Text>, key);
     }
     case 'text':
       {
@@ -422,40 +437,40 @@ function renderNode(node: SemanticNode, context: RenderContext, inline = false, 
         )}</React.Fragment>;
       }
     case 'strong':
-      return withOverride(node, context, true, children, () => <Text key={key} style={styles.bold}>{children}</Text>);
+      return withOverride(node, context, true, children, () => <Text key={key} style={styles.bold}>{children}</Text>, key);
     case 'emphasis':
-      return withOverride(node, context, true, children, () => <Text key={key} style={styles.italic}>{children}</Text>);
+      return withOverride(node, context, true, children, () => <Text key={key} style={styles.italic}>{children}</Text>, key);
     case 'delete':
-      return withOverride(node, context, true, children, () => <Text key={key} style={styles.strikethrough}>{children}</Text>);
+      return withOverride(node, context, true, children, () => <Text key={key} style={styles.strikethrough}>{children}</Text>, key);
     case 'inlineCode':
-      return withOverride(node, context, true, node.value, () => <Text key={key} style={styles.code}>{node.value}</Text>);
+      return withOverride(node, context, true, node.value, () => <Text key={key} style={styles.code}>{node.value}</Text>, key);
     case 'inlineMath': {
       const source = node.value ?? '';
       const visual = context.plugins?.math?.render({ source, display: false, errorColor: context.theme.colors.muted });
       return withOverride(node, context, true, source, () => visual
         ? <Text key={key} accessibilityLabel={source}>{visual}</Text>
-        : <Text key={key} style={styles.code}>{source}</Text>);
+        : <Text key={key} style={styles.code}>{source}</Text>, key);
     }
     case 'math': {
       const source = node.value ?? '';
       const visual = context.plugins?.math?.render({ source, display: true, errorColor: context.theme.colors.muted });
-      return withOverride(node, context, false, source, () => <View key={key} accessibilityLabel={source}>{visual ?? <Text style={styles.code}>{source}</Text>}</View>);
+      return withOverride(node, context, false, source, () => <View key={key} accessibilityLabel={source}>{visual ?? <Text style={styles.code}>{source}</Text>}</View>, key);
     }
     case 'break':
       return '\n';
     case 'blockquote':
-      return withOverride(node, context, false, children, () => <View key={key} style={blocks.blockquote}>{children}</View>);
+      return withOverride(node, context, false, children, () => <View key={key} style={blocks.blockquote}>{children}</View>, key);
     case 'list':
       return renderList(node, context, key);
     case 'listItem':
       return children;
     case 'thematicBreak':
-      return withOverride(node, context, false, null, () => <View key={key} style={blocks.horizontalRule} />);
+      return withOverride(node, context, false, null, () => <View key={key} style={blocks.horizontalRule} />, key);
     case 'code': {
-      const custom = findCustomRenderer(context.plugins?.renderers, node.lang ?? '');
+      const custom = selectCustomRenderer(context.plugins?.renderers, node.lang ?? '');
       if (custom) {
         const Custom = custom.component;
-        return <Custom key={key} code={node.value ?? ''} language={node.lang ?? ''} isIncomplete={Boolean(context.codeFenceIncomplete)} meta={node.meta ?? undefined} />;
+        return <Custom key={key} code={node.value ?? ''} language={node.lang ?? ''} isIncomplete={Boolean(context.isStreaming && context.codeFenceIncomplete)} meta={node.meta ?? undefined} />;
       }
       if ((node.lang ?? '').toLowerCase() === 'mermaid' && context.plugins?.mermaid) {
         const Diagram = context.plugins.mermaid.component;
@@ -469,13 +484,13 @@ function renderNode(node: SemanticNode, context: RenderContext, inline = false, 
           translations={context.translations ?? defaultTranslations}
           icons={context.icons}
           disabled={context.controlsDisabled ?? context.isStreaming}
-          incomplete={Boolean(context.codeFenceIncomplete)}
+          incomplete={Boolean(context.isStreaming && context.codeFenceIncomplete)}
         />;
       }
       const content = <Text style={[styles.code, { writingDirection: context.direction }]}>{node.value ?? ''}</Text>;
       return withOverride(node, context, false, content, () => (
         <NativeCodeBlock key={key} node={node} context={context} />
-      ));
+      ), key);
     }
     case 'table':
       return renderTable(node, context, key);
@@ -484,7 +499,7 @@ function renderNode(node: SemanticNode, context: RenderContext, inline = false, 
       return children;
     case 'link':
       if (!node.url) return <Text key={key}>{renderInlineChildren(node, context)}</Text>;
-      return withOverride(node, context, true, children, () => <NativeLink key={key} url={node.url!} capabilities={context.capabilities ?? resolveCapabilities()} resourcePolicy={context.securityPolicy} translations={context.translations} style={styles.link}>{children}</NativeLink>);
+      return withOverride(node, context, true, children, () => <NativeLink key={key} url={node.url!} capabilities={context.capabilities ?? resolveCapabilities()} resourcePolicy={context.securityPolicy} translations={context.translations} style={styles.link}>{children}</NativeLink>, key);
     case 'linkReference':
       {
         const definition = node.identifier ? context.definitions.get(node.identifier) : undefined;
@@ -494,7 +509,8 @@ function renderNode(node: SemanticNode, context: RenderContext, inline = false, 
           context,
           true,
           children,
-          () => <NativeLink key={key} url={definition.url!} capabilities={context.capabilities ?? resolveCapabilities()} resourcePolicy={context.securityPolicy} translations={context.translations} style={styles.link}>{children}</NativeLink>
+          () => <NativeLink key={key} url={definition.url!} capabilities={context.capabilities ?? resolveCapabilities()} resourcePolicy={context.securityPolicy} translations={context.translations} style={styles.link}>{children}</NativeLink>,
+          key
         );
       }
     case 'image': {
@@ -502,7 +518,7 @@ function renderNode(node: SemanticNode, context: RenderContext, inline = false, 
       const safe = node.url ? sanitizeResourceURL(node.url, 'image', context.securityPolicy) : null;
       if (!safe) return node.alt ? <Text key={key} style={styles.body}>[Image: {node.alt}]</Text> : null;
       const image = <SafeImage key={safe} uri={safe} alt={node.alt ?? undefined} theme={context.theme} capabilities={context.capabilities ?? resolveCapabilities()} controls={context.controls} translations={context.translations ?? defaultTranslations} icons={context.icons} disabled={context.controlsDisabled ?? context.isStreaming} />;
-      return withOverride(node, context, false, null, () => <View key={key}>{image}</View>);
+      return withOverride(node, context, false, null, () => <View key={key}>{image}</View>, key);
     }
     case 'imageReference':
       {
@@ -517,14 +533,16 @@ function renderNode(node: SemanticNode, context: RenderContext, inline = false, 
           context,
           false,
           null,
-          () => <View key={key}><SafeImage key={safe} uri={safe} alt={node.alt ?? undefined} theme={context.theme} capabilities={context.capabilities ?? resolveCapabilities()} controls={context.controls} translations={context.translations ?? defaultTranslations} icons={context.icons} disabled={context.controlsDisabled ?? context.isStreaming} /></View>
+          () => <View key={key}><SafeImage key={safe} uri={safe} alt={node.alt ?? undefined} theme={context.theme} capabilities={context.capabilities ?? resolveCapabilities()} controls={context.controls} translations={context.translations ?? defaultTranslations} icons={context.icons} disabled={context.controlsDisabled ?? context.isStreaming} /></View>,
+          key
         );
       }
     case 'footnoteReference':
-      return withOverride(node, context, true, `[${node.identifier}]`, () => <Text key={key}>[{node.identifier}]</Text>);
+      return withOverride(node, context, true, `[${node.identifier}]`, () => <Text key={key}>[{node.identifier}]</Text>, key);
     case 'footnoteDefinition': {
+      if (!node.children?.length) return null;
       const content = <><Text style={styles.bold}>[{node.identifier}] </Text>{children}</>;
-      return withOverride(node, context, false, content, () => <View key={key} accessibilityLabel={`Footnote ${node.identifier}`}>{content}</View>);
+      return withOverride(node, context, false, content, () => <View key={key} accessibilityLabel={`Footnote ${node.identifier}`}>{content}</View>, key);
     }
     case 'definition':
       return null;
@@ -540,13 +558,13 @@ function renderNode(node: SemanticNode, context: RenderContext, inline = false, 
         if (inline) return <Text key={key}>{customChildren}</Text>;
         if (node.data?.literal) return <View key={key}><Text>{customChildren}</Text></View>;
         return <View key={key}>{customChildren}</View>;
-      });
+      }, key);
     }
     default: {
       const fallbackChildren = node.children?.length
         ? renderChildren(node, context, inline)
         : (inline ? node.value ?? null : <Text>{node.value ?? ''}</Text>);
-      return withOverride(node, context, inline, fallbackChildren, () => fallbackChildren);
+      return withOverride(node, context, inline, fallbackChildren, () => fallbackChildren, key);
     }
   }
 }
@@ -561,7 +579,9 @@ export const ASTRenderer: React.FC<ASTRendererProps> = ({ node, ...options }) =>
   const root = applySecurityPolicy(rawRoot, options.securityPolicy);
   const direction = options.dir === 'rtl' || options.dir === 'ltr'
     ? options.dir
-    : detectTextDirection(textValue(root as unknown as SemanticNode));
+    : options.dir === 'auto'
+      ? detectTextDirection(textValue(root as unknown as SemanticNode))
+      : undefined;
   const definitions = new Map<string, { url?: string; title?: string | null }>();
   for (const child of root.children as unknown as SemanticNode[]) {
     if (child.type === 'definition' && child.identifier) {

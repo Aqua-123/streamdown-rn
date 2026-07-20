@@ -90,6 +90,24 @@ describe("parity manifest validation", () => {
     expect(validateParity(inventory, implemented, { projectRoot: root, verifySource: false }).join("\n")).toContain("missing marker");
   });
 
+  it("requires every mapping marker to occur exactly once in executable source", () => {
+    const { root, inventory, manifest } = validFixture();
+    const entry = manifest.entries[0];
+    mkdirSync(join(root, "tests"), { recursive: true });
+    writeFileSync(join(root, "tests", "first.test.ts"), `// ${entry.target.marker}\n`);
+    writeFileSync(join(root, "tests", "second.test.ts"), `// ${entry.target.marker}\n`);
+    const implemented: Manifest = {
+      ...manifest,
+      entries: [{
+        ...entry,
+        status: "implemented",
+        target: { ...entry.target, path: "tests/first.test.ts" },
+      }],
+    };
+    expect(validateParity(inventory, implemented, { projectRoot: root, verifySource: false }).join("\n"))
+      .toContain("target marker must occur exactly once in executable source; found 2");
+  });
+
   it("detects a changed source hash against the pinned inventory", () => {
     const { root, inventory, manifest } = validFixture();
     writeFileSync(join(root, "packages", "streamdown", "__tests__", "sample.test.ts"), 'describe("suite", () => { it("case", () => { expect(2).toBe(2); }); });');

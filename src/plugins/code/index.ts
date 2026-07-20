@@ -6,12 +6,15 @@ export interface HighlightToken {
   bgColor?: string;
   fontStyle?: 'normal' | 'italic';
   fontWeight?: 'normal' | 'bold';
+  /** Provider styles translated only when they have a native text equivalent. */
+  htmlStyle?: Readonly<Record<string, string>>;
 }
 
 export interface HighlightResult {
   bg?: string;
   fg?: string;
   tokens: HighlightToken[][];
+  rootStyle?: string | false;
 }
 
 export interface HighlightOptions {

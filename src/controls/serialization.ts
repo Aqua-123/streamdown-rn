@@ -62,7 +62,8 @@ export function imageFileRequest(content: Uint8Array, mimeType: string, basename
   const normalized = mimeType.split(';', 1)[0].toLowerCase();
   const extension = imageTypes[normalized];
   if (!extension) throw new TypeError(`Unsupported image MIME type: ${normalized || 'unknown'}`);
-  return { basename: sanitizeBasename(basename, 'image'), extension, mimeType: normalized, content };
+  const safeBasename = sanitizeBasename(basename, 'image').replace(/\.(?:png|jpe?g|gif|webp|avif)$/i, '') || 'image';
+  return { basename: safeBasename, extension, mimeType: normalized, content };
 }
 
 const DEFAULT_MAX_IMAGE_BYTES = 10 * 1024 * 1024;

@@ -350,6 +350,8 @@ export interface StreamdownProps extends SecurityPolicyOptions {
   mode?: 'static' | 'streaming';
   dir?: 'auto' | 'ltr' | 'rtl';
   parseIncompleteMarkdown?: boolean;
+  /** Normalize 4+ space indentation before tags in an HTML-led document. */
+  normalizeHtmlIndentation?: boolean;
   /** Whether the host is currently delivering streamed content. */
   isAnimating?: boolean;
   /** Animate only content that became visible in the current append. */

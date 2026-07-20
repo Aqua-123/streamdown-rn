@@ -25,7 +25,8 @@ export interface RendererPlugin {
 export interface PluginConfig {
   cjk?: CjkPlugin;
   code?: CodeHighlighterPlugin;
-  renderers?: RendererPlugin;
+  /** Accept upstream's renderer array or the optional-subpath plugin wrapper. */
+  renderers?: RendererPlugin | readonly CustomRenderer[];
   math?: MathPlugin;
   mermaid?: DiagramPlugin;
 }
@@ -39,9 +40,15 @@ export function createRendererPlugin(renderers: readonly CustomRenderer[]): Rend
   return { name: 'renderers', type: 'custom-renderers', renderers: [...renderers] };
 }
 
-export function findCustomRenderer(plugin: RendererPlugin | undefined, language: string): CustomRenderer | undefined {
+export function findCustomRenderer(
+  plugin: RendererPlugin | readonly CustomRenderer[] | undefined,
+  language: string
+): CustomRenderer | undefined {
   const normalized = language.toLowerCase();
-  return plugin?.renderers.find(({ language: candidate }) =>
+  const renderers = Array.isArray(plugin)
+    ? plugin as readonly CustomRenderer[]
+    : (plugin as RendererPlugin | undefined)?.renderers;
+  return renderers?.find(({ language: candidate }) =>
     (Array.isArray(candidate) ? candidate : [candidate]).some((value) => value.toLowerCase() === normalized)
   );
 }

@@ -21,9 +21,19 @@ export interface SemanticParseOptions extends SemanticPluginOrder {
 }
 
 const DEFAULT_PLUGINS: PluggableList = [remarkGfm];
+const PROCESSOR_CACHE_LIMIT = 100;
 const pluginIds = new WeakMap<object, number>();
 const processors = new Map<string, ReturnType<typeof remark>>();
 let nextPluginId = 1;
+
+const HTML_BLOCK_START_PATTERN = /^[ \t]*<[\w!/?-]/;
+const HTML_LINE_INDENT_PATTERN = /(^|\n)[ \t]{4,}(?=<[\w!/?-])/g;
+
+/** Prevent indented tags in an HTML-led document from becoming code blocks. */
+export function normalizeHtmlIndentation(content: string): string {
+  if (!content || !HTML_BLOCK_START_PATTERN.test(content)) return content;
+  return content.replace(HTML_LINE_INDENT_PATTERN, '$1');
+}
 
 function valueId(value: unknown): string {
   if ((typeof value !== 'function' && typeof value !== 'object') || value === null) {
@@ -61,8 +71,17 @@ function getProcessor(order: SemanticPluginOrder): ReturnType<typeof remark> {
   if (cached) return cached;
 
   const processor = remark().use(plugins);
+  if (processors.size >= PROCESSOR_CACHE_LIMIT) {
+    const oldest = processors.keys().next().value;
+    if (oldest !== undefined) processors.delete(oldest);
+  }
   processors.set(key, processor);
   return processor;
+}
+
+/** Test-only visibility for the upstream cache-ceiling parity assertion. */
+export function getProcessorCacheSizeForTests(): number {
+  return processors.size;
 }
 
 /** Parse one complete semantic document, preserving every top-level node. */

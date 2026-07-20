@@ -25,23 +25,21 @@ export function TableControls({ table, children, capabilities, controls, transla
   const download = controlEnabled(controls, 'table', 'download');
   const expand = controlEnabled(controls, 'table', 'fullscreen');
   if (!copy && !download && !expand) return <>{children}</>;
+  const renderActions = (includeFullscreen: boolean) => <View accessibilityRole="toolbar" style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+    {copy ? <>
+      <ActionButton label={translations.copyTableAsMarkdown} icon={icons?.copy ?? defaultIcons.copy} successMessage={translations.copied} disabled={disabled} onAction={() => capabilities.clipboard?.writeText(serializeTable(table, 'markdown')) ?? { status: 'unavailable', error: new Error('Clipboard unavailable') }} />
+      <ActionButton label={translations.copyTableAsCsv} icon={icons?.copy ?? defaultIcons.copy} successMessage={translations.copied} disabled={disabled} onAction={() => capabilities.clipboard?.writeText(serializeTable(table, 'csv')) ?? { status: 'unavailable', error: new Error('Clipboard unavailable') }} />
+      <ActionButton label={translations.copyTableAsTsv} icon={icons?.copy ?? defaultIcons.copy} successMessage={translations.copied} disabled={disabled} onAction={() => capabilities.clipboard?.writeText(serializeTable(table, 'tsv')) ?? { status: 'unavailable', error: new Error('Clipboard unavailable') }} />
+    </> : null}
+    {download ? <>
+      <ActionButton label={translations.downloadTableAsCsv} icon={icons?.download ?? defaultIcons.download} disabled={disabled} onAction={() => capabilities.files?.save(tableFileRequest(table, 'csv')) ?? { status: 'unavailable', error: new Error('File saving unavailable') }} />
+      <ActionButton label={translations.downloadTableAsMarkdown} icon={icons?.download ?? defaultIcons.download} disabled={disabled} onAction={() => capabilities.files?.save(tableFileRequest(table, 'markdown')) ?? { status: 'unavailable', error: new Error('File saving unavailable') }} />
+    </> : null}
+    {expand && includeFullscreen ? <ActionButton buttonRef={opener} label={translations.viewFullscreen} icon={icons?.fullscreen ?? defaultIcons.fullscreen} disabled={disabled} onAction={() => { setFullscreen(true); return { status: 'success' }; }} /> : null}
+  </View>;
   return (
     <View>
-      <View accessibilityRole="toolbar" style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-        {copy ? <>
-          <ActionButton label={translations.copyTableAsMarkdown} icon={icons?.copy ?? defaultIcons.copy} disabled={disabled} onAction={() => capabilities.clipboard?.writeText(serializeTable(table, 'markdown')) ?? { status: 'unavailable', error: new Error('Clipboard unavailable') }} />
-          <ActionButton label={translations.copyTableAsCsv} icon={icons?.copy ?? defaultIcons.copy} disabled={disabled} onAction={() => capabilities.clipboard?.writeText(serializeTable(table, 'csv')) ?? { status: 'unavailable', error: new Error('Clipboard unavailable') }} />
-          <ActionButton label={translations.copyTableAsTsv} icon={icons?.copy ?? defaultIcons.copy} disabled={disabled} onAction={() => capabilities.clipboard?.writeText(serializeTable(table, 'tsv')) ?? { status: 'unavailable', error: new Error('Clipboard unavailable') }} />
-        </> : null}
-        {download ? <>
-          <ActionButton label={translations.downloadTableAsCsv} icon={icons?.download ?? defaultIcons.download} disabled={disabled} onAction={() => capabilities.files?.save(tableFileRequest(table, 'csv')) ?? { status: 'unavailable', error: new Error('File saving unavailable') }} />
-          <ActionButton label={translations.downloadTableAsMarkdown} icon={icons?.download ?? defaultIcons.download} disabled={disabled} onAction={() => capabilities.files?.save(tableFileRequest(table, 'markdown')) ?? { status: 'unavailable', error: new Error('File saving unavailable') }} />
-        </> : null}
-        {expand ? <ActionButton buttonRef={opener} label={translations.viewFullscreen} icon={icons?.fullscreen ?? defaultIcons.fullscreen} disabled={disabled} onAction={() => {
-          setFullscreen(true);
-          return { status: 'success' };
-        }} /> : null}
-      </View>
+      {renderActions(true)}
       {children}
       <FullscreenModal
         visible={fullscreen}
@@ -51,7 +49,7 @@ export function TableControls({ table, children, capabilities, controls, transla
         restoreTarget={opener.current}
         onClose={() => setFullscreen(false)}
         icons={icons}
-      >{children}</FullscreenModal>
+      ><View>{renderActions(false)}{children}</View></FullscreenModal>
     </View>
   );
 }

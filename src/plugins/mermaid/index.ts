@@ -1,6 +1,8 @@
 import type { ComponentType, ReactNode } from 'react';
 import { MermaidBlock, type MermaidBlockProps } from './MermaidBlock';
 
+export { mermaidFileRequest, type MermaidDownloadFormat } from './download';
+
 export type MermaidFamily = 'flowchart' | 'sequence' | 'class' | 'state' | 'er' | 'xychart' | 'unsupported' | 'invalid';
 export const BEAUTIFUL_MERMAID_FAMILIES = ['flowchart', 'state', 'sequence', 'class', 'er', 'xychart'] as const;
 export type MermaidConfig = Readonly<Record<string, unknown>>;
@@ -50,6 +52,7 @@ export interface DiagramPlugin {
   maxSourceLength: number;
   maxSvgLength: number;
   onError?: (error: Error) => void;
+  errorComponent?: ComponentType<{ error: Error; source: string; retry: () => void }>;
   component: ComponentType<MermaidBlockProps>;
 }
 
@@ -61,6 +64,7 @@ export interface MermaidPluginOptions {
   maxSvgLength?: number;
   maxRetries?: number;
   onError?: (error: Error) => void;
+  errorComponent?: ComponentType<{ error: Error; source: string; retry: () => void }>;
 }
 
 const DEFAULT_CONFIG: MermaidConfig = {
@@ -199,6 +203,7 @@ export function createMermaidPlugin(options: MermaidPluginOptions = {}): Diagram
     name: 'mermaid', type: 'diagram', language: 'mermaid', maxSourceLength, maxSvgLength,
     component: MermaidBlock,
     onError: options.onError,
+    errorComponent: options.errorComponent,
     getMermaid(next) { if (next) instance.initialize(next); return instance; },
     render,
   };

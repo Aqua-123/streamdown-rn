@@ -55,6 +55,8 @@ export type {
   DebugSnapshot,
 } from './core/types';
 
+export { normalizeHtmlIndentation } from './core/parser';
+
 export type {
   SecurityPolicyOptions,
   ResourcePolicy,
