@@ -68,15 +68,21 @@
     "dev": "tsc --watch",
     "test": "jest --runInBand",
     "test:parity": "jest --runInBand --testMatch='<rootDir>/tests/parity/**/*.test.ts?(x)'",
+    "test:device-contract": "jest --runInBand --testMatch='<rootDir>/tests/device/**/*.test.ts?(x)'",
+    "test:visual": "node tests/visual/capture.mjs",
+    "benchmark:parser": "bun benchmarks/parser.bench.ts",
+    "benchmark:streaming": "bun benchmarks/streaming.bench.ts",
+    "benchmark:host": "bun run benchmark:parser && bun run benchmark:streaming",
     "parity:refresh": "bun scripts/parity/inventory.ts --source .reference/streamdown",
     "parity:validate": "bun scripts/parity/validate.ts",
     "parity:drift": "bun scripts/parity/check-drift.ts",
     "type-check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tools.json --noEmit",
-    "pack:verify": "node tests/package/verify-pack.mjs"
+    "pack:verify": "node tests/package/verify-pack.mjs",
+    "pack:verify-optional-renderers": "node tests/package/verify-optional-renderers.mjs"
   },
   "peerDependencies": {
     "react": "^19.0.0",
-    "react-native": "^0.81.0"
+    "react-native": "^0.81.0 || ^0.85.0"
   },
   "dependencies": {
     "remark": "^15.0.1",
@@ -95,6 +101,8 @@
     "@types/react-test-renderer": "19.1.0",
     "babel-jest": "29.7.0",
     "jest": "29.7.0",
+    "pixelmatch": "7.2.0",
+    "pngjs": "7.0.0",
     "react": "19.1.0",
     "react-native": "0.81.5",
     "react-test-renderer": "19.1.0",

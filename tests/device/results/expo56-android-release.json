@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-20T22:00:00+05:30",
+  "fixture": "current-rn",
+  "stack": {
+    "expo": "56.0.16",
+    "reactNative": "0.85.3",
+    "react": "19.2.7"
+  },
+  "platform": "android",
+  "configuration": "Release",
+  "target": "Pixel_8_2 API 34 arm64 emulator, Android 14, 1080x2400 @420dpi",
+  "result": "passed",
+  "commands": {
+    "build": "./gradlew assembleRelease --no-daemon --stacktrace",
+    "install": "adb -s emulator-5554 install -r android/app/build/outputs/apk/release/app-release.apk",
+    "launch": "adb -s emulator-5554 shell am start -W -n ai.darkresearch.streamdownrn.expo56/.MainActivity"
+  },
+  "build": {
+    "tool": "Gradle assembleRelease",
+    "resultMarker": "BUILD SUCCESSFUL",
+    "apkBytes": 68027826,
+    "apkSha256": "0c6210e932cb56174967b250585c6508d59bf0bbdc1295bcb504f635f6140b03",
+    "hermesSharedLibraryPresent": true
+  },
+  "launch": {
+    "deviceId": "emulator-5554",
+    "bundleId": "ai.darkresearch.streamdownrn.expo56",
+    "reactNativeMainStarted": true,
+    "fatalJavaScriptExceptionObserved": false,
+    "processCrashObserved": false,
+    "uiautomatorAssertions": ["fixture heading", "task roles and state", "table and controls", "code", "math source", "CJK and RTL text", "diagram controls", "Native flowchart"]
+  },
+  "screenshot": {
+    "width": 1080,
+    "height": 2400,
+    "sha256": "9d116f83e7d22a6460af50b2f8f3054b25667d37c2426c9ff04bed8e22f6d80f",
+    "reviewedBaseline": false
+  },
+  "streamingCharacterization": {
+    "corpusUtf8Bytes": 10240,
+    "appendCharacters": 9470,
+    "chunkCharacters": 32,
+    "samples": 295,
+    "appendToLayoutMs": { "p50": 15.9075, "p95": 39.6105, "max": 249.7559 },
+    "instrumentation": {
+      "stableParses": 138,
+      "stableRenders": 138,
+      "activeParses": 287,
+      "activeRenders": 295,
+      "documentParses": 2,
+      "cacheEntries": 128,
+      "cacheHits": 0
+    },
+    "status": "non-reference-characterization"
+  },
+  "memoryEndSnapshotKb": {
+    "totalPss": 234246,
+    "rss": 317984,
+    "javaHeap": 17084,
+    "nativeHeap": 144216
+  },
+  "limitations": [
+    "The emulator p95 exceeds the reference Pixel 8 budget; it is not recorded as a performance pass.",
+    "No before/after memory delta was captured, so the heap-growth budget is not evaluated.",
+    "TalkBack was not manually exercised.",
+    "React Profiler callbacks are compiled out in this Release build; append-to-layout effects were used for characterization."
+  ]
+}

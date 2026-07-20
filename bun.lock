@@ -21,6 +21,8 @@
         "@types/react-test-renderer": "19.1.0",
         "babel-jest": "29.7.0",
         "jest": "29.7.0",
+        "pixelmatch": "7.2.0",
+        "pngjs": "7.0.0",
         "react": "19.1.0",
         "react-native": "0.81.5",
         "react-test-renderer": "19.1.0",
@@ -28,7 +30,7 @@
       },
       "peerDependencies": {
         "react": "^19.0.0",
-        "react-native": "^0.81.0",
+        "react-native": "^0.81.0 || ^0.85.0",
       },
     },
   },
@@ -965,7 +967,11 @@
 
     "pirates": ["pirates@4.0.7", "", {}, "sha512-TfySrs/5nm8fQJDcBDuUng3VOUKsd7S+zqvbOTiGXHfxX4wK31ard+hoNuvkicM/2YFzlpDgABOevKSsB4G/FA=="],
 
+    "pixelmatch": ["pixelmatch@7.2.0", "", { "dependencies": { "pngjs": "^7.0.0" }, "bin": { "pixelmatch": "bin/pixelmatch" } }, "sha512-xhcb4yHu9sM/G7foGzoLtXYcC0zHEaOXXjRKhGup0fw78Nf2Tkiapv4EQyMzrbcmQPsllAI7DbFY2UT7PlI9Pg=="],
+
     "pkg-dir": ["pkg-dir@4.2.0", "", { "dependencies": { "find-up": "^4.0.0" } }, "sha512-HRDzbaKjC+AOWVXxAU/x54COGeIv9eb+6CkDSQoNTt4XyWoIJvuPsXizxu/Fr23EiekbtZwmh1IcIG/l/a10GQ=="],
+
+    "pngjs": ["pngjs@7.0.0", "", {}, "sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow=="],
 
     "prettier": ["prettier@2.8.8", "", { "bin": { "prettier": "bin-prettier.js" } }, "sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q=="],
 

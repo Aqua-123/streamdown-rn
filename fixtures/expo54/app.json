@@ -1,7 +1,11 @@
 {
   "expo": {
-    "name": "streamdown-rn-fixture",
-    "slug": "streamdown-rn-fixture",
-    "version": "1.0.0"
+    "name": "streamdown-rn-expo54-fixture",
+    "slug": "streamdown-rn-expo54-fixture",
+    "scheme": "streamdown-rn-expo54",
+    "version": "1.0.0",
+    "newArchEnabled": true,
+    "ios": { "bundleIdentifier": "ai.darkresearch.streamdownrn.expo54" },
+    "android": { "package": "ai.darkresearch.streamdownrn.expo54" }
   }
 }

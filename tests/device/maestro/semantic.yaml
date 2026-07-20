@@ -1,0 +1,4 @@
+appId: ${APP_ID}
+---
+- assertVisible: "Fixture: ${EXPECTED_SCENARIO}"
+- assertVisible: "Streamdown RN"

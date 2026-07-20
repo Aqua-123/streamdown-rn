@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-20T22:30:00+05:30",
+  "environment": {
+    "host": "Apple M5, macOS 26.5.2, 16 GiB",
+    "xcode": "26.5 (17F42)",
+    "iosRuntime": "iOS 26.5 (23F77)",
+    "androidTools": "adb 37.0.0; emulator 36.5.11",
+    "androidAvd": "Pixel_8_2 API 34 arm64, Android 14, 1080x2400 @420dpi; headless boot succeeded",
+    "node": "26.0.0",
+    "bun": "1.3.14",
+    "cocoapods": "1.16.2",
+    "java": "17.0.19"
+  },
+  "sources": [
+    "https://expo.dev/changelog/sdk-56",
+    "https://expo.dev/sdk/56",
+    "https://reactnative.dev/versions"
+  ],
+  "results": [
+    {
+      "fixture": "expo54",
+      "scope": "packed Metro resolution",
+      "status": "passed",
+      "platforms": ["ios", "android"],
+      "details": "The packed tarball resolved from an isolated consumer root and bundled the full matrix fixture with plugins for both Metro platforms. Native Release installation was not exercised for this fixture."
+    },
+    {
+      "fixture": "current-rn",
+      "scope": "packed Metro resolution",
+      "status": "passed",
+      "platforms": ["ios", "android"],
+      "details": "Expo 56 / React Native 0.85 packed-consumer bundling passed from an isolated root under the release-proven ^0.81.0 || ^0.85.0 peer range."
+    },
+    {
+      "fixture": "current-rn",
+      "scope": "Release simulator launch",
+      "status": "passed",
+      "platforms": ["ios", "android"],
+      "artifacts": [
+        "tests/device/results/expo56-ios-release.json",
+        "tests/device/results/expo56-android-release.json"
+      ],
+      "details": "Packed Expo 56 / React Native 0.85 applications built in Release, installed, launched, and visibly rendered the fixture on the designated iOS and Android simulators."
+    },
+    {
+      "fixture": "current-rn",
+      "scope": "real optional renderer Metro spike",
+      "status": "passed-bundling-only",
+      "platforms": ["ios", "android"],
+      "artifacts": ["tests/device/results/expo56-optional-renderers-bundle.json"],
+      "details": "Real Shiki JavaScript-regex engine, RaTeX, beautiful-mermaid/react-native-svg, and react-native-webview adapters resolved and bundled on both Metro platforms. No runtime render or resource-budget claim is made."
+    }
+  ],
+  "blockers": [
+    "Expo 54 native Release build/install/launch remains unverified; only isolated packed Metro bundling passed.",
+    "No reviewed iOS or Android visual baseline exists yet.",
+    "No physical Pixel 8 or iPhone 15 reference device is connected for release-Hermes frame, heap, or startup profiling.",
+    "Manual VoiceOver and TalkBack hardware verification has not been performed.",
+    "Maestro and Detox are not installed; iOS automated semantic hierarchy assertions are unavailable until one approved runner is installed.",
+    "The Android emulator streaming characterization exceeded the reference-device p95 budget and is recorded as non-reference evidence, not a pass.",
+    "Real Shiki, RaTeX, beautiful-mermaid, and WebView providers passed Metro bundling only; native Release rendering and resource gates remain unverified."
+  ],
+  "status": "blocked"
+}

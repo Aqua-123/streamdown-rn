@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-20T22:40:00+05:30",
+  "fixture": "current-rn",
+  "stack": {
+    "expo": "56.0.16",
+    "reactNative": "0.85.3",
+    "react": "19.2.7"
+  },
+  "command": "bun run pack:verify-optional-renderers",
+  "platforms": ["ios", "android"],
+  "result": "passed-bundling-only",
+  "providers": [
+    { "package": "shiki", "version": "4.3.1", "integration": "createHighlighterCore with createJavaScriptRegexEngine and TypeScript grammar" },
+    { "package": "ratex-react-native", "version": "0.1.13", "integration": "createMathPlugin adapter returning RaTeXView" },
+    { "package": "beautiful-mermaid", "version": "1.1.3", "integration": "createBeautifulMermaidAdapter with renderMermaidSVG" },
+    { "package": "react-native-svg", "version": "15.15.5", "integration": "SvgXml render surface" },
+    { "package": "react-native-webview", "version": "14.0.1", "integration": "full-fidelity adapter render surface" }
+  ],
+  "assertions": [
+    "A freshly packed streamdown-rn tarball installed without a peer override.",
+    "The real-provider application exported through Metro for iOS.",
+    "The real-provider application exported through Metro for Android."
+  ],
+  "limitations": [
+    "The generated bundles were not installed or launched.",
+    "No provider output was visually or semantically asserted.",
+    "No Hermes timing, heap, startup, or bundle-size budget was evaluated.",
+    "The WebView spike proves native module resolution and Metro bundling, not the production offline asset/bridge security contract."
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "corpus": "benchmarks/corpus/mixed.md",
+  "corpusSha256": "1471041a7ddcc9fcab2110089f487beb7f7d6bd2d250e4e49993ff8bc309d30e",
+  "expandedBytes": 10240,
+  "chunkSize": 32,
+  "warmups": 5,
+  "samples": 30,
+  "referenceDevices": {
+    "android": "Pixel 8 hardware, Android 14, 60 Hz, release Hermes",
+    "ios": "iPhone 15 hardware, current supported iOS, 60 Hz, release Hermes"
+  },
+  "budgets": {
+    "androidP95AppendToCommitMs": 16.67,
+    "stableRerendersPerAppend": 0,
+    "stableRootCacheEntries": 128,
+    "droppedFramePercent": 1,
+    "heapGrowthMiB": 32,
+    "firstRenderMs": 250,
+    "coreBundleOptionalMarkerCount": 0
+  },
+  "notes": [
+    "Only same-device release-Hermes runs are comparable.",
+    "Host Node results characterize parser changes and never satisfy device budgets.",
+    "Dropped-frame and heap evidence must come from Android System Trace/Perfetto and Xcode Instruments, not Jest timers."
+  ]
+}

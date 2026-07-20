@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "pixelThreshold": 0.1,
+  "maxDifferentPixelRatio": 0.0025,
+  "cases": [
+    { "id": "core-static-light-ltr-narrow-100", "scenario": "static", "theme": "light", "direction": "ltr", "layout": "narrow", "fontScale": 1 },
+    { "id": "core-static-dark-rtl-wide-130", "scenario": "static", "theme": "dark", "direction": "rtl", "layout": "wide", "fontScale": 1.3 },
+    { "id": "core-stream-light-ltr-wide-200", "scenario": "streaming", "checkpoint": "128", "theme": "light", "direction": "ltr", "layout": "wide", "fontScale": 2 },
+    { "id": "core-stream-dark-rtl-narrow-100", "scenario": "streaming", "checkpoint": "complete", "theme": "dark", "direction": "rtl", "layout": "narrow", "fontScale": 1 },
+    { "id": "controls-light-ltr-narrow-130", "scenario": "controls", "theme": "light", "direction": "ltr", "layout": "narrow", "fontScale": 1.3 },
+    { "id": "interaction-disabled-dark-rtl-wide-200", "scenario": "interaction-disabled", "theme": "dark", "direction": "rtl", "layout": "wide", "fontScale": 2 },
+    { "id": "fullscreen-light-ltr-wide-130", "scenario": "fullscreen", "theme": "light", "direction": "ltr", "layout": "wide", "fontScale": 1.3 },
+    { "id": "fallbacks-dark-ltr-wide-100", "scenario": "fallbacks", "theme": "dark", "direction": "ltr", "layout": "wide", "fontScale": 1 },
+    { "id": "image-loading-light-ltr-narrow-100", "scenario": "image-loading", "theme": "light", "direction": "ltr", "layout": "narrow", "fontScale": 1 },
+    { "id": "image-error-dark-rtl-wide-130", "scenario": "image-error", "theme": "dark", "direction": "rtl", "layout": "wide", "fontScale": 1.3 },
+    { "id": "image-retry-light-rtl-narrow-200", "scenario": "image-retry", "theme": "light", "direction": "rtl", "layout": "narrow", "fontScale": 2 },
+    { "id": "code-supported-dark-ltr-narrow-200", "scenario": "code", "theme": "dark", "direction": "ltr", "layout": "narrow", "fontScale": 2 },
+    { "id": "code-loading-light-ltr-wide-100", "scenario": "code-loading", "theme": "light", "direction": "ltr", "layout": "wide", "fontScale": 1 },
+    { "id": "code-unsupported-dark-rtl-narrow-130", "scenario": "code-unsupported", "theme": "dark", "direction": "rtl", "layout": "narrow", "fontScale": 1.3 },
+    { "id": "code-incomplete-light-rtl-wide-200", "scenario": "code-incomplete", "theme": "light", "direction": "rtl", "layout": "wide", "fontScale": 2 },
+    { "id": "math-native-light-rtl-wide-100", "scenario": "math", "theme": "light", "direction": "rtl", "layout": "wide", "fontScale": 1 },
+    { "id": "math-loading-dark-ltr-narrow-130", "scenario": "math-loading", "theme": "dark", "direction": "ltr", "layout": "narrow", "fontScale": 1.3 },
+    { "id": "math-error-light-ltr-wide-200", "scenario": "math-error", "theme": "light", "direction": "ltr", "layout": "wide", "fontScale": 2 },
+    { "id": "math-fallback-dark-rtl-narrow-100", "scenario": "math-fallback", "theme": "dark", "direction": "rtl", "layout": "narrow", "fontScale": 1 },
+    { "id": "mermaid-native-dark-rtl-narrow-130", "scenario": "mermaid", "theme": "dark", "direction": "rtl", "layout": "narrow", "fontScale": 1.3 },
+    { "id": "mermaid-loading-light-ltr-wide-100", "scenario": "mermaid-loading", "theme": "light", "direction": "ltr", "layout": "wide", "fontScale": 1 },
+    { "id": "mermaid-error-dark-ltr-narrow-200", "scenario": "mermaid-error", "theme": "dark", "direction": "ltr", "layout": "narrow", "fontScale": 2 },
+    { "id": "mermaid-retry-light-rtl-wide-130", "scenario": "mermaid-retry", "theme": "light", "direction": "rtl", "layout": "wide", "fontScale": 1.3 },
+    { "id": "mermaid-webview-fallback-dark-rtl-narrow-100", "scenario": "mermaid-webview-fallback", "theme": "dark", "direction": "rtl", "layout": "narrow", "fontScale": 1 }
+  ]
+}

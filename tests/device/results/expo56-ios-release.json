@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-20T22:23:39+05:30",
+  "fixture": "current-rn",
+  "stack": {
+    "expo": "56.0.16",
+    "reactNative": "0.85.3",
+    "react": "19.2.7"
+  },
+  "platform": "ios",
+  "configuration": "Release",
+  "target": "iPhone 17 Pro simulator, iOS 26.5 (23F77)",
+  "result": "passed",
+  "commands": {
+    "build": "NODE_ENV=production xcodebuild -workspace streamdownrnexpo56fixture.xcworkspace -scheme streamdownrnexpo56fixture -configuration Release -sdk iphonesimulator -destination id=09BA095C-1865-4E81-8FF1-9097D69AA032 -derivedDataPath /tmp/streamdown-u10-ios-derived CODE_SIGNING_ALLOWED=NO build",
+    "install": "xcrun simctl install 09BA095C-1865-4E81-8FF1-9097D69AA032 /tmp/streamdown-u10-ios-derived/Build/Products/Release-iphonesimulator/streamdownrnexpo56fixture.app",
+    "launch": "xcrun simctl launch 09BA095C-1865-4E81-8FF1-9097D69AA032 ai.darkresearch.streamdownrn.expo56"
+  },
+  "build": {
+    "tool": "xcodebuild 26.5 (17F42)",
+    "resultMarker": "** BUILD SUCCEEDED **",
+    "destinationId": "09BA095C-1865-4E81-8FF1-9097D69AA032",
+    "codeSigningAllowed": false,
+    "executableSha256": "0d72bf0102cc048659bd89e20a8efa30657c7f796a3ca979297c211328abbc46",
+    "mainBundleBytes": 2570779,
+    "mainBundleSha256": "59bfc9269595ef060e42ef273ff03863f3be509d834677b771a68108be539bdf"
+  },
+  "launch": {
+    "bundleId": "ai.darkresearch.streamdownrn.expo56",
+    "pid": 40827,
+    "visibleFixture": ["task list", "table", "code", "math source", "CJK and RTL text", "native Mermaid flowchart"],
+    "fatalJavaScriptExceptionObserved": false,
+    "processCrashObserved": false
+  },
+  "screenshot": {
+    "width": 1206,
+    "height": 2622,
+    "sha256": "82f2848ed3e241bd14f9404f4a2e1c07b0f558e49d7f08e4cf678d3dfc3818a4",
+    "reviewedBaseline": false
+  },
+  "limitations": [
+    "Maestro and Detox were unavailable, so this run has visual render evidence but no automated iOS accessibility hierarchy assertion.",
+    "VoiceOver was not manually exercised.",
+    "This simulator run is not reference-device performance evidence.",
+    "UIKit emitted a future UIScene lifecycle requirement warning and focus-cache warnings for RCTScrollView."
+  ]
+}

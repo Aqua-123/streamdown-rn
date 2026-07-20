@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://darkresearch.ai/streamdown-rn/benchmark-result.schema.json",
+  "type": "object",
+  "required": ["schemaVersion", "runId", "timestamp", "environment", "corpus", "metrics", "status"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "runId": { "type": "string", "minLength": 1 },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "status": { "enum": ["characterization", "pass", "fail", "blocked"] },
+    "environment": {
+      "type": "object",
+      "required": ["platform", "engine", "buildType", "host"],
+      "properties": {
+        "platform": { "enum": ["node", "ios", "android"] },
+        "engine": { "type": "string" },
+        "buildType": { "enum": ["host", "debug", "release"] },
+        "host": { "type": "string" },
+        "osVersion": { "type": "string" },
+        "device": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "corpus": {
+      "type": "object",
+      "required": ["sha256", "bytes", "chunkSize"],
+      "properties": {
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "chunkSize": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "metrics": { "type": "object", "additionalProperties": { "type": "number" } },
+    "budgets": { "type": "object", "additionalProperties": { "type": "number" } },
+    "evidence": { "type": "array", "items": { "type": "string" } },
+    "blockers": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}
