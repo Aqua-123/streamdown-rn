@@ -1,5 +1,17 @@
 # streamdown-rn
 
+## Unreleased
+
+### Minor Changes
+
+- Add a pinned 1,511-case Vercel Streamdown parity ledger and executable native semantic ports.
+- Add append-aware streaming caches, suffix animation/caret lifecycle, native controls and capabilities, security policies, custom semantic renderers, and optional code/CJK/math/Mermaid entry points.
+- Add isolated packed-package and optional-provider Metro gates, device/visual/performance evidence contracts, compiled documentation examples, scheduled upstream drift reporting, and a publish stop gate.
+
+### Release status
+
+- Expo 54/RN 0.81 and Expo 56/RN 0.85 Release launches are recorded on iOS simulators and Android emulators. Publishing remains blocked while planned parity mappings, reviewed iOS/Android visual manifests, physical-device release-Hermes profiling, manual screen-reader checks, iOS automated semantics, and optional-provider runtime proof are incomplete. Run `bun run release:report` for the current evidence snapshot.
+
 ## 0.2.1
 
 ### Patch Changes

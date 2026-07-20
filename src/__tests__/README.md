@@ -1,41 +1,17 @@
-# StreamdownRN Tests
+# Test guide
 
-## Running Tests
-
-```bash
-bun test                    # Run all tests
-bun test --watch            # Watch mode
-bun test splitter.test.ts   # Run specific test file
-```
-
-## Test Structure
-
-### Unit Tests (Pure Logic)
-
-- **`splitter.test.ts`** — Block boundary detection and finalization
-- **`incomplete.test.ts`** — Tag state tracking and incomplete markdown fixing
-- **`parser.test.ts`** — Remark/GFM parsing
-- **`component-extraction.test.ts`** — Component syntax parsing
-- **`sanitize.test.ts`** — URL/prop sanitization and XSS prevention
-
-### Visual Tests (Storybook)
-
-Run Storybook for visual regression testing:
+Run the smallest gate that answers the question:
 
 ```bash
-bun run storybook
+bun run test                         # all Jest semantic/unit/device-contract suites
+bun run test:parity                  # implemented pinned mappings
+bun run test:device-contract         # evidence schema, not device execution
+bun run type-check
+bun run docs:verify
+bun run pack:verify                  # packed Expo 54 + core isolation
+bun run pack:verify-optional-renderers
 ```
 
-## Testing Philosophy
+`src/__tests__` covers core parsing, security, components, streaming invariance, and the public API. Renderer, control, streaming, and plugin tests live beside their source. `tests/parity` contains executable upstream mappings. `tests/device` and `tests/visual` distinguish recorded evidence from required-but-blocked evidence.
 
-1. **Unit test pure functions** — splitter, parser, extractors
-2. **Integration test streaming flows** — multi-block scenarios
-3. **Visual test in Storybook** — actual rendering and UX
-4. **Manual test in app** — Real AI streaming
-
-## Coverage Goals
-
-- Core logic: >90%
-- Edge cases: All documented scenarios
-- Streaming: Various token speeds and patterns
-
+Do not describe a Jest accessibility assertion as VoiceOver/TalkBack proof, a Metro export as native rendering, a simulator timing as a physical-device budget pass, or an unreviewed screenshot as a visual baseline.

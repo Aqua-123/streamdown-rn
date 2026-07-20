@@ -70,6 +70,7 @@
     "test:parity": "jest --runInBand --testMatch='<rootDir>/tests/parity/**/*.test.ts?(x)'",
     "test:device-contract": "jest --runInBand --testMatch='<rootDir>/tests/device/**/*.test.ts?(x)'",
     "test:visual": "node tests/visual/capture.mjs",
+    "docs:verify": "npm run build && node scripts/docs/verify.mjs",
     "benchmark:parser": "bun benchmarks/parser.bench.ts",
     "benchmark:streaming": "bun benchmarks/streaming.bench.ts",
     "benchmark:host": "bun run benchmark:parser && bun run benchmark:streaming",
@@ -78,7 +79,15 @@
     "parity:drift": "bun scripts/parity/check-drift.ts",
     "type-check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tools.json --noEmit",
     "pack:verify": "node tests/package/verify-pack.mjs",
-    "pack:verify-optional-renderers": "node tests/package/verify-optional-renderers.mjs"
+    "pack:verify-optional-renderers": "node tests/package/verify-optional-renderers.mjs",
+    "licenses:verify": "node scripts/release/licenses.mjs",
+    "advisories:verify": "bun audit --production",
+    "release:report": "node scripts/release/report.mjs",
+    "release:report:verify": "node scripts/release/verify-report.mjs",
+    "release:verify": "node scripts/release/verify.mjs",
+    "release:publish": "bunx changeset publish",
+    "changeset:verify": "node scripts/release/changesets.mjs",
+    "ci:hosted": "bun run type-check && bun run test --silent && bun run test:parity --silent && bun run test:device-contract --silent && bun run parity:validate && bun run parity:drift --candidate-root .reference/streamdown && bun run build && bun run docs:verify && bun run licenses:verify && bun run advisories:verify && bun run release:report:verify && bun run changeset:verify && bun run pack:verify && bun run pack:verify-optional-renderers"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -111,11 +120,27 @@
   "files": [
     "dist/",
     "README.md",
+    "ARCHITECTURE.md",
     "CHANGELOG.md",
     "LICENSE",
-    "NOTICE"
+    "NOTICE",
+    "docs/api.md",
+    "docs/plugins.md",
+    "docs/migration.md",
+    "docs/parity.md",
+    "docs/security.md",
+    "docs/accessibility.md",
+    "docs/performance.md",
+    "docs/compatibility.md",
+    "docs/visual-testing.md",
+    "docs/release.md",
+    "docs/third-party.md"
   ],
   "engines": {
     "node": ">=20.19.4"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }

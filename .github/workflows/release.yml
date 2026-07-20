@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    environment: npm
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76
+        with:
+          bun-version: 1.3.14
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: Restore the exact parity oracle
+        run: |
+          git clone https://github.com/vercel/streamdown.git .reference/streamdown
+          git -C .reference/streamdown checkout e5deed330aa4231751a106445d93d62e4716a22f
+      - name: Run hosted gates
+        run: bun run ci:hosted
+      - name: Require manual, hardware, visual, performance, and parity evidence
+        run: bun run release:verify
+      - uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba
+        with:
+          publish: bun run release:publish
+          version: bunx changeset version
+          commit: "chore: release package"
+          title: "chore: release package"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+          NPM_CONFIG_ACCESS: public

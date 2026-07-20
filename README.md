@@ -1,222 +1,65 @@
 # streamdown-rn
 
-High-performance streaming markdown renderer for React Native, optimized for AI responses.
+Streaming Markdown for React Native with a native semantic renderer, append-aware block caching, explicit security policy, and opt-in rich-renderer adapters.
 
-## Features
+This repository uses Vercel Streamdown as a pinned parity oracle, not as a claim that browser behavior is automatically native behavior. The current release gate is blocked until every planned parity case and the required device, accessibility, visual, and physical-device performance evidence are complete. See [parity status](./docs/parity.md) and [release status](./docs/release.md).
 
-- **Streaming-first** — Renders markdown as it arrives, character by character
-- **Format-as-you-type** — Formatting appears immediately (e.g., `**bo` shows as **bo**)
-- **Progressive components** — Custom components stream with skeleton placeholders
-- **Block-level memoization** — Stable blocks never re-render
-- **Full GFM support** — Tables, strikethrough, task lists via remark-gfm
-- **Syntax highlighting** — Prism-based code highlighting
-
-## Installation
+## Install
 
 ```bash
 npm install streamdown-rn
-# or
-bun add streamdown-rn
 ```
 
-### Peer Dependencies
+Required peers are React 19 and React Native `^0.81.0 || ^0.85.0`. Code highlighting, native math, native Mermaid SVG, and full-fidelity WebView rendering are optional host integrations; they are not bundled into the core entry.
 
-```json
-{
-  "react": "^19.0.0",
-  "react-native": "^0.81.0"
-}
-```
+## Use
 
-## Basic Usage
+```tsx verify
+import React from 'react';
+import { Streamdown } from 'streamdown-rn';
 
-```tsx
-import { StreamdownRN } from 'streamdown-rn';
-
-function ChatMessage({ content }: { content: string }) {
+export function Message({ markdown, done }: { markdown: string; done: boolean }) {
   return (
-    <StreamdownRN theme="dark">
-      {content}
-    </StreamdownRN>
+    <Streamdown mode="streaming" isAnimating={!done} isComplete={done} theme="dark">
+      {markdown}
+    </Streamdown>
   );
 }
 ```
 
-## Custom Components
+`StreamdownRN` and the default export are aliases of `Streamdown`. Static content should use `mode="static"`.
 
-Inject custom React Native components using the `[{c:"Name",p:{...}}]` syntax:
+## What is included
 
-```tsx
-import { StreamdownRN, type ComponentRegistry, type ComponentDefinition } from 'streamdown-rn';
+- CommonMark/GFM semantic rendering, incomplete-stream repair, stable block caching, direction detection, footnotes, tables, task lists, links, and images.
+- Capability-backed clipboard, file, share, link approval, focus, announcement, and gesture actions. Unavailable native capabilities fail visibly instead of silently.
+- Custom native semantic components and the existing `[{c:"Name",p:{...}}]` component registry syntax.
+- Separate `code`, `cjk`, `renderers`, `math`, `mermaid`, and `mermaid/webview` entry points. Core Metro bundles are tested for optional-renderer isolation.
 
-// Define your component
-const StatusCard = ({ title, status }) => (
-  <View style={styles.card}>
-    <Text>{title}</Text>
-    <Text>{status}</Text>
-  </View>
-);
+## Documentation
 
-// Create a registry
-const registry: ComponentRegistry = {
-  get: (name) => definitions[name],
-  has: (name) => !!definitions[name],
-  validate: () => ({ valid: true, errors: [] }),
-};
+- [API](./docs/api.md)
+- [Plugins and optional native providers](./docs/plugins.md)
+- [Migration from web Streamdown and older streamdown-rn](./docs/migration.md)
+- [Parity methodology](./docs/parity.md)
+- [Security boundaries](./docs/security.md)
+- [Accessibility](./docs/accessibility.md)
+- [Performance protocol](./docs/performance.md)
+- [Compatibility](./docs/compatibility.md)
+- [Visual testing](./docs/visual-testing.md)
+- [Release gates](./docs/release.md)
+- [Architecture](./ARCHITECTURE.md)
 
-const definitions: Record<string, ComponentDefinition> = {
-  StatusCard: {
-    component: StatusCard,
-    skeletonComponent: StatusCardSkeleton, // Optional: shown while streaming
-  },
-};
+## Verify
 
-// Use it
-<StreamdownRN componentRegistry={registry}>
-  {`Here's a status card:
-  
-[{c:"StatusCard",p:{"title":"Build Status","status":"passing"}}]
-
-More text below.`}
-</StreamdownRN>
+```bash
+bun install --frozen-lockfile
+bun run ci:hosted
+bun run release:report
 ```
 
-### Component Syntax
+`ci:hosted` proves the source, semantic tests, pinned ledger, documentation examples, direct runtime licenses, packed exports, and core bundle isolation. It does not substitute for the manual/hardware gates. `bun run release:verify` intentionally exits non-zero while those gates remain blocked.
 
-Components use a compact JSON syntax:
+## License and attribution
 
-```
-[{c:"ComponentName",p:{"prop1":"value","prop2":123}}]
-```
-
-- `c` — Component name (must exist in registry)
-- `p` — Props object (JSON)
-
-### Progressive Prop Streaming
-
-Components render progressively as props stream in. Define a `skeletonComponent` to show placeholders for missing props:
-
-```tsx
-const StatusCardSkeleton = ({ title, status }) => (
-  <View style={styles.card}>
-    {title ? <Text>{title}</Text> : <SkeletonText width={100} />}
-    {status ? <Text>{status}</Text> : <SkeletonText width={60} />}
-  </View>
-);
-```
-
-## Skeleton Primitives
-
-Build skeleton components using provided primitives:
-
-```tsx
-import { Skeleton, SkeletonText, SkeletonCircle, SkeletonNumber } from 'streamdown-rn';
-
-// Basic rectangle
-<Skeleton width={100} height={20} />
-
-// Text placeholder (single or multi-line)
-<SkeletonText width={200} lines={3} gap={6} />
-
-// Circle (for avatars)
-<SkeletonCircle size={40} />
-
-// Number placeholder
-<SkeletonNumber width={50} />
-```
-
-## Theming
-
-```tsx
-<StreamdownRN theme="dark">  {/* or "light" */}
-  {content}
-</StreamdownRN>
-```
-
-## Debugging
-
-Enable debug callbacks to inspect the streaming state:
-
-```tsx
-<StreamdownRN
-  onDebug={(snapshot) => {
-    console.log('Blocks:', snapshot.registry.stableBlockCount);
-    console.log('Active:', snapshot.registry.activeBlock?.type);
-  }}
-  isComplete={streamingDone}
->
-  {content}
-</StreamdownRN>
-```
-
-## API Reference
-
-### StreamdownRN Props
-
-| Prop | Type | Description |
-|------|------|-------------|
-| `children` | `string` | Markdown content to render |
-| `componentRegistry` | `ComponentRegistry` | Custom component definitions |
-| `theme` | `'dark' \| 'light'` | Color theme (default: `'dark'`) |
-| `onDebug` | `(snapshot: DebugSnapshot) => void` | Debug callback |
-| `onError` | `(error: Error) => void` | Error handler |
-| `isComplete` | `boolean` | Set `true` when streaming finishes |
-
-## Security
-
-streamdown-rn includes built-in protection against XSS attacks:
-
-### URL Sanitization
-
-All URLs in markdown links, images, and component props are automatically sanitized using an **allowlist approach**. Only these protocols are permitted:
-
-- `http:`, `https:` — Web URLs
-- `mailto:` — Email links
-- `tel:`, `sms:` — Phone links
-- Relative URLs (`/path`, `#anchor`, `./file`)
-
-**Blocked protocols** (examples):
-- `javascript:` — Script execution
-- `data:` — Inline data (can contain scripts)
-- `vbscript:` — Legacy script execution
-- `file:` — Local file access
-
-### Component Props
-
-Component props from the `[{c:"Name",p:{...}}]` syntax are sanitized recursively. Any URL-like string values are checked against the allowlist.
-
-```tsx
-// This malicious input:
-[{c:"Card",p:{"url":"javascript:alert(1)"}}]
-
-// Results in sanitized props:
-{ url: '' }  // Dangerous URL replaced with empty string
-```
-
-### HTML in Markdown
-
-Raw HTML in markdown (e.g., `<script>alert(1)</script>`) is rendered as **plain text**, not executed. We never use `dangerouslySetInnerHTML`.
-
-### Using Sanitization Utilities
-
-You can use the sanitization functions directly if needed:
-
-```tsx
-import { sanitizeURL, sanitizeProps } from 'streamdown-rn';
-
-// Sanitize a single URL
-sanitizeURL('javascript:alert(1)');  // null
-sanitizeURL('https://example.com');  // 'https://example.com'
-
-// Sanitize an object with URL props
-sanitizeProps({ href: 'javascript:evil()', title: 'Safe' });
-// { href: '', title: 'Safe' }
-```
-
-## Architecture
-
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed implementation notes.
-
-## License
-
-Apache-2.0. The source repository's parity oracle inventories the Apache-2.0-licensed Vercel Streamdown test suites at the exact commit documented in `parity/upstream.json`; see `NOTICE` for attribution and `parity/README.md` for reproducible refresh and validation commands.
+Apache-2.0. The parity inventory derives test names and layout from Vercel Streamdown at the exact SHA in `parity/upstream.json`; the upstream source snapshot is not published in this package. See [NOTICE](./NOTICE) and [third-party notices](./docs/third-party.md).
