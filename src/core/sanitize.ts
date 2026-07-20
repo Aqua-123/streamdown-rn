@@ -18,13 +18,11 @@
  * Protocols that are safe to allow.
  * Everything else is blocked.
  */
-const ALLOWED_PROTOCOLS = new Set([
-  'http:',
-  'https:',
-  'mailto:',
-  'tel:',
-  'sms:',
-]);
+import {
+  sanitizeResourceURL,
+  type ResourcePolicy,
+  type ResourceSink,
+} from './security';
 
 // ============================================================================
 // URL Sanitization
@@ -39,43 +37,11 @@ const ALLOWED_PROTOCOLS = new Set([
  * @example
  * sanitizeURL('https://example.com')     // 'https://example.com'
  * sanitizeURL('javascript:alert(1)')     // null
- * sanitizeURL('/relative/path')          // '/relative/path'
+ * sanitizeURL('/relative/path')          // null (until a host resolver is supplied)
  * sanitizeURL('data:text/html,...')      // null
  */
-export function sanitizeURL(url: string): string | null {
-  if (!url || typeof url !== 'string') {
-    return null;
-  }
-  
-  const trimmed = url.trim();
-  
-  if (trimmed.length === 0) {
-    return null;
-  }
-  
-  // Allow relative URLs - they're safe
-  if (trimmed.startsWith('/') || trimmed.startsWith('#') || trimmed.startsWith('./') || trimmed.startsWith('../')) {
-    return url;
-  }
-  
-  // Parse and check protocol
-  try {
-    const parsed = new URL(trimmed);
-    
-    if (ALLOWED_PROTOCOLS.has(parsed.protocol)) {
-      return url;
-    }
-    
-    // Protocol not in allowlist - block it
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn(`[streamdown-rn] Blocked URL with disallowed protocol: ${parsed.protocol}`);
-    }
-    return null;
-  } catch {
-    // Invalid URL - could be a protocol-relative URL or malformed
-    // Be conservative and block it
-    return null;
-  }
+export function sanitizeURL(url: string, policy: ResourcePolicy = {}): string | null {
+  return sanitizeResourceURL(url, 'link', policy);
 }
 
 // ============================================================================
@@ -87,8 +53,17 @@ export function sanitizeURL(url: string): string | null {
  * Only strings that look like URLs need sanitization.
  */
 function looksLikeURL(value: string): boolean {
-  // Match strings that start with a protocol-like pattern: word followed by colon
-  return /^[a-z][a-z0-9+.-]*:/i.test(value);
+  return /^(?:[a-z][a-z0-9+.-]*:|%[\da-f]{2})/i.test(value);
+}
+
+function sinkForKey(key: string): ResourceSink {
+  return /^(?:src|srcset|source|uri|images?|imageurl|thumbnails?|avatars?)$/i.test(key)
+    ? 'image'
+    : 'link';
+}
+
+function isResourceKey(key: string): boolean {
+  return /(?:url|href|link|src|uri|source|image|avatar|thumbnail)s?$/i.test(key);
 }
 
 /**
@@ -104,14 +79,17 @@ function looksLikeURL(value: string): boolean {
  * sanitizeProps({ url: 'javascript:alert(1)', title: 'Safe' })
  * // { url: '', title: 'Safe' }
  */
-export function sanitizeProps(props: Record<string, unknown>): Record<string, unknown> {
+export function sanitizeProps(
+  props: Record<string, unknown>,
+  policy: ResourcePolicy = {}
+): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   
   for (const [key, value] of Object.entries(props)) {
+    if (key === '__proto__' || key === 'prototype' || key === 'constructor') continue;
     if (typeof value === 'string') {
-      // Only check strings that look like URLs
-      if (looksLikeURL(value)) {
-        const safeUrl = sanitizeURL(value);
+      if (looksLikeURL(value) || isResourceKey(key)) {
+        const safeUrl = sanitizeResourceURL(value, sinkForKey(key), policy);
         result[key] = safeUrl ?? '';
       } else {
         result[key] = value;
@@ -120,16 +98,16 @@ export function sanitizeProps(props: Record<string, unknown>): Record<string, un
       // Recursively sanitize arrays
       result[key] = value.map(item => {
         if (typeof item === 'object' && item !== null) {
-          return sanitizeProps(item as Record<string, unknown>);
+          return sanitizeProps(item as Record<string, unknown>, policy);
         }
-        if (typeof item === 'string' && looksLikeURL(item)) {
-          return sanitizeURL(item) ?? '';
+        if (typeof item === 'string' && (looksLikeURL(item) || isResourceKey(key))) {
+          return sanitizeResourceURL(item, sinkForKey(key), policy) ?? '';
         }
         return item;
       });
     } else if (typeof value === 'object' && value !== null) {
       // Recursively sanitize nested objects
-      result[key] = sanitizeProps(value as Record<string, unknown>);
+      result[key] = sanitizeProps(value as Record<string, unknown>, policy);
     } else {
       // Preserve primitives (numbers, booleans, null)
       result[key] = value;
@@ -138,4 +116,3 @@ export function sanitizeProps(props: Record<string, unknown>): Record<string, un
   
   return result;
 }
-

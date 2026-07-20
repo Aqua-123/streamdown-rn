@@ -9807,27 +9807,27 @@
     {
       "upstreamId": "4834ac6a610744598ba9c2bb26ac7d1e44ce23f9b4b79fd9092d0d444572f0ff",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/final-coverage.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown raw node handling > should handle raw HTML node with skipHtml=true (lines 241-244, 309-310)” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown raw node handling > should handle raw HTML node with skipHtml=true (lines 241-244, 309-310)”.",
         "marker": "parity:4834ac6a610744598ba9c2bb26ac7d1e44ce23f9b4b79fd9092d0d444572f0ff"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/final-coverage.test.tsx:217 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "ee1aa0c6b05c9060a8bc228c97c211f4d6c40e7a7dffb51566353da7b270d4c5",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/final-coverage.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown raw node handling > should convert raw HTML to text when skipHtml=false and urlTransform present” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown raw node handling > should convert raw HTML to text when skipHtml=false and urlTransform present”.",
         "marker": "parity:ee1aa0c6b05c9060a8bc228c97c211f4d6c40e7a7dffb51566353da7b270d4c5"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/final-coverage.test.tsx:232 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
@@ -11692,105 +11692,105 @@
     {
       "upstreamId": "8712cedad0f0edc19c0be9d2f706920fd11c2a2364d5b77abeb46bedd5063b6c",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown-filtering.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown post-processing > defaultUrlTransform > should pass through URLs unchanged” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown post-processing > defaultUrlTransform > should pass through URLs unchanged”.",
         "marker": "parity:8712cedad0f0edc19c0be9d2f706920fd11c2a2364d5b77abeb46bedd5063b6c"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown-filtering.test.ts:7 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "d11b96cd4f1ac6cf2d966e7d078e2ebdcd6262d095bc009d7e041a01a97ccc7d",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown-filtering.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown post-processing > urlTransform > should transform URLs when urlTransform is provided” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown post-processing > urlTransform > should transform URLs when urlTransform is provided”.",
         "marker": "parity:d11b96cd4f1ac6cf2d966e7d078e2ebdcd6262d095bc009d7e041a01a97ccc7d"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown-filtering.test.ts:15 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "e7200eec7d2d2bf6829be65b4acd982929e954a1436295bb76cc61926ecc8a04",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown-filtering.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown post-processing > urlTransform > should remove URL when transform returns null” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown post-processing > urlTransform > should remove URL when transform returns null”.",
         "marker": "parity:e7200eec7d2d2bf6829be65b4acd982929e954a1436295bb76cc61926ecc8a04"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown-filtering.test.ts:30 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "b4ab76743f91569ad4b2422de2a4fa12910ae5d43a1ee0f2c500f27aeafb7538",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown-filtering.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown post-processing > allowedElements > should only render allowed elements” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown post-processing > allowedElements > should only render allowed elements”.",
         "marker": "parity:b4ab76743f91569ad4b2422de2a4fa12910ae5d43a1ee0f2c500f27aeafb7538"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown-filtering.test.ts:46 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "3f6e8325ce477ab869b773bd7f0c10d45fe66e923148c3679b1d90a547d39312",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown-filtering.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown post-processing > disallowedElements > should remove disallowed elements” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown post-processing > disallowedElements > should remove disallowed elements”.",
         "marker": "parity:3f6e8325ce477ab869b773bd7f0c10d45fe66e923148c3679b1d90a547d39312"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown-filtering.test.ts:60 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "4d6a1822bfdb5f2e43efe49a0aa075f883cd60035f6ab5236ce028d66f9c67ec",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown-filtering.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown post-processing > allowElement > should filter elements with custom function” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown post-processing > allowElement > should filter elements with custom function”.",
         "marker": "parity:4d6a1822bfdb5f2e43efe49a0aa075f883cd60035f6ab5236ce028d66f9c67ec"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown-filtering.test.ts:73 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "732dd03faf508792309dbc4a775f62bf5cb2c942e636734cf44912d6ccc65954",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown-filtering.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown post-processing > unwrapDisallowed > should unwrap disallowed elements, keeping children” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown post-processing > unwrapDisallowed > should unwrap disallowed elements, keeping children”.",
         "marker": "parity:732dd03faf508792309dbc4a775f62bf5cb2c942e636734cf44912d6ccc65954"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown-filtering.test.ts:89 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "5285ea900af18f1772839b4a190e857253a781d91ed3f76be57ed6ad8ef376e4",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown-filtering.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown post-processing > skipHtml > should skip raw HTML nodes when skipHtml is true” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown post-processing > skipHtml > should skip raw HTML nodes when skipHtml is true”.",
         "marker": "parity:5285ea900af18f1772839b4a190e857253a781d91ed3f76be57ed6ad8ef376e4"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown-filtering.test.ts:104 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
@@ -12628,157 +12628,157 @@
     {
       "upstreamId": "5c0f888c8df228b845a5c38b0d3521f30b5918dbd5ecd0c0b7e8a9c794751fb8",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > allowedElements > should only render allowed elements” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown Component > allowedElements > should only render allowed elements”.",
         "marker": "parity:5c0f888c8df228b845a5c38b0d3521f30b5918dbd5ecd0c0b7e8a9c794751fb8"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown.test.tsx:800 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "4a39929860942069d5dd83ae9614a6894ce60b7f358600f8ffc14d9a96f08738",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > allowedElements > should drop children of disallowed elements by default” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown Component > allowedElements > should drop children of disallowed elements by default”.",
         "marker": "parity:4a39929860942069d5dd83ae9614a6894ce60b7f358600f8ffc14d9a96f08738"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown.test.tsx:810 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "584155fda48f71869bcb2aa34e37ef2c98181791abf530d5f3060fa7b565a02f",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > disallowedElements > should remove disallowed elements” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown Component > disallowedElements > should remove disallowed elements”.",
         "marker": "parity:584155fda48f71869bcb2aa34e37ef2c98181791abf530d5f3060fa7b565a02f"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown.test.tsx:821 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "796e08d59a51630ff15a4e498353835e673fe6cc7f75c02e39625e6d6719b55e",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > disallowedElements > should keep everything except disallowed” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown Component > disallowedElements > should keep everything except disallowed”.",
         "marker": "parity:796e08d59a51630ff15a4e498353835e673fe6cc7f75c02e39625e6d6719b55e"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown.test.tsx:830 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "a5c8b18c31f025f114edb35203e66cdc2fcc911e8c4f1d28affe72861a008147",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > allowElement > should filter elements with a callback” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown Component > allowElement > should filter elements with a callback”.",
         "marker": "parity:a5c8b18c31f025f114edb35203e66cdc2fcc911e8c4f1d28affe72861a008147"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown.test.tsx:841 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "024b2f5e15e5d1f9a22498a5a7bfb775e976808e0c125d1e5ebbed02be0717af",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > allowElement > should work alongside allowedElements” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown Component > allowElement > should work alongside allowedElements”.",
         "marker": "parity:024b2f5e15e5d1f9a22498a5a7bfb775e976808e0c125d1e5ebbed02be0717af"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown.test.tsx:853 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "7436774b5d4f97a27df1071b053d93dd51b190c6d355dd9367d23de3bac501b9",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > unwrapDisallowed > should unwrap disallowed elements keeping children” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown Component > unwrapDisallowed > should unwrap disallowed elements keeping children”.",
         "marker": "parity:7436774b5d4f97a27df1071b053d93dd51b190c6d355dd9367d23de3bac501b9"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown.test.tsx:869 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "32470d0f031aa7e4cc4d96dfaeae9ac9d4e47d6bc727c1d7bedfa954e1def0e0",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > unwrapDisallowed > should unwrap with allowedElements” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown Component > unwrapDisallowed > should unwrap with allowedElements”.",
         "marker": "parity:32470d0f031aa7e4cc4d96dfaeae9ac9d4e47d6bc727c1d7bedfa954e1def0e0"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown.test.tsx:882 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "579e34f8f1b80fd33a38961b0c0a88d15d0251876e2ea998f403afe8ebc1606e",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > skipHtml > should strip raw HTML when skipHtml is true” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown Component > skipHtml > should strip raw HTML when skipHtml is true”.",
         "marker": "parity:579e34f8f1b80fd33a38961b0c0a88d15d0251876e2ea998f403afe8ebc1606e"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown.test.tsx:898 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "9213509db254505de3ae9e2d6f18a8987b025c1f4723523b7789c6726987c1fa",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > urlTransform > should transform URLs via urlTransform callback” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown Component > urlTransform > should transform URLs via urlTransform callback”.",
         "marker": "parity:9213509db254505de3ae9e2d6f18a8987b025c1f4723523b7789c6726987c1fa"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown.test.tsx:909 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "2af3c1dd881aca14823264f2b88b22296ac0bdbf2ec7142a54e0500956995a14",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > urlTransform > should remove URLs when urlTransform returns empty string” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown Component > urlTransform > should remove URLs when urlTransform returns empty string”.",
         "marker": "parity:2af3c1dd881aca14823264f2b88b22296ac0bdbf2ec7142a54e0500956995a14"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown.test.tsx:921 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "f465da020e812aee6cd07f35289f3d44d254f647ddd9cd1534011d111ecba083",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/markdown.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown Component > defaultUrlTransform > should pass through URLs unchanged” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown Component > defaultUrlTransform > should pass through URLs unchanged”.",
         "marker": "parity:f465da020e812aee6cd07f35289f3d44d254f647ddd9cd1534011d111ecba083"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/markdown.test.tsx:932 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
@@ -15488,40 +15488,40 @@
     {
       "upstreamId": "071f3188fcf930d8f61f6bb66de04a71f2468dacc15312eb3df589d8b3cfcef8",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/remaining-coverage.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown skipHtml and raw node handling > should handle raw HTML with skipHtml=true” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown skipHtml and raw node handling > should handle raw HTML with skipHtml=true”.",
         "marker": "parity:071f3188fcf930d8f61f6bb66de04a71f2468dacc15312eb3df589d8b3cfcef8"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/remaining-coverage.test.tsx:162 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "db179a70d70ade9b8327076acd8ac4ba6acf0cd2f76825981e203541025ae0db",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/remaining-coverage.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown skipHtml and raw node handling > should handle raw HTML with urlTransform and skipHtml=false” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown skipHtml and raw node handling > should handle raw HTML with urlTransform and skipHtml=false”.",
         "marker": "parity:db179a70d70ade9b8327076acd8ac4ba6acf0cd2f76825981e203541025ae0db"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/remaining-coverage.test.tsx:175 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "b0ef11be7fe9e0d4324724b393cc3b6212213fe0eee5ce377e5e0825a3669991",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/remaining-coverage.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Markdown skipHtml and raw node handling > should handle urlTransform with allowedElements together” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Markdown skipHtml and raw node handling > should handle urlTransform with allowedElements together”.",
         "marker": "parity:b0ef11be7fe9e0d4324724b393cc3b6212213fe0eee5ce377e5e0825a3669991"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/remaining-coverage.test.tsx:186 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
@@ -17672,40 +17672,40 @@
     {
       "upstreamId": "ce8f387da5f25b7daa80307dfa0f44d3bb29136606c6711d4e05673c7d154dfa",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/tel-links.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Tel Links (#373) > should render tel: links” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Tel Links (#373) > should render tel: links”.",
         "marker": "parity:ce8f387da5f25b7daa80307dfa0f44d3bb29136606c6711d4e05673c7d154dfa"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/tel-links.test.tsx:9 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "35b10185236afb89d392aa216a46728f098cc80f8afdb8a8677f25f02f7ef8a0",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/tel-links.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Tel Links (#373) > should render tel: links alongside mailto: and http: links” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Tel Links (#373) > should render tel: links alongside mailto: and http: links”.",
         "marker": "parity:35b10185236afb89d392aa216a46728f098cc80f8afdb8a8677f25f02f7ef8a0"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/tel-links.test.tsx:22 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {
       "upstreamId": "aef48a6a20badb9ba70248a7cad408ad787cba34d1371171aa49e26d2829755c",
       "classification": "adapted",
-      "status": "planned",
+      "status": "implemented",
       "target": {
-        "path": "tests/parity/ports/streamdown/tel-links.test.test.ts",
-        "assertion": "Assert the React Native semantic equivalent of upstream case “Tel Links (#373) > should render tel: links with international format” without relying on DOM output.",
+        "path": "tests/parity/ports/streamdown/security-policy.test.ts",
+        "assertion": "Assert the native semantic security equivalent of upstream case “Tel Links (#373) > should render tel: links with international format”.",
         "marker": "parity:aef48a6a20badb9ba70248a7cad408ad787cba34d1371171aa49e26d2829755c"
       },
       "evidence": {
-        "adaptation": "Upstream streamdown case packages/streamdown/__tests__/tel-links.test.tsx:35 exercises web-facing behavior; the planned target asserts its platform-neutral contract through native semantics."
+        "adaptation": "The pinned DOM assertion is replaced by a pure MDAST/native-sink assertion; transformed URLs are revalidated, raw HTML remains inert, and no browser activation primitive is used."
       }
     },
     {

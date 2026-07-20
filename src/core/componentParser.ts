@@ -6,6 +6,7 @@
  */
 
 import { sanitizeProps } from './sanitize';
+import type { ResourcePolicy } from './security';
 
 // ============================================================================
 // Types
@@ -130,16 +131,19 @@ export function tryParseIncompleteJSON(json: string): unknown | null {
  * Recursively extract children from nested component arrays (complete JSON).
  * Props are sanitized to prevent XSS via malicious URLs.
  */
-export function extractChildrenRecursive(children: unknown[]): ComponentData[] {
+export function extractChildrenRecursive(
+  children: unknown[],
+  policy: ResourcePolicy = {}
+): ComponentData[] {
   return children
     .filter((child): child is { c: string; p?: Record<string, unknown>; style?: Record<string, unknown>; children?: unknown[] } => 
       typeof child === 'object' && child !== null && 'c' in child
     )
     .map(child => ({
       name: child.c,
-      props: sanitizeProps(child.p ?? {}),
-      style: child.style,
-      children: child.children ? extractChildrenRecursive(child.children) : undefined,
+      props: sanitizeProps(child.p ?? {}, policy),
+      style: child.style ? sanitizeProps(child.style, policy) : undefined,
+      children: child.children ? extractChildrenRecursive(child.children, policy) : undefined,
     }));
 }
 
@@ -164,7 +168,10 @@ function findBalancedClose(content: string, openChar: string, closeChar: string)
  * Content should start at the opening { of the component.
  * Props are sanitized to prevent XSS via malicious URLs.
  */
-function extractSingleComponentData(content: string): { props: Record<string, unknown>; style?: Record<string, unknown> } {
+function extractSingleComponentData(
+  content: string,
+  policy: ResourcePolicy
+): { props: Record<string, unknown>; style?: Record<string, unknown> } {
   let props: Record<string, unknown> = {};
   let style: Record<string, unknown> | undefined;
   
@@ -207,14 +214,20 @@ function extractSingleComponentData(content: string): { props: Record<string, un
   }
   
   // Sanitize props to prevent XSS
-  return { props: sanitizeProps(props), style };
+  return {
+    props: sanitizeProps(props, policy),
+    style: style ? sanitizeProps(style, policy) : undefined,
+  };
 }
 
 /**
  * Extract partial children from streaming content.
  * Finds all {c:"Name" patterns and extracts available data for each.
  */
-function extractPartialChildren(childrenContent: string): ComponentData[] {
+function extractPartialChildren(
+  childrenContent: string,
+  policy: ResourcePolicy
+): ComponentData[] {
   const children: ComponentData[] = [];
   
   // Find all child component starts: {c:"Name"
@@ -235,7 +248,7 @@ function extractPartialChildren(childrenContent: string): ComponentData[] {
       : remainingContent;
     
     // Extract props and style for this child
-    const { props, style } = extractSingleComponentData(childContent);
+    const { props, style } = extractSingleComponentData(childContent, policy);
     
     // Recursively extract nested children if present
     let nestedChildren: ComponentData[] | undefined;
@@ -243,7 +256,7 @@ function extractPartialChildren(childrenContent: string): ComponentData[] {
     if (nestedChildrenMatch) {
       const nestedStart = nestedChildrenMatch.index! + nestedChildrenMatch[0].length;
       const nestedContent = childContent.slice(nestedStart);
-      nestedChildren = extractPartialChildren(nestedContent);
+      nestedChildren = extractPartialChildren(nestedContent, policy);
       if (nestedChildren.length === 0) nestedChildren = undefined;
     }
     
@@ -269,7 +282,10 @@ function extractPartialChildren(childrenContent: string): ComponentData[] {
  * Works for both complete and streaming (partial) content.
  * Props are sanitized to prevent XSS via malicious URLs.
  */
-export function extractComponentData(content: string): ComponentData {
+export function extractComponentData(
+  content: string,
+  policy: ResourcePolicy = {}
+): ComponentData {
   const nameMatch = content.match(/\[\{c:\s*"([^"]+)"/);
   if (!nameMatch) {
     return { name: '', props: {} };
@@ -294,7 +310,7 @@ export function extractComponentData(content: string): ComponentData {
       
       // Extract children if present (already sanitized in extractChildrenRecursive)
       if (Array.isArray(parsed.children)) {
-        children = extractChildrenRecursive(parsed.children);
+        children = extractChildrenRecursive(parsed.children, policy);
       }
     }
   } else {
@@ -345,12 +361,16 @@ export function extractComponentData(content: string): ComponentData {
     if (childrenMatch) {
       const childrenStart = childrenMatch.index! + childrenMatch[0].length;
       const childrenContent = componentContent.slice(childrenStart);
-      children = extractPartialChildren(childrenContent);
+      children = extractPartialChildren(childrenContent, policy);
       if (children.length === 0) children = undefined;
     }
   }
   
   // Sanitize props to prevent XSS via malicious URLs
-  return { name, props: sanitizeProps(props), style, children };
+  return {
+    name,
+    props: sanitizeProps(props, policy),
+    style: style ? sanitizeProps(style, policy) : undefined,
+    children,
+  };
 }
-

@@ -13,6 +13,7 @@ interface StableBlockProps {
   block: StableBlockType;
   theme: ThemeConfig;
   componentRegistry?: ComponentRegistry;
+  onError?: (error: Error, componentName?: string) => void;
 }
 
 /**
@@ -22,7 +23,7 @@ interface StableBlockProps {
  * The block prop is immutable — once finalized, content never changes.
  */
 export const StableBlock: React.FC<StableBlockProps> = React.memo(
-  ({ block, theme, componentRegistry }) => {
+  ({ block, theme, componentRegistry, onError }) => {
     // Component blocks don't have AST (custom syntax, not markdown)
     if (block.type === 'component') {
       return (
@@ -30,6 +31,7 @@ export const StableBlock: React.FC<StableBlockProps> = React.memo(
           block={block}
           theme={theme}
           componentRegistry={componentRegistry}
+          onError={onError}
         />
       );
     }
@@ -41,6 +43,7 @@ export const StableBlock: React.FC<StableBlockProps> = React.memo(
           node={block.ast}
           theme={theme}
           componentRegistry={componentRegistry}
+          onError={onError}
         />
       );
     }
@@ -52,7 +55,9 @@ export const StableBlock: React.FC<StableBlockProps> = React.memo(
   // Re-render if block content or theme changes
   (prev, next) =>
     prev.block.contentHash === next.block.contentHash &&
-    prev.theme === next.theme
+    prev.theme === next.theme &&
+    prev.componentRegistry === next.componentRegistry &&
+    prev.onError === next.onError
 );
 
 StableBlock.displayName = 'StableBlock';

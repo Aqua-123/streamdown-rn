@@ -11,14 +11,45 @@
  * - Syntax highlighting for code blocks
  */
 
-import React, { ReactNode, useState, useEffect } from 'react';
+import React, { ReactNode, useState, useEffect, useContext } from 'react';
 import { Text, View, ScrollView, Image, Platform } from 'react-native';
 import SyntaxHighlighter from 'react-native-syntax-highlighter';
 import type { Content, Parent, Table as TableNode, Code as CodeNode, List as ListNode, Image as ImageNode, Link as LinkNode } from 'mdast';
 import type { ThemeConfig, ComponentRegistry, StableBlock } from '../core/types';
 import { getTextStyles, getBlockStyles } from '../themes';
 import { extractComponentData, type ComponentData } from '../core/componentParser';
-import { sanitizeURL } from '../core/sanitize';
+import { sanitizeProps, sanitizeURL } from '../core/sanitize';
+import { sanitizeResourceURL } from '../core/security';
+
+type ComponentErrorHandler = (error: Error, componentName?: string) => void;
+const ComponentErrorContext = React.createContext<ComponentErrorHandler | undefined>(undefined);
+
+class RegistryErrorBoundary extends React.Component<{
+  children: ReactNode;
+  componentName: string;
+  fallback: ReactNode;
+  onError?: ComponentErrorHandler;
+}, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: Error) {
+    this.props.onError?.(error, this.props.componentName);
+  }
+
+  componentDidUpdate(previous: Readonly<{ componentName: string }>) {
+    if (this.state.failed && previous.componentName !== this.props.componentName) {
+      this.setState({ failed: false });
+    }
+  }
+
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
 
 // ============================================================================
 // Syntax Highlighting Utilities
@@ -95,6 +126,7 @@ export interface ASTRendererProps {
   componentRegistry?: ComponentRegistry;
   /** Whether this is streaming (for components) */
   isStreaming?: boolean;
+  onError?: ComponentErrorHandler;
 }
 
 /**
@@ -107,8 +139,13 @@ export const ASTRenderer: React.FC<ASTRendererProps> = ({
   theme,
   componentRegistry,
   isStreaming = false,
+  onError,
 }) => {
-  return <>{renderNode(node, theme, componentRegistry, isStreaming)}</>;
+  return (
+    <ComponentErrorContext.Provider value={onError}>
+      {renderNode(node, theme, componentRegistry, isStreaming)}
+    </ComponentErrorContext.Provider>
+  );
 };
 
 // ============================================================================
@@ -593,7 +630,7 @@ function renderImage(
   }
 
   // Sanitize URL to prevent XSS
-  const safeUrl = sanitizeURL(node.url);
+  const safeUrl = sanitizeResourceURL(node.url, 'image');
   if (!safeUrl) {
     // Dangerous URL - render alt text only as a fallback
     if (node.alt) {
@@ -658,12 +695,19 @@ function renderTextWithComponents(
     );
   }
   
-  const Component = componentDef.component;
-  
   return (
     <>
       {before}
-      <Component key={key} {...props} _isInline={true} _isStreaming={isStreaming} />
+      <ValidatedRegistryComponent
+        key={key}
+        componentName={name}
+        componentRegistry={componentRegistry}
+        componentDef={componentDef}
+        props={props}
+        isInline
+        isStreaming={isStreaming}
+        theme={theme}
+      />
       {renderTextWithComponents(after, theme, componentRegistry, isStreaming, `${key}-after`)}
     </>
   );
@@ -688,6 +732,7 @@ export interface ComponentBlockProps {
   children?: ComponentData[];
   /** Whether streaming (for active blocks) */
   isStreaming?: boolean;
+  onError?: ComponentErrorHandler;
 }
 
 /**
@@ -706,6 +751,80 @@ function renderComponentError(theme: ThemeConfig, message: string): ReactNode {
   );
 }
 
+function ValidatedRegistryComponent({
+  componentName,
+  componentRegistry,
+  componentDef,
+  props,
+  style,
+  children,
+  isStreaming,
+  isInline = false,
+  theme,
+  onError: directOnError,
+}: {
+  componentName: string;
+  componentRegistry: ComponentRegistry;
+  componentDef: NonNullable<ReturnType<ComponentRegistry['get']>>;
+  props: Record<string, unknown>;
+  style?: Record<string, unknown>;
+  children?: ReactNode;
+  isStreaming: boolean;
+  isInline?: boolean;
+  theme: ThemeConfig;
+  onError?: ComponentErrorHandler;
+}) {
+  const contextOnError = useContext(ComponentErrorContext);
+  const onError = directOnError ?? contextOnError;
+  const safeProps = sanitizeProps(props);
+  const safeStyle = style ? sanitizeProps(style) : undefined;
+  let validationError: Error | null = null;
+
+  try {
+    const result = componentRegistry.validate(componentName, safeProps);
+    if (!result.valid) {
+      validationError = new Error(
+        `Invalid props for ${componentName}: ${result.errors.join(', ')}`
+      );
+    }
+  } catch (error) {
+    validationError = error instanceof Error ? error : new Error(String(error));
+  }
+
+  useEffect(() => {
+    if (validationError) onError?.(validationError, componentName);
+  }, [componentName, onError, validationError?.message]);
+
+  const fallback = isInline
+    ? <Text style={{ color: theme.colors.muted }}>⚠️ [{componentName}]</Text>
+    : renderComponentError(theme, `⚠️ Invalid component: ${componentName}`);
+  if (validationError) return fallback;
+
+  const Component = isStreaming && componentDef.skeletonComponent
+    ? componentDef.skeletonComponent
+    : componentDef.component;
+  const rendered = (
+    <Component
+      {...safeProps}
+      {...(isInline ? { _isInline: true } : {})}
+      style={{ ...(safeProps.style as object), ...safeStyle }}
+      _isStreaming={isStreaming}
+    >
+      {children}
+    </Component>
+  );
+
+  return (
+    <RegistryErrorBoundary
+      componentName={componentName}
+      fallback={fallback}
+      onError={onError}
+    >
+      {rendered}
+    </RegistryErrorBoundary>
+  );
+}
+
 /**
  * Render a block-level custom component with skeleton and children support.
  */
@@ -719,6 +838,7 @@ export const ComponentBlock: React.FC<ComponentBlockProps> = React.memo(
     style: directStyle,
     children: directChildren,
     isStreaming = false,
+    onError,
   }) => {
     // Extract component data from block or direct props
     let componentName: string;
@@ -774,44 +894,39 @@ export const ComponentBlock: React.FC<ComponentBlockProps> = React.memo(
           style={child.style}
           children={child.children}
           isStreaming={isStreaming}
+          onError={onError}
         />
       ))
     ) : undefined;
     
-    // Merge props.style (component config) with layout style (positioning)
-    // props.style = component-specific config (e.g., Canvas gridTemplateColumns)
-    // style = layout positioning in parent (e.g., gridColumn: "span 2")
-    const mergedStyle = { ...(props.style as object), ...style };
-    
-    // When streaming, prefer skeleton component if available
-    if (isStreaming && componentDef.skeletonComponent) {
-      const SkeletonComponent = componentDef.skeletonComponent;
-      return (
-        <View style={{ marginBottom: theme.spacing.block }}>
-          <SkeletonComponent {...props} style={mergedStyle} _isStreaming={true}>
-            {renderedChildren}
-          </SkeletonComponent>
-        </View>
-      );
-    }
-    
-    // Render the main component
-    const Component = componentDef.component;
     return (
       <View style={{ marginBottom: theme.spacing.block }}>
-        <Component {...props} style={mergedStyle} _isStreaming={isStreaming}>
+        <ValidatedRegistryComponent
+          componentName={componentName}
+          componentRegistry={componentRegistry}
+          componentDef={componentDef}
+          props={props}
+          style={style}
+          isStreaming={isStreaming}
+          theme={theme}
+          onError={onError}
+        >
           {renderedChildren}
-        </Component>
+        </ValidatedRegistryComponent>
       </View>
     );
   },
   (prev, next) => {
     if (prev.block && next.block) {
-      return prev.block.contentHash === next.block.contentHash;
+      return prev.block.contentHash === next.block.contentHash &&
+        prev.componentRegistry === next.componentRegistry &&
+        prev.onError === next.onError;
     }
     return (
       prev.componentName === next.componentName &&
       prev.isStreaming === next.isStreaming &&
+      prev.componentRegistry === next.componentRegistry &&
+      prev.onError === next.onError &&
       JSON.stringify(prev.props) === JSON.stringify(next.props) &&
       JSON.stringify(prev.children) === JSON.stringify(next.children)
     );

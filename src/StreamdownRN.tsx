@@ -172,6 +172,7 @@ export const StreamdownRN: React.FC<StreamdownRNProps> = React.memo(({
           block={block}
           theme={themeConfig}
           componentRegistry={componentRegistry}
+          onError={onError}
         />
       ))}
       
@@ -181,6 +182,7 @@ export const StreamdownRN: React.FC<StreamdownRNProps> = React.memo(({
         tagState={registry.activeTagState}
         theme={themeConfig}
         componentRegistry={componentRegistry}
+        onError={onError}
       />
     </View>
   );
@@ -190,7 +192,9 @@ export const StreamdownRN: React.FC<StreamdownRNProps> = React.memo(({
   return (
     prev.children === next.children &&
     prev.theme === next.theme &&
-    prev.isComplete === next.isComplete
+    prev.isComplete === next.isComplete &&
+    prev.componentRegistry === next.componentRegistry &&
+    prev.onError === next.onError
   );
 });
 

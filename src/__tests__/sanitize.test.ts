@@ -104,19 +104,22 @@ describe('Security: URL Sanitization', () => {
   });
 
   describe('relative URLs', () => {
-    it('should allow absolute paths', () => {
-      expect(sanitizeURL('/path/to/page')).toBe('/path/to/page');
-      expect(sanitizeURL('/api/data')).toBe('/api/data');
+    it('should require a host resolver for absolute paths', () => {
+      expect(sanitizeURL('/path/to/page')).toBeNull();
+      expect(sanitizeURL('/api/data')).toBeNull();
+      expect(sanitizeURL('/docs', {
+        resolveRelativeUrl: (url) => `https://example.com${url}`,
+      })).toBe('https://example.com/docs');
     });
 
-    it('should allow hash anchors', () => {
-      expect(sanitizeURL('#section')).toBe('#section');
-      expect(sanitizeURL('#top')).toBe('#top');
+    it('should keep unresolved hash anchors inert', () => {
+      expect(sanitizeURL('#section')).toBeNull();
+      expect(sanitizeURL('#top')).toBeNull();
     });
 
-    it('should allow relative paths', () => {
-      expect(sanitizeURL('./file.html')).toBe('./file.html');
-      expect(sanitizeURL('../parent/file.html')).toBe('../parent/file.html');
+    it('should keep unresolved relative paths inert', () => {
+      expect(sanitizeURL('./file.html')).toBeNull();
+      expect(sanitizeURL('../parent/file.html')).toBeNull();
     });
   });
 
@@ -157,11 +160,11 @@ describe('Security: Prop Sanitization', () => {
       expect(safe.src).toBe('');
     });
 
-    it('should preserve safe URLs', () => {
+    it('should preserve safe absolute URLs and neutralize unresolved paths', () => {
       const props = { url: 'https://example.com', href: '/path/to/page' };
       const safe = sanitizeProps(props);
       expect(safe.url).toBe('https://example.com');
-      expect(safe.href).toBe('/path/to/page');
+      expect(safe.href).toBe('');
     });
 
     it('should preserve non-URL strings', () => {
@@ -401,4 +404,3 @@ describe('Security: HTML in Markdown (Safe by Design)', () => {
     });
   });
 });
-

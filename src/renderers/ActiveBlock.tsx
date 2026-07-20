@@ -20,6 +20,7 @@ interface ActiveBlockProps {
   tagState: IncompleteTagState;
   theme: ThemeConfig;
   componentRegistry?: ComponentRegistry;
+  onError?: (error: Error, componentName?: string) => void;
 }
 
 /**
@@ -33,6 +34,7 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
   tagState,
   theme,
   componentRegistry,
+  onError,
 }) => {
   // No active block — nothing to render
   if (!block || !block.content.trim()) {
@@ -49,6 +51,7 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
         isStreaming={true}
         theme={theme}
         componentRegistry={componentRegistry}
+        onError={onError}
       />
     );
   }
@@ -67,6 +70,7 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
         theme={theme}
         componentRegistry={componentRegistry}
         isStreaming={true}
+        onError={onError}
       />
     );
   }
