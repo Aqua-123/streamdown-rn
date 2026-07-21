@@ -12,10 +12,11 @@ describe('TableDownload controls native outcomes', () => {
   });
   it('renders default/custom visuals, disables while streaming, and invokes file adapters', async () => {
     const save = jest.fn().mockResolvedValue({ status: 'success' });
-    const screen = render(<TableControls table={table} capabilities={{ files: { save } }} translations={defaultTranslations} icons={{ download: <Text testID="save-icon">S</Text> }}><Text>body</Text></TableControls>);
+    const screen = render(<TableControls table={table} capabilities={{ files: { save } }} translations={defaultTranslations} icons={{ download: <Text testID="save-icon">S</Text> }} color="#123456"><Text>body</Text></TableControls>);
     expect(screen.getAllByTestId('save-icon')).toHaveLength(1);
+    expect(screen.getByTestId('save-icon').props.color).toBe('#123456');
     fireEvent.press(screen.getByRole('button', { name: 'Download table' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Download table as CSV' }));
+    fireEvent.press(screen.getByRole('menuitem', { name: 'Download table as CSV' }));
     await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({ extension: 'csv' })));
     screen.rerender(<TableControls table={table} capabilities={{ files: { save } }} translations={defaultTranslations} disabled><Text>body</Text></TableControls>);
     expect(screen.getByRole('button', { name: 'Download table' }).props.accessibilityState.disabled).toBe(true);
@@ -25,7 +26,7 @@ describe('TableDownload controls native outcomes', () => {
     expect(screen.queryByRole('button', { name: 'Download table' })).toBeNull();
     screen.rerender(<TableControls table={table} capabilities={{ files: { save: () => { throw new Error('File save failed'); } } }} translations={defaultTranslations}><Text>body</Text></TableControls>);
     fireEvent.press(screen.getByRole('button', { name: 'Download table' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Download table as CSV' }));
+    fireEvent.press(screen.getByRole('menuitem', { name: 'Download table as CSV' }));
     await waitFor(() => expect(screen.getByText('File save failed')).toBeTruthy());
   });
 });

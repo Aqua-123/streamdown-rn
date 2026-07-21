@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { cloneElement, isValidElement, useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
+import { Dropdown } from '../components/ui';
 import type { TableData } from '../core/tableSerialization';
 import type { CapabilityResult, NativeCapabilities } from '../platform/capabilities';
 import { ActionButton } from './ActionButton';
@@ -9,6 +10,16 @@ import { FullscreenModal } from './FullscreenModal';
 import { serializeTable, tableFileRequest } from './serialization';
 import type { StreamdownTranslations } from './translations';
 import { defaultIcons, type IconMap } from './icons';
+
+function capabilityError(result: CapabilityResult): Error {
+  return result.error ?? new Error(result.status === 'unavailable' ? 'Unavailable'
+    : result.status === 'denied' ? 'Action denied'
+      : result.status === 'cancelled' ? 'Action cancelled' : 'Action failed');
+}
+
+function coloredIcon(icon: React.ReactNode, color?: string): React.ReactNode {
+  return isValidElement<{ color?: string }>(icon) && color ? cloneElement(icon, { color }) : icon;
+}
 
 export function TableControls({ table, children, capabilities, controls, translations, disabled, icons, color, backgroundColor, surfaceColor, borderColor }: {
   table: TableData;
@@ -36,38 +47,39 @@ export function TableControls({ table, children, capabilities, controls, transla
     return () => clearTimeout(timer);
   }, [copyFeedback]);
   if (!copy && !download && !expand) return <>{children}</>;
-  const closeMenu = (result: { status: string }) => { if (result.status === 'success') setMenu(null); };
-  const finishCopy = (scope: 'inline' | 'fullscreen', result: CapabilityResult) => {
-    if (result.status !== 'success') return;
+  const copyTable = async (scope: 'inline' | 'fullscreen', format: 'markdown' | 'csv' | 'tsv') => {
+    const result = await capabilities.clipboard!.writeText(serializeTable(table, format));
+    if (result.status !== 'success') throw capabilityError(result);
     setCopyFeedback((current) => ({ scope, revision: (current?.revision ?? 0) + 1 }));
-    setMenu(null);
   };
-  const toggleMenu = (type: 'copy' | 'download', scope: 'inline' | 'fullscreen') => {
-    setMenu((current) => current?.type === type && current.scope === scope ? null : { type, scope });
-    return { status: 'success' as const };
+  const downloadTable = async (format: 'csv' | 'markdown') => {
+    const result = await capabilities.files!.save(tableFileRequest(table, format));
+    if (result.status !== 'success') throw capabilityError(result);
   };
   const renderActions = (scope: 'inline' | 'fullscreen', includeFullscreen: boolean) => <View accessibilityRole="toolbar" style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-    {copy ? <ActionButton label={translations.copyTable} icon={icons?.copy ?? defaultIcons.copy} disabled={disabled} color={color} onAction={() => toggleMenu('copy', scope)} /> : null}
-    {download ? <ActionButton label={translations.downloadTable} icon={icons?.download ?? defaultIcons.download} disabled={disabled} color={color} onAction={() => toggleMenu('download', scope)} /> : null}
+    {copy ? <Dropdown.Root open={menu?.type === 'copy' && menu.scope === scope} onOpenChange={(open) => setMenu(open ? { type: 'copy', scope } : null)}>
+      <Dropdown.Trigger accessibilityLabel={translations.copyTable} disabled={disabled} foregroundColor={color}>{coloredIcon(icons?.copy ?? defaultIcons.copy, color)}</Dropdown.Trigger>
+      <Dropdown.Popup accessibilityLabel={translations.copyTable} style={{ borderColor, backgroundColor: surfaceColor }}>
+        <Dropdown.Item accessibilityLabel={translations.copyTableAsMarkdown} disabled={disabled} foregroundColor={color} onSelect={() => copyTable(scope, 'markdown')}>{translations.tableFormatMarkdown}</Dropdown.Item>
+        <Dropdown.Item accessibilityLabel={translations.copyTableAsCsv} disabled={disabled} foregroundColor={color} onSelect={() => copyTable(scope, 'csv')}>{translations.tableFormatCsv}</Dropdown.Item>
+        <Dropdown.Item accessibilityLabel={translations.copyTableAsTsv} disabled={disabled} foregroundColor={color} onSelect={() => copyTable(scope, 'tsv')}>{translations.tableFormatTsv}</Dropdown.Item>
+      </Dropdown.Popup>
+    </Dropdown.Root> : null}
+    {download ? <Dropdown.Root open={menu?.type === 'download' && menu.scope === scope} onOpenChange={(open) => setMenu(open ? { type: 'download', scope } : null)}>
+      <Dropdown.Trigger accessibilityLabel={translations.downloadTable} disabled={disabled} foregroundColor={color}>{coloredIcon(icons?.download ?? defaultIcons.download, color)}</Dropdown.Trigger>
+      <Dropdown.Popup accessibilityLabel={translations.downloadTable} style={{ borderColor, backgroundColor: surfaceColor }}>
+        <Dropdown.Item accessibilityLabel={translations.downloadTableAsCsv} disabled={disabled} foregroundColor={color} onSelect={() => downloadTable('csv')}>{translations.tableFormatCsv}</Dropdown.Item>
+        <Dropdown.Item accessibilityLabel={translations.downloadTableAsMarkdown} disabled={disabled} foregroundColor={color} onSelect={() => downloadTable('markdown')}>{translations.tableFormatMarkdown}</Dropdown.Item>
+      </Dropdown.Popup>
+    </Dropdown.Root> : null}
     {expand && includeFullscreen ? <ActionButton buttonRef={opener} label={translations.viewFullscreen} icon={icons?.fullscreen ?? defaultIcons.fullscreen} disabled={disabled} color={color} onAction={() => { setFullscreen(true); return { status: 'success' }; }} /> : null}
   </View>;
-  const renderMenu = (scope: 'inline' | 'fullscreen') => menu?.scope === scope ? <View style={{ alignSelf: 'flex-end', minWidth: 180, borderWidth: 1, borderColor, borderRadius: 6, backgroundColor, padding: 4 }}>
-    {menu.type === 'copy' ? <>
-      <ActionButton label={translations.copyTableAsMarkdown} icon={translations.tableFormatMarkdown} disabled={disabled} color={color} onResult={(result) => finishCopy(scope, result)} onAction={() => capabilities.clipboard!.writeText(serializeTable(table, 'markdown'))} />
-      <ActionButton label={translations.copyTableAsCsv} icon={translations.tableFormatCsv} disabled={disabled} color={color} onResult={(result) => finishCopy(scope, result)} onAction={() => capabilities.clipboard!.writeText(serializeTable(table, 'csv'))} />
-      <ActionButton label={translations.copyTableAsTsv} icon={translations.tableFormatTsv} disabled={disabled} color={color} onResult={(result) => finishCopy(scope, result)} onAction={() => capabilities.clipboard!.writeText(serializeTable(table, 'tsv'))} />
-    </> : <>
-      <ActionButton label={translations.downloadTableAsCsv} icon={translations.tableFormatCsv} disabled={disabled} color={color} onResult={closeMenu} onAction={() => capabilities.files!.save(tableFileRequest(table, 'csv'))} />
-      <ActionButton label={translations.downloadTableAsMarkdown} icon={translations.tableFormatMarkdown} disabled={disabled} color={color} onResult={closeMenu} onAction={() => capabilities.files!.save(tableFileRequest(table, 'markdown'))} />
-    </>}
-  </View> : null;
   const renderCopyFeedback = (scope: 'inline' | 'fullscreen') => copyFeedback?.scope === scope
     ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color }}>{translations.copied}</Text>
     : null;
   return (
     <View style={{ marginVertical: 16, borderWidth: 1, borderColor, borderRadius: 8, backgroundColor: surfaceColor, padding: 8, gap: 8 }}>
       {renderActions('inline', true)}
-      {renderMenu('inline')}
       {renderCopyFeedback('inline')}
       {children}
       <FullscreenModal
@@ -76,11 +88,11 @@ export function TableControls({ table, children, capabilities, controls, transla
         closeLabel={translations.exitFullscreen}
         capabilities={capabilities}
         restoreTarget={opener.current}
-        onClose={() => setFullscreen(false)}
+        onClose={() => { setFullscreen(false); setMenu((current) => current?.scope === 'fullscreen' ? null : current); }}
         icons={icons}
         color={color}
         backgroundColor={backgroundColor}
-      ><View>{renderActions('fullscreen', false)}{renderMenu('fullscreen')}{renderCopyFeedback('fullscreen')}{children}</View></FullscreenModal>
+      ><View>{renderActions('fullscreen', false)}{renderCopyFeedback('fullscreen')}{children}</View></FullscreenModal>
     </View>
   );
 }
