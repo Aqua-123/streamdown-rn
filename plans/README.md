@@ -11,7 +11,7 @@ plan fully, honor its STOP conditions, and update its row when done.
 |------|-------|----------|--------|------------|--------|
 | 001 | Introduce the OKLCH-derived semantic theme primitives | P1 | M | — | DONE |
 | 002 | Apply semantic primitives to blocks and shared controls | P1 | M | 001 | DONE |
-| 003 | Align the native harness and dark visual gates | P1 | M | 001, 002 | TODO |
+| 003 | Align the native harness and dark visual gates | P1 | M | 001, 002 | DONE — Steps 5–6 waived by maintainer; no baseline or capture-evidence update |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
 REJECTED (with one-line rationale)

@@ -19,6 +19,12 @@
 - **Depends on**: `plans/001-semantic-theme-primitives.md`, `plans/002-apply-theme-primitives-and-fix-controls.md`
 - **Category**: tests
 - **Planned at**: commit `ccf15eb`, 2026-07-22
+- **Execution result**: Steps 1–4 completed at commit `6f1c5cb` on
+  `codex/003-harness-dark-visual-gates`.
+- **Maintainer override**: Step 5 was explicitly skipped on 2026-07-22. Step 6
+  was therefore skipped because there is no capture evidence to document.
+- **Evidence boundary**: no PNG, manifest, review ID, comparison range, or
+  visual-evidence documentation was added or claimed.
 
 ## Why this matters
 
