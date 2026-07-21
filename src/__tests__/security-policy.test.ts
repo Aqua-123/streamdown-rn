@@ -213,6 +213,24 @@ describe('semantic filtering boundary', () => {
       unwrapDisallowed: true,
     }).children).toEqual([{ type: 'text', value: 'readable' }]);
   });
+
+  it('filters table headers and body cells by contextual semantics without mutating input', () => {
+    const source = parseSemanticDocument('| Head |\n| --- |\n| Body |');
+    const original = JSON.stringify(source);
+
+    const withoutHeaders = applySecurityPolicy(source, { disallowedElements: ['th'] });
+    expect(JSON.stringify(withoutHeaders)).not.toContain('Head');
+    expect(JSON.stringify(withoutHeaders)).toContain('Body');
+
+    const withoutBody = applySecurityPolicy(source, { disallowedElements: ['td'] });
+    expect(JSON.stringify(withoutBody)).toContain('Head');
+    expect(JSON.stringify(withoutBody)).not.toContain('Body');
+
+    const allowed = applySecurityPolicy(source, { allowedElements: ['table', 'tr', 'th', 'td'] });
+    expect(JSON.stringify(allowed)).toContain('Head');
+    expect(JSON.stringify(allowed)).toContain('Body');
+    expect(JSON.stringify(source)).toBe(original);
+  });
 });
 
 describe('custom registry trust boundary', () => {

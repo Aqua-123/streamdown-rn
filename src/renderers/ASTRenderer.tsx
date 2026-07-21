@@ -67,9 +67,29 @@ type SemanticNode = Node & {
   lang?: string | null;
   meta?: string | null;
   identifier?: string;
+  align?: Array<'left' | 'center' | 'right' | null>;
   children?: SemanticNode[];
   data?: { hName?: string; hProperties?: Record<string, unknown>; literal?: boolean };
 };
+
+const TABLE_MIN_COLUMN_WIDTH = 120;
+const TABLE_MAX_COLUMN_WIDTH = 320;
+const TABLE_CHARACTER_WIDTH = 8;
+const TABLE_HORIZONTAL_PADDING = 32;
+
+function normalizedTableText(node: SemanticNode): string {
+  return textValue(node).trim().replace(/\s+/g, ' ');
+}
+
+function tableColumnWidths(node: SemanticNode, count: number): number[] {
+  return Array.from({ length: count }, (_, columnIndex) => {
+    const contentWidth = Math.max(0, ...(node.children ?? []).map((row) => {
+      const cell = row.children?.[columnIndex];
+      return cell ? Array.from(normalizedTableText(cell)).length * TABLE_CHARACTER_WIDTH : 0;
+    }));
+    return Math.max(TABLE_MIN_COLUMN_WIDTH, Math.min(TABLE_MAX_COLUMN_WIDTH, contentWidth + TABLE_HORIZONTAL_PADDING));
+  });
+}
 
 export interface ASTRendererProps {
   node: Node;
@@ -174,11 +194,12 @@ function elementName(node: SemanticNode): string {
   }
 }
 
-function overrideFor(node: SemanticNode, context: RenderContext) {
+function overrideFor(node: SemanticNode, context: RenderContext, semanticElement?: string) {
   if (node.type === 'inlineCode' && context.components?.inlineCode) {
     return context.components.inlineCode;
   }
-  return context.components?.[elementName(node)] ??
+  const name = typeof node.data?.hName === 'string' ? elementName(node) : semanticElement ?? elementName(node);
+  return context.components?.[name] ??
     (!KNOWN_NODES.has(node.type) ? context.components?.unknown : undefined);
 }
 
@@ -188,9 +209,10 @@ function withOverride(
   inline: boolean,
   children: ReactNode,
   fallback: () => ReactNode,
-  key?: React.Key
+  key?: React.Key,
+  semanticElement?: string
 ): ReactNode {
-  const Override = overrideFor(node, context);
+  const Override = overrideFor(node, context, semanticElement);
   return Override
     ? <Override key={key} semantic={semantic(node, inline)}>{children}</Override>
     : fallback();
@@ -299,12 +321,21 @@ function renderList(node: SemanticNode, context: RenderContext, key?: React.Key)
 function renderTable(node: SemanticNode, context: RenderContext, key?: React.Key): ReactNode {
   const styles = getTextStyles(context.theme);
   const blocks = getBlockStyles(context.theme);
+  const columnCount = Math.max(0, ...(node.children ?? []).map((row) => row.children?.length ?? 0));
+  const columnWidths = tableColumnWidths(node, columnCount);
   const rows = (node.children ?? []).map((row, rowIndex) => {
     const cells = (row.children ?? []).map((cell, cellIndex) => {
       const value = renderInlineChildren(cell, context);
+      const alignment = node.align?.[cellIndex] ?? 'left';
+      const alignItems = alignment === 'center' ? 'center' : alignment === 'right' ? 'flex-end' : 'flex-start';
       return withOverride(cell, context, false, value, () => (
-        <View key={cellIndex} style={[rowIndex === 0 ? blocks.tableHeader : blocks.tableCell, { minWidth: 120, flexGrow: 1 }]}><Text style={[styles.body, { fontSize: 14, lineHeight: 20 }, rowIndex === 0 ? styles.bold : undefined]}>{value}</Text></View>
-      ), cellIndex);
+        <View key={cellIndex} style={[rowIndex === 0 ? blocks.tableHeader : blocks.tableCell, {
+          width: columnWidths[cellIndex],
+          alignItems,
+          borderRightWidth: cellIndex < columnCount - 1 ? 1 : 0,
+          borderRightColor: context.theme.colors.border,
+        }]}><Text style={[styles.body, { width: '100%', fontSize: 14, lineHeight: 20, textAlign: alignment }, rowIndex === 0 ? styles.bold : undefined]}>{value}</Text></View>
+      ), cellIndex, rowIndex === 0 ? 'th' : 'td');
     });
     return withOverride(row, context, false, cells, () => (
       <View key={rowIndex} style={{ flexDirection: 'row', borderBottomWidth: rowIndex < (node.children?.length ?? 0) - 1 ? 1 : 0, borderBottomColor: context.theme.colors.border }}>{cells}</View>

@@ -249,15 +249,6 @@ export function getBlockStyles(theme: ThemeConfig) {
       backgroundColor: theme.colors.border,
       marginVertical: 24,
     },
-    table: {
-      marginVertical: theme.spacing.block,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      borderRadius: 8,
-      backgroundColor: theme.colors.codeBackground,
-      padding: 8,
-      gap: 8,
-    },
     tableHeader: {
       backgroundColor: theme.colors.codeBackground,
       paddingHorizontal: 16,

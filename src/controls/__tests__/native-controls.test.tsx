@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
-import { Modal } from 'react-native';
+import { Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { Streamdown } from '../../StreamdownRN';
 
 describe('native markdown controls', () => {
@@ -86,6 +86,30 @@ describe('native markdown controls', () => {
     fireEvent(screen.UNSAFE_getByType(Modal), 'dismiss');
     expect(restore).toHaveBeenCalledTimes(3);
     expect(restore).toHaveBeenLastCalledWith(expect.anything());
+  });
+
+  it('keeps table control and content chrome as separate inline and fullscreen layers', () => {
+    const markdown = '| A |\n| --- |\n| B |';
+    const screen = render(<Streamdown mode="static">{markdown}</Streamdown>);
+    const outerSurfaces = () => screen.UNSAFE_getAllByType(View).filter(({ props }) => {
+      const style = StyleSheet.flatten(props.style);
+      return style?.borderWidth === 1 && style?.borderRadius === 8 && style?.padding === 8;
+    });
+    const innerSurfaces = () => screen.UNSAFE_getAllByType(ScrollView).filter(({ props }) => {
+      const style = StyleSheet.flatten(props.style);
+      return style?.borderWidth === 1 && style?.borderRadius === 6;
+    });
+    const toolbars = () => screen.UNSAFE_getAllByType(View).filter(({ props }) => props.accessibilityRole === 'toolbar');
+
+    expect(outerSurfaces()).toHaveLength(1);
+    expect(innerSurfaces()).toHaveLength(1);
+    expect(StyleSheet.flatten(toolbars()[0].props.style)).toMatchObject({ alignItems: 'center', gap: 4 });
+
+    fireEvent.press(screen.getByRole('button', { name: 'View fullscreen' }));
+    expect(outerSurfaces()).toHaveLength(1);
+    expect(innerSurfaces()).toHaveLength(2);
+    expect(toolbars().map(({ props }) => StyleSheet.flatten(props.style)))
+      .toEqual([expect.objectContaining({ gap: 4 }), expect.objectContaining({ gap: 4 })]);
   });
 
   it('honors control visibility and translated labels', () => {

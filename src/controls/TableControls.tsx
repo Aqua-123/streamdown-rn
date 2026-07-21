@@ -56,7 +56,7 @@ export function TableControls({ table, children, capabilities, controls, transla
     const result = await capabilities.files!.save(tableFileRequest(table, format));
     if (result.status !== 'success') throw capabilityError(result);
   };
-  const renderActions = (scope: 'inline' | 'fullscreen', includeFullscreen: boolean) => <View accessibilityRole="toolbar" style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+  const renderActions = (scope: 'inline' | 'fullscreen', includeFullscreen: boolean) => <View accessibilityRole="toolbar" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
     {copy ? <Dropdown.Root open={menu?.type === 'copy' && menu.scope === scope} onOpenChange={(open) => setMenu(open ? { type: 'copy', scope } : null)}>
       <Dropdown.Trigger accessibilityLabel={translations.copyTable} disabled={disabled} foregroundColor={color}>{coloredIcon(icons?.copy ?? defaultIcons.copy, color)}</Dropdown.Trigger>
       <Dropdown.Popup accessibilityLabel={translations.copyTable} style={{ borderColor, backgroundColor: surfaceColor }}>
