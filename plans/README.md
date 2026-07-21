@@ -39,7 +39,7 @@ Baseline verified during the assessment:
 | 005 | Align table semantics, columns, and visual chrome | P1 | M | 004 | DONE |
 | 006 | Align code-block styling and active highlighting theme | P1 | M | 002 | DONE |
 | 007 | Complete Mermaid state-diagram and pan/zoom fidelity | P1 | L | 001, 004 | DONE |
-| 008 | Govern interaction and visual parity on devices | P1 | L | 003-007 | BLOCKED — iOS Release build exhausted the 8 GiB free-space safety margin; partial scoped work is preserved in `/tmp/streamdown-rn-plan-008-N9lvoK` |
+| 008 | Govern interaction and visual parity on devices | P1 | L | 003-007 | BLOCKED — iOS case 8 twice used hidden `Streaming response` with Maestro `assertVisible`; plan refreshed to require visible disabled-control evidence before the next complete recapture |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
 REJECTED (with one-line rationale).

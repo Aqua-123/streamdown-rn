@@ -20,12 +20,13 @@
 - **Depends on**: Plans 003 through 007 (DONE)
 - **Category**: tests
 - **Planned at**: commit `f4c271249725911268d880d21228bf93d624c759`, 2026-07-21
-- **Execution**: BLOCKED on 2026-07-21 — the fresh iOS Release build
-  failed at `CompileAssetCatalogVariant` after free space fell from 12 GiB to
-  6.3 GiB, below the mandatory 8 GiB native-build gate. Partial scoped work is
-  preserved uncommitted in `/tmp/streamdown-rn-plan-008-N9lvoK` on
-  `codex/008-device-visual-gates`. Resume only after freeing enough disk to
-  remain above 8 GiB throughout both native builds and capture passes.
+- **Execution**: BLOCKED on 2026-07-21 — fresh packed iOS and Android Release
+  builds now pass, but the iOS matrix stopped twice at case 8 because Maestro
+  `assertVisible` cannot see the intentionally hidden `Streaming response`
+  live-region label. This is a plan expectation mismatch, not a renderer build
+  failure. Partial scoped work remains uncommitted in
+  `/tmp/streamdown-rn-plan-008-N9lvoK`; seven partial iOS PNG writes are not
+  reviewed evidence and must be replaced by the next complete update run.
 
 ## Why this matters
 
@@ -175,8 +176,11 @@ control/fullscreen evidence and add the smallest set that covers:
 - supported code in light and dark themes, plus one long-line narrow case and
   unknown-language fallback; expected labels identify `Download file` and
   `Copy Code` where capabilities are enabled;
-- capability-disabled streaming state: expected labels must prove disabled
-  Streamdown state and absence of active controls through the contract test;
+- interaction-disabled streaming state: expected labels must identify two
+  visible production controls (for example `Download table` and
+  `View fullscreen`) while the existing focused component tests prove their
+  `accessibilityState.disabled` contract. Do not use the visually hidden
+  `Streaming response` live-region label with Maestro `assertVisible`;
 - Mermaid flowchart in light and dark themes, state diagram, sequence diagram,
   loading/error, download menu open, and real diagram fullscreen;
 - Mermaid download menu: action `Download diagram`, then expect
@@ -243,8 +247,9 @@ assert all of the following:
 - both themes, directions, layouts, and 1/1.3/2 font-scale axes remain covered;
 - capture/flows contain label-based Maestro interaction and no fixed point;
 - no new case uses `Fixture:` or `Fixture state:` as semantic proof;
-- the capability-disabled scenario does not list copy/download labels as
-  expected evidence.
+- the interaction-disabled scenario has no `actionLabel`, uses visible
+  production control labels, and remains paired with focused tests that assert
+  disabled accessibility state.
 
 Do not test pixel files in Jest; manifests and capture comparison own that.
 
@@ -393,6 +398,8 @@ Stop and report rather than weakening the gate if:
   injection, or renderer change under `src/`;
 - the packed current fixture cannot build/install/launch in Release-Hermes on
   either pinned platform;
+- a Maestro `assertVisible` expectation targets an intentionally hidden live
+  region instead of a visible production surface;
 - fewer than 8 GiB are free before native builds, or a required simulator,
   emulator, Java/Xcode/Android tool, Maestro, or network install is unavailable;
 - baseline captures differ beyond 0.25% on the immediate second run after one
