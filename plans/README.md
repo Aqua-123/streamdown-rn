@@ -10,7 +10,7 @@ plan fully, honor its STOP conditions, and update its row when done.
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | 001 | Introduce the OKLCH-derived semantic theme primitives | P1 | M | — | DONE |
-| 002 | Apply semantic primitives to blocks and shared controls | P1 | M | 001 | TODO |
+| 002 | Apply semantic primitives to blocks and shared controls | P1 | M | 001 | DONE |
 | 003 | Align the native harness and dark visual gates | P1 | M | 001, 002 | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) |

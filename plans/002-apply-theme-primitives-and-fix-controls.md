@@ -85,12 +85,15 @@ Mermaid role collapse (`src/plugins/mermaid/index.ts:43`):
 - `src/components/ui/Dropdown.tsx`
 - `src/components/ui/__tests__/primitives.test.tsx`
 - `src/controls/ActionButton.tsx`
+- `src/controls/CodeControls.tsx`
 - `src/controls/TableControls.tsx`
 - `src/controls/PanZoomSurface.tsx`
 - `src/controls/__tests__/native-controls.test.tsx`
 - `src/controls/__tests__/translations-icons-panzoom.test.tsx`
 - `src/renderers/__tests__/table-layout.test.tsx`
 - `src/plugins/__tests__/mermaid.test.tsx`
+- `tests/parity/ports/streamdown/code-block-body.test.test.ts`
+- `tests/parity/ports/streamdown/mermaid-fullscreen.test.test.ts`
 - `.changeset/semantic-theme-consumers.md` (create)
 - `plans/README.md` (status only)
 
@@ -136,7 +139,8 @@ Reserve a transparent border in the base style so showing the ring does not
 move layout; when focused, use `focusRingColor`. Default to existing geometry
 when these props are absent so third-party primitive use remains compatible.
 
-Pass the resolved `ring` and base `radius` through library-owned buttons.
+Pass the resolved `ring` and base `radius` through library-owned buttons,
+including fenced-code copy/download controls.
 Add equivalent radius inputs to `Dropdown.Popup`; do not add a context or new
 provider solely for these two values.
 
@@ -173,7 +177,10 @@ Do not remove the wrapper/body layering. Do not substitute card for sidebar
 just because both happen to be close in the built-in palette.
 
 Update focused table/control tests to assert semantic values, not merely the
-presence of a `style` prop.
+presence of a `style` prop. Update the existing inline-code and Mermaid
+fullscreen parity assertions to expect `primitives.muted` and
+`primitives.border`; these tests currently encode the legacy color fields that
+this plan intentionally replaces.
 
 **Verify**:
 `bun run test --silent --runTestsByPath src/controls/__tests__/native-controls.test.tsx src/renderers/__tests__/table-layout.test.tsx src/controls/__tests__/translations-icons-panzoom.test.tsx` → pass.
@@ -221,9 +228,13 @@ are modified. Leave `benchmarks/results/` untouched.
 ## Test plan
 
 - Shared SVG-child color and focus tests in `primitives.test.tsx`.
+- Theme-derived fenced-code control radius/focus assertions in
+  `native-controls.test.tsx`.
 - Mermaid action-strip color regression and all-variable palette mapping in
   `mermaid.test.tsx`.
 - Dark semantic table/code/control assertions in existing focused suites.
+- Semantic inline-code and Mermaid fullscreen assertions in the existing
+  parity suites.
 - Full Jest and device-contract runs for cross-consumer regression coverage.
 
 ## Done criteria
