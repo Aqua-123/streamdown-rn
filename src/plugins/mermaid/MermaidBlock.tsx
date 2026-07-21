@@ -62,7 +62,13 @@ export function MermaidBlock({ source, plugin, theme, capabilities, controls, tr
   const visual = result?.content;
   const panZoom = controlEnabled(controls, 'mermaid', 'panZoom');
   const rendered = visual
-    ? <View accessible accessibilityRole="image" accessibilityLabel={`Mermaid diagram: ${renderedResult?.source ?? source}`}>
+    ? <View
+      testID={fullscreen ? 'mermaid-fullscreen-canvas' : undefined}
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={`Mermaid diagram: ${renderedResult?.source ?? source}`}
+      style={fullscreen ? { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center' } : undefined}
+    >
       {panZoom ? <PanZoomSurface capabilities={capabilities} icons={icons} disabled={disabled} color={theme.colors.foreground}>{visual}</PanZoomSurface> : visual}
     </View>
     : null;
@@ -104,7 +110,7 @@ export function MermaidBlock({ source, plugin, theme, capabilities, controls, tr
         ? <plugin.errorComponent error={error} source={source} retry={() => setRevision((value) => value + 1)} />
         : error ? <Text accessibilityRole="alert" style={{ padding: 16, color: theme.colors.muted }}>{error.message}</Text> : null}
     </View>
-    <FullscreenModal visible={fullscreen} label={translations.diagramFullscreen} closeLabel={translations.exitFullscreen} capabilities={capabilities} restoreTarget={opener.current} onClose={() => setFullscreen(false)} icons={icons} color={theme.colors.foreground} backgroundColor={theme.colors.background}>
+    <FullscreenModal visible={fullscreen} contentMode="canvas" label={translations.diagramFullscreen} closeLabel={translations.exitFullscreen} capabilities={capabilities} restoreTarget={opener.current} onClose={() => setFullscreen(false)} icons={icons} color={theme.colors.foreground} backgroundColor={theme.colors.background}>
       {fullscreen ? rendered ?? <Text selectable>{source}</Text> : null}
     </FullscreenModal>
   </View>;

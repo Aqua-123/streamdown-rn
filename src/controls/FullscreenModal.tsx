@@ -1,9 +1,10 @@
-import React from 'react';
-import { Modal, Platform, Pressable, SafeAreaView, ScrollView, StatusBar, Text, View } from 'react-native';
+import React, { cloneElement, isValidElement, useCallback, useEffect, useRef } from 'react';
+import { InteractionManager, Modal, Platform, SafeAreaView, ScrollView, StatusBar, Text, View } from 'react-native';
+import { Button } from '../components/ui';
 import type { NativeCapabilities } from '../platform/capabilities';
 import { defaultIcons, type IconMap } from './icons';
 
-export function FullscreenModal({ visible, label, closeLabel, children, capabilities, restoreTarget, onClose, icons, color, backgroundColor }: {
+export function FullscreenModal({ visible, label, closeLabel, children, capabilities, restoreTarget, onClose, icons, color, backgroundColor, contentMode = 'horizontal' }: {
   visible: boolean;
   label: string;
   closeLabel: string;
@@ -14,16 +15,42 @@ export function FullscreenModal({ visible, label, closeLabel, children, capabili
   icons?: IconMap;
   color?: string;
   backgroundColor?: string;
+  contentMode?: 'horizontal' | 'document' | 'canvas';
 }) {
-  const close = () => {
-    onClose();
+  const closeRequested = useRef(false);
+  const restorePending = useRef(false);
+  const visibleRef = useRef(visible);
+  visibleRef.current = visible;
+  const restoreFocus = useCallback(() => {
+    if (visibleRef.current || !restorePending.current) return;
+    restorePending.current = false;
     capabilities.focus?.restore(restoreTarget);
+  }, [capabilities.focus, restoreTarget]);
+  const close = () => {
+    if (!visible || closeRequested.current) return;
+    closeRequested.current = true;
+    restorePending.current = true;
+    onClose();
   };
+  useEffect(() => {
+    if (visible) {
+      closeRequested.current = false;
+      return;
+    }
+    if (!restorePending.current || Platform.OS !== 'android') return;
+    const task = InteractionManager.runAfterInteractions(restoreFocus);
+    return () => task.cancel();
+  }, [restoreFocus, visible]);
   const closeIcon = icons?.close ?? defaultIcons.close;
-  if (!visible) return null;
+  const coloredCloseIcon = isValidElement<{ color?: string }>(closeIcon) && color ? cloneElement(closeIcon, { color }) : closeIcon;
+  const content = contentMode === 'document'
+    ? <ScrollView testID="fullscreen-content-document" style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>{children}</ScrollView>
+    : contentMode === 'canvas'
+      ? <View testID="fullscreen-content-canvas" style={{ flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center' }}>{children}</View>
+      : <ScrollView testID="fullscreen-content-horizontal" horizontal contentContainerStyle={{ flexGrow: 1 }}>{children}</ScrollView>;
   return (
-    <Modal visible={visible} transparent={false} animationType="none" onRequestClose={close}>
-      <SafeAreaView style={{ flex: 1, backgroundColor }}>
+    <Modal visible={visible} transparent={false} animationType="none" onRequestClose={close} onDismiss={restoreFocus}>
+      {visible ? <SafeAreaView style={{ flex: 1, backgroundColor }}>
         <View
           accessibilityViewIsModal
           style={{ flex: 1, padding: 16, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) + 16 : 16 }}
@@ -37,15 +64,14 @@ export function FullscreenModal({ visible, label, closeLabel, children, capabili
             onAccessibilityAction={(event) => { if (event.nativeEvent.actionName === 'escape') close(); }}
             style={{ color }}
           >{label}</Text>
-          <Pressable
-            accessibilityRole="button"
+          <Button
             accessibilityLabel={closeLabel}
             onPress={close}
             style={{ minWidth: 44, minHeight: 44, alignSelf: 'flex-end', justifyContent: 'center' }}
-          >{typeof closeIcon === 'string' || typeof closeIcon === 'number' ? <Text style={{ color }}>{closeIcon}</Text> : closeIcon}</Pressable>
-          <ScrollView horizontal contentContainerStyle={{ flexGrow: 1 }}>{children}</ScrollView>
+          >{typeof coloredCloseIcon === 'string' || typeof coloredCloseIcon === 'number' ? <Text style={{ color }}>{coloredCloseIcon}</Text> : coloredCloseIcon}</Button>
+          {content}
         </View>
-      </SafeAreaView>
+      </SafeAreaView> : null}
     </Modal>
   );
 }
