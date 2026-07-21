@@ -66,7 +66,7 @@ export function MermaidBlock({ source, plugin, theme, capabilities, controls, tr
       {panZoom ? <PanZoomSurface capabilities={capabilities} icons={icons} disabled={disabled} color={theme.colors.foreground}>{visual}</PanZoomSurface> : visual}
     </View>
     : null;
-  const copy = controlEnabled(controls, 'mermaid', 'copy');
+  const copy = controlEnabled(controls, 'mermaid', 'copy') && Boolean(capabilities.clipboard);
   // Streamdown does not show Share in its default Mermaid action strip.
   const share = controls !== undefined && controlEnabled(controls, 'mermaid', 'share');
   const download = controlEnabled(controls, 'mermaid', 'download') && Boolean(capabilities.files);
@@ -90,7 +90,7 @@ export function MermaidBlock({ source, plugin, theme, capabilities, controls, tr
             <Dropdown.Item accessibilityLabel={translations.downloadDiagramAsMmd} disabled={disabled} foregroundColor={theme.colors.foreground} onSelect={() => saveDiagram('mmd')}>{translations.mermaidFormatMmd}</Dropdown.Item>
           </Dropdown.Popup>
         </Dropdown.Root> : null}
-        {copy ? <ActionButton label={translations.copyDiagram} icon={icons?.copy ?? defaultIcons.copy} disabled={disabled} color={theme.colors.muted} onAction={() => capabilities.clipboard?.writeText(source) ?? { status: 'unavailable' }} /> : null}
+        {copy ? <ActionButton label={translations.copyDiagram} icon={icons?.copy ?? defaultIcons.copy} successMessage={translations.copied} disabled={disabled} color={theme.colors.muted} onAction={() => capabilities.clipboard!.writeText(source)} /> : null}
         {share ? <ActionButton label={translations.shareDiagram} icon={icons?.share ?? defaultIcons.share} disabled={disabled} color={theme.colors.muted} onAction={() => capabilities.share?.shareText(source, 'Mermaid diagram') ?? { status: 'unavailable' }} /> : null}
         {allowFullscreen ? <ActionButton buttonRef={opener} label={translations.viewFullscreen} icon={icons?.fullscreen ?? defaultIcons.fullscreen} disabled={disabled} color={theme.colors.muted} onAction={() => { setFullscreen(true); return { status: 'success' }; }} /> : null}
         {error ? <ActionButton label={translations.retryDiagram} icon={icons?.retry ?? defaultIcons.retry} disabled={disabled} color={theme.colors.muted} onAction={() => { setRevision((value) => value + 1); return { status: 'success' }; }} /> : null}

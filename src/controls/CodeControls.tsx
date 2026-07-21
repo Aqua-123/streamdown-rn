@@ -17,8 +17,8 @@ export function CodeControls({ code, language, capabilities, controls, translati
   icons?: IconMap;
   color?: string;
 }) {
-  const copy = controlEnabled(controls, 'code', 'copy');
-  const download = controlEnabled(controls, 'code', 'download');
+  const copy = controlEnabled(controls, 'code', 'copy') && Boolean(capabilities.clipboard);
+  const download = controlEnabled(controls, 'code', 'download') && Boolean(capabilities.files);
   if (!copy && !download) return null;
   return (
     <View accessibilityRole="toolbar" style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
@@ -28,18 +28,14 @@ export function CodeControls({ code, language, capabilities, controls, translati
         successMessage={translations.copied}
         disabled={disabled}
         color={color}
-        onAction={() => capabilities.clipboard?.writeText(code) ?? {
-          status: 'unavailable', error: new Error('Clipboard unavailable'),
-        }}
+        onAction={() => capabilities.clipboard!.writeText(code)}
       /> : null}
       {download ? <ActionButton
         label={translations.downloadFile}
         icon={icons?.download ?? defaultIcons.download}
         disabled={disabled}
         color={color}
-        onAction={() => capabilities.files?.save(codeFileRequest(code, language)) ?? {
-          status: 'unavailable', error: new Error('File saving unavailable'),
-        }}
+        onAction={() => capabilities.files!.save(codeFileRequest(code, language))}
       /> : null}
     </View>
   );
