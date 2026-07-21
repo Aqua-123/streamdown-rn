@@ -41,21 +41,21 @@ describe('native markdown controls', () => {
     );
 
     fireEvent.press(screen.getByRole('button', { name: 'Copy table' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Copy table as CSV' }));
+    fireEvent.press(screen.getByRole('menuitem', { name: 'Copy table as CSV' }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith('Name,City\nZoë,東京'));
     fireEvent.press(screen.getByRole('button', { name: 'Copy table' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Copy table as TSV' }));
+    fireEvent.press(screen.getByRole('menuitem', { name: 'Copy table as TSV' }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith('Name\tCity\nZoë\t東京'));
     fireEvent.press(screen.getByRole('button', { name: 'Copy table' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Copy table as Markdown' }));
+    fireEvent.press(screen.getByRole('menuitem', { name: 'Copy table as Markdown' }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(expect.stringContaining('| Zoë | 東京 |')));
     fireEvent.press(screen.getByRole('button', { name: 'Download table' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Download table as CSV' }));
+    fireEvent.press(screen.getByRole('menuitem', { name: 'Download table as CSV' }));
     await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({
       basename: 'table', extension: 'csv', mimeType: 'text/csv;charset=utf-8', content: '\uFEFFName,City\nZoë,東京',
     })));
     fireEvent.press(screen.getByRole('button', { name: 'Download table' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Download table as Markdown' }));
+    fireEvent.press(screen.getByRole('menuitem', { name: 'Download table as Markdown' }));
     await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({
       basename: 'table', extension: 'md', mimeType: 'text/markdown;charset=utf-8',
     })));
@@ -130,12 +130,12 @@ describe('native markdown controls', () => {
       files: { save: async () => { throw new Error('table save failed'); } },
     }}>{table}</Streamdown>);
     fireEvent.press(screen.getByRole('button', { name: 'Download table' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Download table as CSV' }));
+    fireEvent.press(screen.getByRole('menuitem', { name: 'Download table as CSV' }));
     await waitFor(() => expect(screen.getByText('table save failed')).toBeTruthy());
     fireEvent.press(screen.getByRole('button', { name: 'Copy table' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Copy table as CSV' }));
+    fireEvent.press(screen.getByRole('menuitem', { name: 'Copy table as CSV' }));
     await waitFor(() => expect(screen.getByText('table copy failed')).toBeTruthy());
-    expect(screen.getByRole('button', { name: 'Copy table as CSV' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Copy table as CSV' })).toBeTruthy();
   });
 
   it('keeps successful table copy feedback visible after its menu closes', async () => {
@@ -144,9 +144,9 @@ describe('native markdown controls', () => {
       clipboard: { writeText: async () => ({ status: 'success' }) },
     }}>{table}</Streamdown>);
     fireEvent.press(screen.getByRole('button', { name: 'Copy table' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Copy table as CSV' }));
+    fireEvent.press(screen.getByRole('menuitem', { name: 'Copy table as CSV' }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Copied'));
-    expect(screen.queryByRole('button', { name: 'Copy table as CSV' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Copy table as CSV' })).toBeNull();
   });
 
   it('hides unavailable table actions while leaving fullscreen available', () => {
