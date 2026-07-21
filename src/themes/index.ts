@@ -221,6 +221,11 @@ export function resolveThemePrimitives(theme: ThemeConfig): ThemePrimitives {
   };
 }
 
+export const inlineRadius = (radius: number) => Math.max(0, radius - 6);
+export const innerRadius = (radius: number) => Math.max(0, radius - 4);
+export const controlRadius = (radius: number) => Math.max(0, radius - 2);
+export const outerRadius = (radius: number) => radius + 2;
+
 // ============================================================================
 // Style Generators (used by block renderers)
 // ============================================================================
@@ -232,19 +237,20 @@ export function resolveThemePrimitives(theme: ThemeConfig): ThemePrimitives {
  * This allows host apps to set fonts at the root level and have them inherited.
  */
 export function getTextStyles(theme: ThemeConfig) {
+  const primitives = resolveThemePrimitives(theme);
   // Helper to conditionally include fontFamily
   const withFont = (fontKey: 'regular' | 'bold' | 'mono') => 
     theme.fonts[fontKey] ? { fontFamily: theme.fonts[fontKey] } : {};
 
   return {
     body: {
-      color: theme.colors.foreground,
+      color: primitives.foreground,
       ...withFont('regular'),
       fontSize: 16,
       lineHeight: 24,
     },
     heading1: {
-      color: theme.colors.foreground,
+      color: primitives.foreground,
       ...withFont('bold'),
       fontSize: 28,
       lineHeight: 36,
@@ -253,7 +259,7 @@ export function getTextStyles(theme: ThemeConfig) {
       marginBottom: 8,
     },
     heading2: {
-      color: theme.colors.foreground,
+      color: primitives.foreground,
       ...withFont('bold'),
       fontSize: 24,
       lineHeight: 32,
@@ -262,7 +268,7 @@ export function getTextStyles(theme: ThemeConfig) {
       marginBottom: 8,
     },
     heading3: {
-      color: theme.colors.foreground,
+      color: primitives.foreground,
       ...withFont('bold'),
       fontSize: 20,
       lineHeight: 28,
@@ -271,7 +277,7 @@ export function getTextStyles(theme: ThemeConfig) {
       marginBottom: 8,
     },
     heading4: {
-      color: theme.colors.foreground,
+      color: primitives.foreground,
       ...withFont('bold'),
       fontSize: 18,
       lineHeight: 26,
@@ -280,7 +286,7 @@ export function getTextStyles(theme: ThemeConfig) {
       marginBottom: 8,
     },
     heading5: {
-      color: theme.colors.foreground,
+      color: primitives.foreground,
       ...withFont('bold'),
       fontSize: 16,
       lineHeight: 24,
@@ -289,7 +295,7 @@ export function getTextStyles(theme: ThemeConfig) {
       marginBottom: 8,
     },
     heading6: {
-      color: theme.colors.foreground,
+      color: primitives.foreground,
       ...withFont('bold'),
       fontSize: 14,
       lineHeight: 22,
@@ -298,7 +304,7 @@ export function getTextStyles(theme: ThemeConfig) {
       marginBottom: 8,
     },
     paragraph: {
-      color: theme.colors.foreground,
+      color: primitives.foreground,
       ...withFont('regular'),
       fontSize: 16,
       lineHeight: 24,
@@ -315,25 +321,25 @@ export function getTextStyles(theme: ThemeConfig) {
     code: {
       ...withFont('mono'),
       fontSize: 14,
-      color: theme.colors.codeForeground,
-      backgroundColor: theme.colors.codeBackground,
+      color: primitives.foreground,
+      backgroundColor: primitives.muted,
       paddingHorizontal: 4,
       paddingVertical: 2,
-      borderRadius: 4,
+      borderRadius: inlineRadius(primitives.radius),
     },
     codeBlock: {
       ...withFont('mono'),
       fontSize: 14,
-      color: theme.colors.codeForeground,
+      color: primitives.foreground,
     },
     codeLineNumber: {
       ...withFont('mono'),
       fontSize: 14,
-      color: theme.colors.muted,
+      color: primitives.mutedForeground,
       minWidth: 32,
     },
     link: {
-      color: theme.colors.link,
+      color: primitives.primary,
       fontWeight: '500' as const,
       textDecorationLine: 'underline' as const,
     },
@@ -347,14 +353,15 @@ export function getTextStyles(theme: ThemeConfig) {
  * Generate block container styles for a theme
  */
 export function getBlockStyles(theme: ThemeConfig) {
+  const primitives = resolveThemePrimitives(theme);
   return {
     codeBlock: {
-      backgroundColor: theme.colors.codeBackground,
-      borderRadius: 12,
+      backgroundColor: primitives.sidebar,
+      borderRadius: outerRadius(primitives.radius),
       padding: 8,
       marginVertical: theme.spacing.block,
       borderWidth: 1,
-      borderColor: theme.colors.border,
+      borderColor: primitives.sidebarBorder,
       gap: 8,
     },
     blockquote: {
@@ -376,7 +383,7 @@ export function getBlockStyles(theme: ThemeConfig) {
       marginVertical: 24,
     },
     tableHeader: {
-      backgroundColor: theme.colors.codeBackground,
+      backgroundColor: primitives.muted,
       paddingHorizontal: 16,
       paddingVertical: 8,
     },

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import Svg from 'react-native-svg';
 import { Streamdown } from '../../StreamdownRN';
 import { defaultTranslations } from '../../controls/translations';
 import { darkTheme, lightTheme } from '../../themes';
@@ -65,20 +66,36 @@ describe('mermaid plugin', () => {
   });
 
   it('maps beautiful-mermaid variables to the active light and dark palettes', async () => {
-    const svg = '<svg fill="var(--bg)"><text fill="var(--_text)" stroke="var(--_line)"/><rect fill="var(--_node-fill)" stroke="var(--_node-stroke)"/><g fill="var(--_group-fill)"/><path fill="var(--_group-hdr)" stroke="var(--_key-badge)"/></svg>';
+    const svg = '<svg><g id="bg" fill="var(--bg)"/><g id="fg" fill="var(--fg)"/><g id="text" fill="var(--_text)"/><g id="text-sec" fill="var(--_text-sec)"/><g id="text-muted" fill="var(--_text-muted)"/><g id="text-faint" fill="var(--_text-faint)"/><g id="line" stroke="var(--_line)"/><g id="arrow" stroke="var(--_arrow)"/><g id="node-fill" fill="var(--_node-fill)"/><g id="node-stroke" stroke="var(--_node-stroke)"/><g id="group-fill" fill="var(--_group-fill)"/><g id="group-hdr" fill="var(--_group-hdr)"/><g id="inner-stroke" stroke="var(--_inner-stroke)"/><g id="key-badge" stroke="var(--_key-badge)"/></svg>';
     for (const theme of [lightTheme, darkTheme]) {
       const normalized = normalizeBeautifulMermaidSvg(svg, theme);
-      expect(normalized).toContain(`fill="${theme.colors.background}"`);
-      expect(normalized).toContain(`fill="${theme.colors.foreground}"`);
-      expect(normalized).toContain(`stroke="${theme.colors.muted}"`);
-      expect(normalized).toContain(`fill="${theme.colors.codeBackground}"`);
-      expect(normalized).toContain(`stroke="${theme.colors.border}"`);
+      const primitives = theme.primitives!;
+      for (const fragment of [
+        `<g id="bg" fill="${primitives.background}"/>`,
+        `<g id="fg" fill="${primitives.foreground}"/>`,
+        `<g id="text" fill="${primitives.foreground}"/>`,
+        `<g id="text-sec" fill="${primitives.mutedForeground}"/>`,
+        `<g id="text-muted" fill="${primitives.chart2}"/>`,
+        `<g id="text-faint" fill="${primitives.chart3}"/>`,
+        `<g id="line" stroke="${primitives.chart2}"/>`,
+        `<g id="arrow" stroke="${primitives.ring}"/>`,
+        `<g id="node-fill" fill="${primitives.card}"/>`,
+        `<g id="node-stroke" stroke="${primitives.border}"/>`,
+        `<g id="group-fill" fill="${primitives.background}"/>`,
+        `<g id="group-hdr" fill="${primitives.muted}"/>`,
+        `<g id="inner-stroke" stroke="${primitives.border}"/>`,
+        `<g id="key-badge" stroke="${primitives.border}"/>`,
+      ]) {
+        expect(normalized).toContain(fragment);
+      }
       expect(sanitizeMermaidSvg(normalized)).toBe(normalized);
     }
 
+    expect(new Set([darkTheme.primitives!.mutedForeground, darkTheme.primitives!.chart2, darkTheme.primitives!.chart3]).size).toBe(3);
+
     const provider = { render: jest.fn(() => ({ svg })), renderSvg: jest.fn(() => null) };
     const result = await createBeautifulMermaidAdapter(provider).render({ source: 'stateDiagram-v2', family: 'state', config: {}, theme: darkTheme });
-    expect(result.svg).toContain(`fill="${darkTheme.colors.codeBackground}"`);
+    expect(result.svg).toContain(`fill="${darkTheme.primitives!.card}"`);
     expect(provider.render).toHaveBeenCalledWith(expect.objectContaining({ theme: darkTheme }));
   });
 
@@ -181,7 +198,7 @@ describe('mermaid plugin', () => {
     const capabilities = { files: { save: jest.fn(() => ({ status: 'success' as const })) } };
     const view = render(<MermaidBlock source={sourceA} plugin={plugin} theme={lightTheme} capabilities={capabilities} translations={defaultTranslations} />);
     await waitFor(() => expect(screen.getByText('result A')).toBeTruthy());
-    fireEvent.press(screen.getByLabelText('Download diagram'));
+    fireEvent.press(screen.getByRole('button', { name: 'Download diagram' }));
     expect(screen.getByRole('menuitem', { name: 'Download diagram as SVG' })).toBeTruthy();
 
     view.rerender(<MermaidBlock source={sourceB} plugin={plugin} theme={lightTheme} capabilities={capabilities} translations={defaultTranslations} />);
@@ -234,10 +251,16 @@ describe('mermaid plugin', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/exceeds/));
     first.unmount();
     const working = createMermaidPlugin({ adapter });
-    render(<Streamdown mode="static" plugins={{ mermaid: working }} controls={{ mermaid: { share: true } }} capabilities={{ clipboard: { writeText: clipboard }, share: { shareText: share }, gestures: { renderPanZoom: ({ children }) => children } }}>{'```mermaid\nflowchart LR\nA-->B\n```'}</Streamdown>);
+    render(<Streamdown mode="static" plugins={{ mermaid: working }} controls={{ mermaid: { share: true } }} capabilities={{ clipboard: { writeText: clipboard }, files: { save: jest.fn() }, share: { shareText: share }, gestures: { renderPanZoom: ({ children }) => children } }}>{'```mermaid\nflowchart LR\nA-->B\n```'}</Streamdown>);
     await waitFor(() => expect(screen.getByLabelText('Zoom')).toBeTruthy());
     expect(screen.getByTestId('mermaid-block')).toHaveStyle({ padding: 8, borderRadius: 12 });
     expect(screen.getByTestId('mermaid-surface')).toHaveStyle({ borderWidth: 1, borderRadius: 6 });
+    for (const label of ['Download diagram', 'Copy diagram', 'View fullscreen']) {
+      expect(screen.getByLabelText(label).findByType(Svg).props.color).toBe(darkTheme.primitives!.mutedForeground);
+    }
+    fireEvent.press(screen.getByRole('button', { name: 'Download diagram' }));
+    expect(StyleSheet.flatten(screen.getByTestId('dropdown-popup').props.style)).toMatchObject({ backgroundColor: darkTheme.primitives!.popover, borderColor: darkTheme.primitives!.border, borderRadius: 8 });
+    fireEvent.press(screen.getByRole('button', { name: 'Download diagram' }));
     fireEvent.press(screen.getByLabelText('Copy diagram'));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Copied'));
     fireEvent.press(screen.getByLabelText('Share diagram'));

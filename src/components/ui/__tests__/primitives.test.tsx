@@ -1,6 +1,7 @@
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { AccessibilityInfo, Dimensions, Modal, StyleSheet, Text, type View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { Button, Dropdown } from '..';
 
 function menu(onSelect: () => void | Promise<void>, root: React.ComponentProps<typeof Dropdown.Root> = {}) {
@@ -14,6 +15,25 @@ describe('UI primitives', () => {
   it('merges button accessibility state with its disabled prop', () => {
     render(<Button disabled accessibilityState={{ selected: true }}>Save</Button>);
     expect(screen.getByRole('button', { name: 'Save' }).props.accessibilityState).toEqual({ selected: true, disabled: true });
+  });
+
+  it('colors currentColor SVG children at the shared button boundary', () => {
+    render(<Button accessibilityLabel="Icon" foregroundColor="#fafafa"><Svg testID="icon"><Path fill="currentColor" d="M0 0" /></Svg></Button>);
+    expect(screen.getByTestId('icon').props.color).toBe('#fafafa');
+  });
+
+  it('reserves and applies the focus ring without changing radius', () => {
+    const onFocus = jest.fn();
+    const onBlur = jest.fn();
+    render(<Button accessibilityLabel="Focus" radius={8} focusRingColor="#737373" onFocus={onFocus} onBlur={onBlur}>Focus</Button>);
+    const button = screen.getByRole('button', { name: 'Focus' });
+    expect(StyleSheet.flatten(button.props.style)).toMatchObject({ borderRadius: 8, borderWidth: 1, borderColor: 'transparent' });
+    fireEvent(button, 'focus');
+    expect(StyleSheet.flatten(button.props.style)).toMatchObject({ borderRadius: 8, borderWidth: 1, borderColor: '#737373' });
+    fireEvent(button, 'blur');
+    expect(StyleSheet.flatten(button.props.style)).toMatchObject({ borderRadius: 8, borderWidth: 1, borderColor: 'transparent' });
+    expect(onFocus).toHaveBeenCalledTimes(1);
+    expect(onBlur).toHaveBeenCalledTimes(1);
   });
 
   it('opens before measurement completes and exposes menu semantics', () => {

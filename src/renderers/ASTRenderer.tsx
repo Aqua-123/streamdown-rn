@@ -18,7 +18,7 @@ import {
   type SecurityPolicyOptions,
 } from '../core/security';
 import { detectTextDirection } from '../core/blockSemantics';
-import { getBlockStyles, getTextStyles } from '../themes';
+import { controlRadius, getBlockStyles, getTextStyles, innerRadius, resolveThemePrimitives } from '../themes';
 import { materializeCustomTags } from './semanticTags';
 import { AnimatedRevealText, type NormalizedAnimationConfig } from '../core/streaming';
 import type { NativeCapabilities } from '../platform/capabilities';
@@ -321,6 +321,7 @@ function renderList(node: SemanticNode, context: RenderContext, key?: React.Key)
 function renderTable(node: SemanticNode, context: RenderContext, key?: React.Key): ReactNode {
   const styles = getTextStyles(context.theme);
   const blocks = getBlockStyles(context.theme);
+  const primitives = resolveThemePrimitives(context.theme);
   const columnCount = Math.max(0, ...(node.children ?? []).map((row) => row.children?.length ?? 0));
   const columnWidths = tableColumnWidths(node, columnCount);
   const rows = (node.children ?? []).map((row, rowIndex) => {
@@ -333,12 +334,12 @@ function renderTable(node: SemanticNode, context: RenderContext, key?: React.Key
           width: columnWidths[cellIndex],
           alignItems,
           borderRightWidth: cellIndex < columnCount - 1 ? 1 : 0,
-          borderRightColor: context.theme.colors.border,
+          borderRightColor: primitives.border,
         }]}><Text style={[styles.body, { width: '100%', fontSize: 14, lineHeight: 20, textAlign: alignment }, rowIndex === 0 ? styles.bold : undefined]}>{value}</Text></View>
       ), cellIndex, rowIndex === 0 ? 'th' : 'td');
     });
     return withOverride(row, context, false, cells, () => (
-      <View key={rowIndex} style={{ flexDirection: 'row', borderBottomWidth: rowIndex < (node.children?.length ?? 0) - 1 ? 1 : 0, borderBottomColor: context.theme.colors.border }}>{cells}</View>
+      <View key={rowIndex} style={{ flexDirection: 'row', borderBottomWidth: rowIndex < (node.children?.length ?? 0) - 1 ? 1 : 0, borderBottomColor: primitives.border }}>{cells}</View>
     ), rowIndex);
   });
   const table: TableData = {
@@ -346,7 +347,7 @@ function renderTable(node: SemanticNode, context: RenderContext, key?: React.Key
     rows: (node.children ?? []).slice(1).map((row) => (row.children ?? []).map(textValue)),
   };
   return withOverride(node, context, false, rows, () => {
-    const content = <ScrollView horizontal style={{ borderWidth: 1, borderColor: context.theme.colors.border, borderRadius: 6, backgroundColor: context.theme.colors.background }}><View key={key}>{rows}</View></ScrollView>;
+    const content = <ScrollView horizontal style={{ borderWidth: 1, borderColor: primitives.border, borderRadius: innerRadius(primitives.radius), backgroundColor: primitives.background }}><View key={key}>{rows}</View></ScrollView>;
     return <TableControls
       key={key}
       table={table}
@@ -355,10 +356,15 @@ function renderTable(node: SemanticNode, context: RenderContext, key?: React.Key
       translations={context.translations ?? defaultTranslations}
       disabled={context.controlsDisabled ?? context.isStreaming}
       icons={context.icons}
-      color={context.theme.colors.muted}
-      backgroundColor={context.theme.colors.background}
-      surfaceColor={context.theme.colors.codeBackground}
-      borderColor={context.theme.colors.border}
+      color={primitives.mutedForeground}
+      backgroundColor={primitives.background}
+      surfaceColor={primitives.sidebar}
+      borderColor={primitives.sidebarBorder}
+      popoverColor={primitives.popover}
+      popoverForegroundColor={primitives.popoverForeground}
+      popoverBorderColor={primitives.border}
+      radius={controlRadius(primitives.radius)}
+      focusRingColor={primitives.ring}
     >{content}</TableControls>;
   }, key);
 }
@@ -380,6 +386,7 @@ function plainCodeResult(code: string): HighlightResult {
 function NativeCodeBlock({ node, context }: { node: SemanticNode; context: RenderContext }) {
   const styles = getTextStyles(context.theme);
   const blocks = getBlockStyles(context.theme);
+  const primitives = resolveThemePrimitives(context.theme);
   const code = node.value ?? '';
   // Match Streamdown's visible-code contract: terminal newlines remain available
   // to copy/download controls, but do not create empty rendered rows.
@@ -416,7 +423,7 @@ function NativeCodeBlock({ node, context }: { node: SemanticNode; context: Rende
   return (
     <View style={blocks.codeBlock}>
       <View style={{ minHeight: 32, flexDirection: 'row', alignItems: 'center' }}>
-        <Text style={{ flex: 1, marginLeft: 4, color: context.theme.colors.muted, fontFamily: context.theme.fonts.mono, fontSize: 12, textTransform: 'lowercase' }}>{node.lang ?? ''}</Text>
+        <Text style={{ flex: 1, marginLeft: 4, color: primitives.mutedForeground, fontFamily: context.theme.fonts.mono, fontSize: 12, textTransform: 'lowercase' }}>{node.lang ?? ''}</Text>
         <CodeControls
           code={code}
           language={node.lang}
@@ -425,11 +432,13 @@ function NativeCodeBlock({ node, context }: { node: SemanticNode; context: Rende
           translations={context.translations ?? defaultTranslations}
           disabled={context.controlsDisabled ?? context.isStreaming}
           icons={context.icons}
-          color={context.theme.colors.muted}
+          color={primitives.mutedForeground}
+          radius={controlRadius(primitives.radius)}
+          focusRingColor={primitives.ring}
         />
       </View>
       {loading ? <View accessible accessibilityLabel="Highlighting code" accessibilityState={{ busy: true }} /> : null}
-      <ScrollView horizontal style={[{ padding: 16 }, result.bg ? { backgroundColor: result.bg } : undefined]}>
+      <ScrollView horizontal style={[{ padding: 16, borderWidth: 1, borderColor: primitives.border, borderRadius: innerRadius(primitives.radius), backgroundColor: primitives.background }, result.bg ? { backgroundColor: result.bg } : undefined]}>
         <View>
           {result.tokens.map((line, lineIndex) => (
             <View key={lineIndex} style={{ flexDirection: 'row' }}>
@@ -455,9 +464,10 @@ function renderNode(node: SemanticNode, context: RenderContext, inline = false, 
   const styles = getTextStyles(context.theme);
   const blocks = getBlockStyles(context.theme);
   const children = renderChildren(node, context, inline);
+  const primitives = resolveThemePrimitives(context.theme);
   switch (node.type) {
     case 'root':
-      return <View key={key}>{renderChildren(node, context, false)}</View>;
+      return <View key={key} style={{ backgroundColor: primitives.background }}>{renderChildren(node, context, false)}</View>;
     case 'paragraph':
       return renderParagraph(node, context, key);
     case 'heading': {

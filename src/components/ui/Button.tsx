@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { cloneElement, forwardRef, isValidElement, useState } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -16,6 +16,8 @@ export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> 
   children: React.ReactNode;
   variant?: ButtonVariant;
   foregroundColor?: string;
+  radius?: number;
+  focusRingColor?: string;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
 }
@@ -24,24 +26,42 @@ export const Button = forwardRef<View, ButtonProps>(function Button({
   children,
   variant = 'ghost',
   foregroundColor,
+  radius,
+  focusRingColor,
   disabled,
   accessibilityRole,
   accessibilityState,
   style,
   textStyle,
+  onFocus,
+  onBlur,
   ...props
 }, ref) {
+  const [focused, setFocused] = useState(false);
+  const content = isValidElement<{ color?: string }>(children) && children.type !== React.Fragment && foregroundColor
+    ? cloneElement(children, { color: foregroundColor })
+    : children;
   return <Pressable
     {...props}
     ref={ref}
     accessibilityRole={accessibilityRole ?? 'button'}
     accessibilityState={{ ...accessibilityState, disabled: Boolean(disabled || accessibilityState?.disabled) }}
     disabled={disabled}
-    style={({ pressed }) => [styles.base, variant === 'menu' ? styles.menu : styles.ghost, pressed && styles.pressed, disabled && styles.disabled, style]}
+    onFocus={(event) => { setFocused(true); onFocus?.(event); }}
+    onBlur={(event) => { setFocused(false); onBlur?.(event); }}
+    style={({ pressed }) => [
+      styles.base,
+      variant === 'menu' ? styles.menu : styles.ghost,
+      radius === undefined ? undefined : { borderRadius: radius },
+      focusRingColor ? { borderWidth: 1, borderColor: focused ? focusRingColor : 'transparent' } : undefined,
+      pressed && styles.pressed,
+      disabled && styles.disabled,
+      style,
+    ]}
   >
     {typeof children === 'string' || typeof children === 'number'
       ? <Text style={[styles.text, { color: foregroundColor }, textStyle]}>{children}</Text>
-      : children}
+      : content}
   </Pressable>;
 });
 

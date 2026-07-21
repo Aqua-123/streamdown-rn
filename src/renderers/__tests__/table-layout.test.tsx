@@ -1,6 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import type { Root } from 'mdast';
 import { ASTRenderer } from '../ASTRenderer';
 import { lightTheme } from '../../themes';
@@ -38,6 +38,9 @@ describe('native table layout', () => {
     expect(styleForCell('Centered title').borderRightWidth).toBe(1);
     expect(styleForCell('R').borderRightWidth).toBe(0);
     expect(styleForText('A').fontWeight).toBe('600');
+    expect(styleForCell('A').backgroundColor).toBe(lightTheme.primitives!.muted);
+    const tableSurface = screen.UNSAFE_getAllByType(ScrollView).find(({ props }) => StyleSheet.flatten(props.style)?.borderWidth === 1)!;
+    expect(StyleSheet.flatten(tableSurface.props.style)).toMatchObject({ backgroundColor: lightTheme.primitives!.background, borderColor: lightTheme.primitives!.border, borderRadius: 6 });
   });
 
   it('defaults missing alignment to left', () => {

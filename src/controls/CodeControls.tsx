@@ -7,7 +7,7 @@ import { controlEnabled } from './config';
 import type { StreamdownTranslations } from './translations';
 import { defaultIcons, type IconMap } from './icons';
 
-export function CodeControls({ code, language, capabilities, controls, translations, disabled, icons, color }: {
+export function CodeControls({ code, language, capabilities, controls, translations, disabled, icons, color, radius, focusRingColor }: {
   code: string;
   language?: string | null;
   capabilities: NativeCapabilities;
@@ -16,6 +16,8 @@ export function CodeControls({ code, language, capabilities, controls, translati
   disabled?: boolean;
   icons?: IconMap;
   color?: string;
+  radius?: number;
+  focusRingColor?: string;
 }) {
   const copy = controlEnabled(controls, 'code', 'copy') && Boolean(capabilities.clipboard);
   const download = controlEnabled(controls, 'code', 'download') && Boolean(capabilities.files);
@@ -27,6 +29,8 @@ export function CodeControls({ code, language, capabilities, controls, translati
         icon={icons?.download ?? defaultIcons.download}
         disabled={disabled}
         color={color}
+        radius={radius}
+        focusRingColor={focusRingColor}
         onAction={() => capabilities.files!.save(codeFileRequest(code, language))}
       /> : null}
       {copy ? <ActionButton
@@ -35,6 +39,8 @@ export function CodeControls({ code, language, capabilities, controls, translati
         successMessage={translations.copied}
         disabled={disabled}
         color={color}
+        radius={radius}
+        focusRingColor={focusRingColor}
         onAction={() => capabilities.clipboard!.writeText(code)}
       /> : null}
     </View>

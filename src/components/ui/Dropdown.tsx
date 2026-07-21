@@ -99,11 +99,12 @@ export interface DropdownPopupProps {
   sideOffset?: number;
   collisionPadding?: number;
   minWidth?: number;
+  radius?: number;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
 }
 
-export function DropdownPopup({ children, align = 'end', sideOffset = 4, collisionPadding = 8, minWidth = 120, style, accessibilityLabel }: DropdownPopupProps) {
+export function DropdownPopup({ children, align = 'end', sideOffset = 4, collisionPadding = 8, minWidth = 120, radius, style, accessibilityLabel }: DropdownPopupProps) {
   const { open, anchor, measureTrigger, setOpen } = useDropdown();
   const window = useWindowDimensions();
   const [size, setSize] = useState({ width: minWidth, height: 0 });
@@ -137,7 +138,7 @@ export function DropdownPopup({ children, align = 'end', sideOffset = 4, collisi
         accessibilityLabel={accessibilityLabel}
         accessibilityViewIsModal
         onLayout={onLayout}
-        style={[styles.popup, { left, top, minWidth: Math.min(minWidth, availableWidth), maxWidth: availableWidth, maxHeight: availableHeight }, style]}
+        style={[styles.popup, { left, top, minWidth: Math.min(minWidth, availableWidth), maxWidth: availableWidth, maxHeight: availableHeight }, radius === undefined ? undefined : { borderRadius: radius }, style]}
       >{children}</View>
     </View>
   </Modal>;
