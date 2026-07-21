@@ -17,19 +17,27 @@ export function FullscreenModal({ visible, label, closeLabel, children, capabili
   backgroundColor?: string;
   contentMode?: 'horizontal' | 'document' | 'canvas';
 }) {
+  const closeRequested = useRef(false);
   const restorePending = useRef(false);
+  const visibleRef = useRef(visible);
+  visibleRef.current = visible;
   const restoreFocus = useCallback(() => {
-    if (!restorePending.current) return;
+    if (visibleRef.current || !restorePending.current) return;
     restorePending.current = false;
     capabilities.focus?.restore(restoreTarget);
   }, [capabilities.focus, restoreTarget]);
   const close = () => {
-    if (!visible || restorePending.current) return;
+    if (!visible || closeRequested.current) return;
+    closeRequested.current = true;
     restorePending.current = true;
     onClose();
   };
   useEffect(() => {
-    if (visible || !restorePending.current || Platform.OS !== 'android') return;
+    if (visible) {
+      closeRequested.current = false;
+      return;
+    }
+    if (!restorePending.current || Platform.OS !== 'android') return;
     const task = InteractionManager.runAfterInteractions(restoreFocus);
     return () => task.cancel();
   }, [restoreFocus, visible]);

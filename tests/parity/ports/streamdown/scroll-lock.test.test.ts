@@ -24,6 +24,22 @@ function ControlledModal({ close, restore }: { close: jest.Mock; restore: jest.M
   });
 }
 
+function ReopenableModal({ close, restore }: { close: jest.Mock; restore: jest.Mock }) {
+  const [visible, setVisible] = useState(true);
+  return React.createElement(React.Fragment, null,
+    React.createElement(Text, { accessibilityRole: 'button', accessibilityLabel: 'Open', onPress: () => setVisible(true) }, 'open'),
+    React.createElement(FullscreenModal, {
+      visible,
+      label: 'Fullscreen',
+      closeLabel: 'Close',
+      capabilities: capabilities(restore),
+      restoreTarget: 'opener',
+      onClose: () => { close(); setVisible(false); },
+      children: React.createElement(Text, null, 'content'),
+    }),
+  );
+}
+
 describe('native modal containment substitutes for body scroll locking', () => {
   it('restores focus after native dismissal and only once', () => {
     // parity:53a966aa3a07bf35c64c72fa62d72dbe37584086b8438de46be377f80233f903
@@ -51,6 +67,22 @@ describe('native modal containment substitutes for body scroll locking', () => {
     expect(restore).not.toHaveBeenCalled();
     act(() => jest.runAllTimers());
     expect(restore).toHaveBeenCalledTimes(1);
+    fireEvent(screen.UNSAFE_getByType(Modal), 'dismiss');
+    expect(restore).toHaveBeenCalledTimes(1);
+  });
+
+  it('can close again after reopening before the prior dismissal callback', () => {
+    const close = jest.fn();
+    const restore = jest.fn();
+    const screen = render(React.createElement(ReopenableModal, { close, restore }));
+    fireEvent.press(screen.getByLabelText('Close'));
+    fireEvent.press(screen.getByLabelText('Open'));
+    fireEvent(screen.UNSAFE_getByType(Modal), 'dismiss');
+    expect(restore).not.toHaveBeenCalled();
+    fireEvent.press(screen.getByLabelText('Close'));
+    expect(close).toHaveBeenCalledTimes(2);
+    expect(restore).not.toHaveBeenCalled();
+    fireEvent(screen.UNSAFE_getByType(Modal), 'dismiss');
     fireEvent(screen.UNSAFE_getByType(Modal), 'dismiss');
     expect(restore).toHaveBeenCalledTimes(1);
   });
