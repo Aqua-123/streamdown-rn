@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, waitFor } from '@testing-library/react-native';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 import { parseSemanticDocument } from '../core/parser';
 import {
   applySecurityPolicy,
@@ -318,6 +318,83 @@ describe('custom registry trust boundary', () => {
       expect.objectContaining({ message: 'render failed' }),
       'BrokenCard'
     ));
+    consoleError.mockRestore();
+  });
+
+  it('retries a failed component only after its inputs change', async () => {
+    const onError = jest.fn();
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const component = ({ status, style, _isStreaming, children }: {
+      status?: string;
+      style?: { opacity?: number };
+      _isStreaming?: boolean;
+      children?: React.ReactNode;
+    }) => {
+      if (
+        status === 'partial' ||
+        (status === 'styled' && style?.opacity !== 1) ||
+        (status === 'streaming' && _isStreaming) ||
+        (status === 'nested' && !children) ||
+        status === 'definition'
+      ) throw new Error('not ready');
+      return React.createElement(View, null, React.createElement(Text, null, status), children);
+    };
+    let definition = { component };
+    const registry = {
+      get: (name: string) => name === 'Child'
+        ? { component: ({ label }: { label?: string }) => React.createElement(Text, null, label) }
+        : definition,
+      has: () => true,
+      validate: () => ({ valid: true, errors: [] }),
+    };
+    const renderCard = (
+      status: string,
+      inputs: Pick<React.ComponentProps<typeof ComponentBlock>, 'style' | 'children' | 'isStreaming'> = {}
+    ) => React.createElement(ComponentBlock, {
+      componentName: 'RetryCard',
+      props: { status },
+      componentRegistry: registry,
+      theme: lightTheme,
+      onError,
+      ...inputs,
+    });
+    const result = render(renderCard('partial'));
+
+    expect(result.getByText('⚠️ Invalid component: RetryCard')).toBeTruthy();
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
+
+    result.rerender(renderCard('partial'));
+    expect(result.getByText('⚠️ Invalid component: RetryCard')).toBeTruthy();
+    expect(onError).toHaveBeenCalledTimes(1);
+
+    result.rerender(renderCard('ready'));
+    expect(result.getByText('ready')).toBeTruthy();
+    expect(onError).toHaveBeenCalledTimes(1);
+
+    result.rerender(renderCard('styled'));
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(2));
+    result.rerender(renderCard('styled', { style: { opacity: 1 } }));
+    expect(result.getByText('styled')).toBeTruthy();
+
+    result.rerender(renderCard('streaming', { isStreaming: true }));
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(3));
+    result.rerender(renderCard('streaming'));
+    expect(result.getByText('streaming')).toBeTruthy();
+
+    result.rerender(renderCard('nested'));
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(4));
+    result.rerender(renderCard('nested', {
+      children: [{ name: 'Child', props: { label: 'child' } }],
+    }));
+    expect(result.getByText('nested')).toBeTruthy();
+    expect(result.getByText('child')).toBeTruthy();
+
+    result.rerender(renderCard('definition'));
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(5));
+    definition = { component: () => React.createElement(Text, null, 'replacement') };
+    result.rerender(renderCard('definition'));
+    expect(result.getByText('replacement')).toBeTruthy();
+    expect(onError).toHaveBeenCalledTimes(5);
     consoleError.mockRestore();
   });
 });

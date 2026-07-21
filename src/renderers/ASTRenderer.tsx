@@ -9,6 +9,7 @@ import type {
   StableBlock,
   ThemeConfig,
 } from '../core/types';
+import { hashContent } from '../core/types';
 import { extractComponentData, type ComponentData } from '../core/componentParser';
 import { sanitizeProps } from '../core/sanitize';
 import {
@@ -124,14 +125,20 @@ const ComponentErrorContext = React.createContext<ComponentErrorHandler | undefi
 class RegistryErrorBoundary extends React.Component<{
   children: ReactNode;
   componentName: string;
+  retryKey: number;
+  retryComponent: React.ElementType;
   fallback: ReactNode;
   onError?: ComponentErrorHandler;
 }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
   componentDidCatch(error: Error) { this.props.onError?.(error, this.props.componentName); }
-  componentDidUpdate(previous: Readonly<{ componentName: string }>) {
-    if (this.state.failed && previous.componentName !== this.props.componentName) {
+  componentDidUpdate(previous: Readonly<typeof this.props>, previousState: Readonly<typeof this.state>) {
+    if (previousState.failed && this.state.failed && (
+      previous.componentName !== this.props.componentName ||
+      previous.retryKey !== this.props.retryKey ||
+      previous.retryComponent !== this.props.retryComponent
+    )) {
       this.setState({ failed: false });
     }
   }
@@ -676,7 +683,7 @@ function componentError(theme: ThemeConfig, message: string): ReactNode {
 }
 
 function ValidatedRegistryComponent({
-  componentName, componentRegistry, props, style, children, isStreaming, theme,
+  componentName, componentRegistry, props, style, children, childrenKey, isStreaming, theme,
   onError: directOnError, resourcePolicy,
 }: {
   componentName: string;
@@ -684,6 +691,7 @@ function ValidatedRegistryComponent({
   props: Record<string, unknown>;
   style?: Record<string, unknown>;
   children?: ReactNode;
+  childrenKey: number;
   isStreaming: boolean;
   theme: ThemeConfig;
   onError?: ComponentErrorHandler;
@@ -709,8 +717,9 @@ function ValidatedRegistryComponent({
   const Component = isStreaming && definition.skeletonComponent
     ? definition.skeletonComponent
     : definition.component;
+  const retryKey = hashContent(JSON.stringify([safeProps, safeStyle, childrenKey, isStreaming]));
   return (
-    <RegistryErrorBoundary componentName={componentName} fallback={fallback} onError={onError}>
+    <RegistryErrorBoundary componentName={componentName} retryKey={retryKey} retryComponent={Component} fallback={fallback} onError={onError}>
       <Component {...safeProps} style={{ ...(safeProps.style as object), ...safeStyle }} _isStreaming={isStreaming}>{children}</Component>
     </RegistryErrorBoundary>
   );
@@ -729,12 +738,13 @@ export const ComponentBlock: React.FC<ComponentBlockProps> = ({
   if (!name) return null;
   if (!componentRegistry) return componentError(theme, '⚠️ No component registry provided');
   if (!componentRegistry.get(name)) return componentError(theme, `⚠️ Unknown component: ${name}`);
+  const childrenKey = hashContent(JSON.stringify(children ?? null));
   const renderedChildren = children?.map((child, index) => (
     <ComponentBlock key={index} theme={theme} componentRegistry={componentRegistry} componentName={child.name} props={child.props} style={child.style} children={child.children} isStreaming={isStreaming} onError={onError} resourcePolicy={resourcePolicy} />
   ));
   return (
     <View style={{ marginBottom: theme.spacing.block }}>
-      <ValidatedRegistryComponent componentName={name} componentRegistry={componentRegistry} props={props} style={style} isStreaming={isStreaming} theme={theme} onError={onError} resourcePolicy={resourcePolicy}>{renderedChildren}</ValidatedRegistryComponent>
+      <ValidatedRegistryComponent componentName={name} componentRegistry={componentRegistry} props={props} style={style} childrenKey={childrenKey} isStreaming={isStreaming} theme={theme} onError={onError} resourcePolicy={resourcePolicy}>{renderedChildren}</ValidatedRegistryComponent>
     </View>
   );
 };
