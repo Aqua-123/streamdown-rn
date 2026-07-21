@@ -21,7 +21,14 @@ export function CodeControls({ code, language, capabilities, controls, translati
   const download = controlEnabled(controls, 'code', 'download') && Boolean(capabilities.files);
   if (!copy && !download) return null;
   return (
-    <View accessibilityRole="toolbar" style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+    <View accessibilityRole="toolbar" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 4 }}>
+      {download ? <ActionButton
+        label={translations.downloadFile}
+        icon={icons?.download ?? defaultIcons.download}
+        disabled={disabled}
+        color={color}
+        onAction={() => capabilities.files!.save(codeFileRequest(code, language))}
+      /> : null}
       {copy ? <ActionButton
         label={translations.copyCode}
         icon={icons?.copy ?? defaultIcons.copy}
@@ -29,13 +36,6 @@ export function CodeControls({ code, language, capabilities, controls, translati
         disabled={disabled}
         color={color}
         onAction={() => capabilities.clipboard!.writeText(code)}
-      /> : null}
-      {download ? <ActionButton
-        label={translations.downloadFile}
-        icon={icons?.download ?? defaultIcons.download}
-        disabled={disabled}
-        color={color}
-        onAction={() => capabilities.files!.save(codeFileRequest(code, language))}
       /> : null}
     </View>
   );

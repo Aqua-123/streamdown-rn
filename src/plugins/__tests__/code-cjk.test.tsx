@@ -41,6 +41,60 @@ describe('optional code plugin', () => {
     expect(plugin.highlight({ code: 'const x = 1', language: 'js', themes: [...themes] })).toEqual(callback.mock.calls[0][0]);
   });
 
+  it('normalizes and caches highlighting by color scheme', async () => {
+    const highlight = jest.fn(async ({ code, colorScheme }) => ({
+      tokens: [[{ content: `${colorScheme}:${code}` }]],
+    }));
+    const plugin = createCodePlugin({ provider: { languages: ['text'], highlight } });
+    const load = (colorScheme?: 'light' | 'dark') => new Promise<HighlightResult>((resolve) => {
+      const immediate = plugin.highlight({ code: 'same', language: 'text', themes: [...themes], colorScheme }, resolve);
+      if (immediate) resolve(immediate);
+    });
+
+    await expect(load('light')).resolves.toEqual({ tokens: [[{ content: 'light:same' }]] });
+    await expect(load('dark')).resolves.toEqual({ tokens: [[{ content: 'dark:same' }]] });
+    await expect(load()).resolves.toEqual({ tokens: [[{ content: 'dark:same' }]] });
+    expect(highlight).toHaveBeenCalledTimes(2);
+    expect(highlight.mock.calls.map(([request]) => request.colorScheme)).toEqual(['light', 'dark']);
+  });
+
+  it('times out pending highlights and ignores obsolete late results', async () => {
+    jest.useFakeTimers();
+    const resolvers: Array<(result: HighlightResult) => void> = [];
+    const onError = jest.fn();
+    const plugin = createCodePlugin({
+      provider: {
+        languages: ['text'],
+        highlight: () => new Promise((resolve) => resolvers.push(resolve)),
+      },
+      highlightTimeoutMs: 50,
+      onError,
+    });
+    const request = { code: 'source', language: 'text', themes: [...themes] } as const;
+    const first = jest.fn();
+    const retry = jest.fn();
+
+    plugin.highlight(request, first);
+    jest.advanceTimersByTime(50);
+    expect(first).toHaveBeenCalledWith(plainCodeResult('source'));
+    expect(onError).toHaveBeenCalledTimes(1);
+
+    plugin.highlight(request, retry);
+    resolvers[0]({ tokens: [[{ content: 'obsolete' }]] });
+    await Promise.resolve();
+    expect(retry).not.toHaveBeenCalled();
+    expect(plugin.highlight(request, retry)).toBeNull();
+
+    const current = { tokens: [[{ content: 'current' }]] };
+    resolvers[1](current);
+    await Promise.resolve();
+    expect(retry).toHaveBeenCalledTimes(1);
+    expect(retry).toHaveBeenCalledWith(current);
+    expect(plugin.highlight(request)).toEqual(current);
+    expect(onError).toHaveBeenCalledTimes(1);
+    jest.useRealTimers();
+  });
+
   it('keys the bounded cache by complete source, not matching edges', async () => {
     const seen: string[] = [];
     const provider: TokenProvider = {
@@ -95,11 +149,14 @@ describe('optional code plugin', () => {
     expect(plugin.highlight({ code: source, language: 'text', themes: [...themes] })).toEqual(plainCodeResult(source));
     expect(highlight).not.toHaveBeenCalled();
     expect(() => createCodePlugin({ maxCacheUnits: 0 })).toThrow('maxCacheUnits must be a positive integer');
+    expect(() => createCodePlugin({ highlightTimeoutMs: 0 })).toThrow('highlightTimeoutMs must be a positive integer');
+    expect(() => createCodePlugin({ highlightTimeoutMs: 1.5 })).toThrow('highlightTimeoutMs must be a positive integer');
+    expect(() => createCodePlugin({ highlightTimeoutMs: Number.POSITIVE_INFINITY })).toThrow('highlightTimeoutMs must be a positive integer');
   });
 });
 
 describe('native code rendering and custom renderer precedence', () => {
-  it('renders metadata, custom start lines, line-number opt-out, and highlighted tokens', async () => {
+  it('applies metadata without displaying it and renders highlighted tokens', async () => {
     const plugin = createCodePlugin({
       provider: {
         languages: ['js'],
@@ -112,9 +169,16 @@ describe('native code rendering and custom renderer precedence', () => {
       </Streamdown>
     );
     expect(screen.getByText('js')).toBeTruthy();
-    expect(screen.getByText('startLine=10 noLineNumbers title="sample"')).toBeTruthy();
+    expect(screen.queryByText('startLine=10 noLineNumbers title="sample"')).toBeNull();
     expect(screen.queryByText('10')).toBeNull();
     expect(screen.getByText('const x = 1')).toHaveStyle({ color: '#f00' });
+  });
+
+  it('passes the resolved theme color scheme to the provider', () => {
+    const highlight = jest.fn(({ code }) => plainCodeResult(code));
+    const plugin = createCodePlugin({ provider: { languages: ['js'], highlight } });
+    render(<Streamdown mode="static" theme="light" plugins={{ code: plugin }}>{'```js\nlight\n```'}</Streamdown>);
+    expect(highlight).toHaveBeenCalledWith(expect.objectContaining({ colorScheme: 'light' }));
   });
 
   it('renders line numbers by default and exposes readable loading fallback', async () => {

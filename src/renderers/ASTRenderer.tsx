@@ -398,7 +398,7 @@ function NativeCodeBlock({ node, context }: { node: SemanticNode; context: Rende
     setResult(raw);
     setLoading(false);
     if (!plugin || context.codeFenceIncomplete) return () => { active = false; };
-    const highlighted = plugin.highlight({ code: displayCode, language: node.lang ?? '', themes }, (next) => {
+    const highlighted = plugin.highlight({ code: displayCode, language: node.lang ?? '', themes, colorScheme: context.theme.colorScheme ?? 'dark' }, (next) => {
       if (!active) return;
       setResult(next);
       setLoading(false);
@@ -406,7 +406,7 @@ function NativeCodeBlock({ node, context }: { node: SemanticNode; context: Rende
     if (highlighted) setResult(highlighted);
     else setLoading(true);
     return () => { active = false; };
-  }, [context.codeFenceIncomplete, displayCode, node.lang, plugin, raw, themes]);
+  }, [context.codeFenceIncomplete, context.theme.colorScheme, displayCode, node.lang, plugin, raw, themes]);
 
   const startMatch = node.meta?.match(/(?:^|\s)startLine=(\d+)(?:\s|$)/);
   const parsedStart = startMatch ? Number.parseInt(startMatch[1], 10) : 1;
@@ -428,18 +428,17 @@ function NativeCodeBlock({ node, context }: { node: SemanticNode; context: Rende
           color={context.theme.colors.muted}
         />
       </View>
-      {node.meta ? <Text style={{ color: context.theme.colors.muted, fontSize: 12 }}>{node.meta}</Text> : null}
       {loading ? <View accessible accessibilityLabel="Highlighting code" accessibilityState={{ busy: true }} /> : null}
-      <ScrollView horizontal style={[{ borderWidth: 1, borderColor: context.theme.colors.border, borderRadius: 6, backgroundColor: context.theme.colors.background, padding: 16 }, result.bg ? { backgroundColor: result.bg } : undefined]}>
+      <ScrollView horizontal style={[{ padding: 16 }, result.bg ? { backgroundColor: result.bg } : undefined]}>
         <View>
           {result.tokens.map((line, lineIndex) => (
             <View key={lineIndex} style={{ flexDirection: 'row' }}>
               {showLineNumbers ? (
-                <Text accessibilityLabel={`Line ${startLine + lineIndex}`} style={[styles.code, { color: context.theme.colors.muted, minWidth: 32 }]}>
+                <Text accessibilityLabel={`Line ${startLine + lineIndex}`} style={styles.codeLineNumber}>
                   {startLine + lineIndex}
                 </Text>
               ) : null}
-              <Text style={[styles.code, result.fg ? { color: result.fg } : undefined]}>
+              <Text style={[styles.codeBlock, result.fg ? { color: result.fg } : undefined]}>
                 {line.length ? line.map((token, tokenIndex) => (
                   <Text key={tokenIndex} style={tokenStyle(token)}>{token.content}</Text>
                 )) : ''}

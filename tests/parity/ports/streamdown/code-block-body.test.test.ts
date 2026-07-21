@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react-native';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Streamdown } from '../../../../src/StreamdownRN';
 import { createCodePlugin, type HighlightResult } from '../../../../src/plugins/code';
+import { getTextStyles, lightTheme } from '../../../../src/themes';
 
 const renderResult = (result: HighlightResult, language = 'javascript') => render(
   React.createElement(Streamdown, {
@@ -24,6 +25,13 @@ const hasTextStyle = (property: string, value: string) =>
   screen.UNSAFE_getAllByType(Text).some((text) => StyleSheet.flatten(text.props.style)?.[property] === value);
 
 describe('CodeBlockBody native parity', () => {
+  it('keeps inline code pills separate from fenced code text and line numbers', () => {
+    const styles = getTextStyles(lightTheme);
+    expect(styles.code).toMatchObject({ backgroundColor: lightTheme.colors.codeBackground, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 });
+    expect(styles.codeBlock).not.toEqual(expect.objectContaining({ backgroundColor: expect.anything(), paddingHorizontal: expect.anything(), paddingVertical: expect.anything(), borderRadius: expect.anything() }));
+    expect(styles.codeLineNumber).not.toEqual(expect.objectContaining({ backgroundColor: expect.anything(), paddingHorizontal: expect.anything(), paddingVertical: expect.anything(), borderRadius: expect.anything() }));
+  });
+
   it('renders the language and basic highlighted result', () => {
     // parity:57b401b5b96284b935fdfc9e8496e35d3ac71720e68ef6bf4799b3ffb0524021
     renderResult({ tokens: [[{ content: 'const x = 1;', color: '#000' }]], bg: '#fff', fg: '#000' });

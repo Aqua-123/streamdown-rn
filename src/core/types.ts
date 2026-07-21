@@ -233,6 +233,8 @@ export interface ThemeColors {
  * Only mono is required for code blocks.
  */
 export interface ThemeConfig {
+  /** Active palette used by scheme-aware code highlighters. Defaults to dark. */
+  colorScheme?: 'light' | 'dark';
   colors: ThemeColors;
   fonts: {
     regular?: string;   // Optional - uses platform default if undefined
