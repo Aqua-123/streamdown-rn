@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { Text } from 'react-native';
-import { render } from '@testing-library/react-native';
+import { Text, View } from 'react-native';
+import { render, within } from '@testing-library/react-native';
 import { Streamdown } from '../../StreamdownRN';
 import { createStreamingInstrumentation } from '../../core/streaming';
 
@@ -129,6 +129,32 @@ describe('streaming lifecycle', () => {
     expect(metrics.snapshot()).toMatchObject({ resets: 1, cacheEntries: 0 });
     expect(mounts).toBe(2);
     expect(unmounts).toBe(1);
+  });
+
+  it('renders progressive component style and children before completion', () => {
+    const Parent = ({ style, children }: { style?: object; children?: React.ReactNode }) => (
+      <View testID="parent" style={style}>{children}</View>
+    );
+    const Child = ({ label }: { label?: string }) => <Text>{label}</Text>;
+    const registry = {
+      get: (name: string) => name === 'Parent'
+        ? { component: Parent }
+        : name === 'Child'
+          ? { component: Child }
+          : undefined,
+      has: (name: string) => name === 'Parent' || name === 'Child',
+      validate: () => ({ valid: true, errors: [] }),
+    };
+    const incomplete = '[{c:"Parent",p:{},style:{"padding":12},children:[{c:"Child",p:{"label":"nested"}}';
+    const screen = render(<Streamdown componentRegistry={registry}>{incomplete}</Streamdown>);
+
+    expect(screen.getByTestId('parent')).toHaveStyle({ padding: 12 });
+    expect(within(screen.getByTestId('parent')).getByText('nested')).toBeTruthy();
+
+    const complete = `${incomplete}]}]`;
+    screen.rerender(<Streamdown componentRegistry={registry} isComplete>{complete}</Streamdown>);
+    expect(screen.getByTestId('parent')).toHaveStyle({ padding: 12 });
+    expect(within(screen.getByTestId('parent')).getByText('nested')).toBeTruthy();
   });
 
   it('fires streaming transitions exactly once and suppresses them in static mode', () => {

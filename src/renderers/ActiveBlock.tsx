@@ -92,11 +92,13 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
   
   // Special handling for component blocks (don't use remark)
   if (block.type === 'component') {
-    const { name, props } = extractComponentData(block.content, securityPolicy);
+    const { name, props, style, children } = extractComponentData(block.content, securityPolicy);
     return (
       <ComponentBlock
         componentName={name}
         props={props}
+        style={style}
+        children={children}
         isStreaming={isAnimating}
         theme={theme}
         componentRegistry={componentRegistry}
