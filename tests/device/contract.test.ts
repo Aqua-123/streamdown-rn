@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { buildBenchmarkCorpus as minimumCorpus } from '../../fixtures/expo54/benchmarkCorpus';
 import { buildBenchmarkCorpus as currentCorpus } from '../../fixtures/current-rn/benchmarkCorpus';
 import { createHash } from 'node:crypto';
@@ -36,12 +37,31 @@ describe('device proof contract', () => {
       'image-loading', 'image-error', 'image-retry',
       'code', 'code-loading', 'code-unsupported', 'code-incomplete',
       'math', 'math-loading', 'math-error', 'math-fallback',
-      'mermaid', 'mermaid-loading', 'mermaid-error', 'mermaid-retry', 'mermaid-webview-fallback',
+      'mermaid', 'mermaid-sequence', 'mermaid-state', 'mermaid-loading', 'mermaid-error', 'mermaid-retry', 'mermaid-webview-fallback',
+      'harness',
     ]) {
       expect(cases.some((entry) => entry.scenario === scenario)).toBe(true);
     }
     expect(cases.filter((entry) => entry.scenario === 'streaming').map((entry) => entry.checkpoint)).toEqual(expect.arrayContaining(['128', 'complete']));
     expect(fs.readFileSync(path.resolve('tests/visual/capture.mjs'), 'utf8')).toMatch(/Accessibility hierarchy|maestro is required/);
+  });
+
+  it('keeps the fixture chrome on exported themes and inside safe areas', () => {
+    const fixture = fs.readFileSync(path.resolve('fixtures/current-rn/App.js'), 'utf8');
+    const harness = fs.readFileSync(path.resolve('fixtures/current-rn/harness-app.js'), 'utf8');
+    for (const source of [fixture, harness]) {
+      expect(source).toMatch(/darkTheme, lightTheme/);
+      expect(source).toMatch(/<SafeAreaView/);
+      expect(source).toMatch(/theme=\{selectedTheme\}/);
+    }
+    expect(harness).not.toMatch(/const PALETTES|#111113/);
+    expect(harness).toMatch(/paddingBottom: (?:9[89]|[1-9]\d{2,})/);
+  });
+
+  it('fails the visual readiness self-check when required semantics are unavailable', () => {
+    const result = spawnSync(process.execPath, ['tests/visual/capture.mjs', '--self-test'], { encoding: 'utf8' });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('semantic readiness self-test passed');
   });
 
   it('cannot claim completion while declared evidence is blocked', () => {

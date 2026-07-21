@@ -2,7 +2,9 @@ import React, { Profiler, useEffect, useMemo, useReducer, useRef, useState } fro
 import {
   AccessibilityInfo,
   Modal,
+  Platform,
   Pressable,
+  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -12,39 +14,17 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { Streamdown } from 'streamdown-rn';
+import { Streamdown, darkTheme, lightTheme } from 'streamdown-rn';
 import { DEFAULT_SAMPLE, HARNESS_SAMPLES } from './harness-samples';
 import { initialPlaybackState, playbackReducer, progressPercent } from './harness-state';
 
-const PALETTES = {
+const STATUS_COLORS = {
   light: {
-    canvas: '#f4f4f5',
-    surface: '#ffffff',
-    surfaceRaised: '#fafafa',
-    border: '#e4e4e7',
-    borderStrong: '#d4d4d8',
-    text: '#18181b',
-    muted: '#71717a',
-    faint: '#a1a1aa',
-    accent: '#18181b',
-    accentText: '#ffffff',
-    tint: '#f1f1f3',
     success: '#16a34a',
     warning: '#f59e0b',
     track: '#e4e4e7',
   },
   dark: {
-    canvas: '#09090b',
-    surface: '#18181b',
-    surfaceRaised: '#202023',
-    border: '#2f2f33',
-    borderStrong: '#3f3f46',
-    text: '#fafafa',
-    muted: '#a1a1aa',
-    faint: '#71717a',
-    accent: '#fafafa',
-    accentText: '#18181b',
-    tint: '#27272a',
     success: '#4ade80',
     warning: '#fbbf24',
     track: '#3f3f46',
@@ -159,9 +139,9 @@ function Metric({ label, value, palette }) {
   );
 }
 
-export function HarnessApp({ allPlugins, metrics, capabilities }) {
+export function HarnessApp({ initialTheme, allPlugins, metrics, capabilities }) {
   const { width } = useWindowDimensions();
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState(initialTheme === 'dark' ? 'dark' : 'light');
   const [direction, setDirection] = useState('ltr');
   const [sampleId, setSampleId] = useState(DEFAULT_SAMPLE.id);
   const [streamingMode, setStreamingMode] = useState(false);
@@ -175,7 +155,22 @@ export function HarnessApp({ allPlugins, metrics, capabilities }) {
   const [playback, dispatch] = useReducer(playbackReducer, initialPlaybackState);
   const lastCommitMs = useRef(0);
   const commitCount = useRef(0);
-  const palette = PALETTES[theme];
+  const selectedTheme = theme === 'dark' ? darkTheme : lightTheme;
+  const primitives = selectedTheme.primitives;
+  const palette = {
+    canvas: primitives.background,
+    surface: primitives.card,
+    surfaceRaised: primitives.popover,
+    border: primitives.border,
+    borderStrong: primitives.input,
+    text: primitives.foreground,
+    muted: primitives.mutedForeground,
+    faint: primitives.chart2,
+    accent: primitives.primary,
+    accentText: primitives.primaryForeground,
+    tint: primitives.muted,
+    ...STATUS_COLORS[theme],
+  };
   const sample = HARNESS_SAMPLES.find((item) => item.id === sampleId) || DEFAULT_SAMPLE;
   const total = sample.markdown.length;
   const percent = streamingMode ? progressPercent(playback.cursor, total) : 100;
@@ -233,12 +228,12 @@ export function HarnessApp({ allPlugins, metrics, capabilities }) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: palette.canvas }} testID="streamdown-lab">
+    <SafeAreaView style={{ flex: 1, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0, paddingBottom: Platform.OS === 'android' ? 12 : 0, backgroundColor: palette.canvas }} testID="streamdown-lab">
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={palette.canvas} />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         keyboardDismissMode="on-drag"
-        contentContainerStyle={{ width: '100%', maxWidth: 820, alignSelf: 'center', paddingHorizontal: compact ? 14 : 20, paddingTop: 10, paddingBottom: 48 }}
+        contentContainerStyle={{ width: '100%', maxWidth: 820, alignSelf: 'center', paddingHorizontal: compact ? 14 : 20, paddingTop: 10, paddingBottom: 116 }}
       >
         <View style={{ paddingHorizontal: 4, paddingTop: 10, paddingBottom: 18 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
@@ -379,12 +374,12 @@ export function HarnessApp({ allPlugins, metrics, capabilities }) {
               <Text style={{ color: palette.muted, fontSize: 11, lineHeight: 16, marginTop: 2 }}>{streamingMode ? `${playback.cursor.toLocaleString()} of ${total.toLocaleString()} characters` : 'Full static document'}</Text>
             </View>
           </View>
-          <View style={{ padding: compact ? 16 : 22, minHeight: 220, backgroundColor: theme === 'dark' ? '#111113' : '#ffffff' }} testID="markdown-preview">
+          <View style={{ padding: compact ? 16 : 22, minHeight: 220, backgroundColor: palette.canvas }} testID="markdown-preview">
             {markdown ? (
               <Profiler id="streamdown-harness" onRender={(_id, _phase, duration) => { lastCommitMs.current = duration; commitCount.current += 1; }}>
                 <Streamdown
                   mode={streamingMode ? 'streaming' : 'static'}
-                  theme={theme}
+                  theme={selectedTheme}
                   dir={direction}
                   isAnimating={animate}
                   isComplete={isComplete}
@@ -414,6 +409,6 @@ export function HarnessApp({ allPlugins, metrics, capabilities }) {
           <Path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M10 14v6" stroke={palette.accentText} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
       </Pressable>
-    </View>
+    </SafeAreaView>
   );
 }

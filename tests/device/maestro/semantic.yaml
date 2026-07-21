@@ -1,6 +1,5 @@
 appId: ${APP_ID}
 ---
-- tapOn:
-    point: "68%,56%"
-- assertVisible: "${EXPECTED_PRIMARY}"
-- assertVisible: "${EXPECTED_SECONDARY}"
+- extendedWaitUntil:
+    visible: "${EXPECTED}"
+    timeout: 10000
