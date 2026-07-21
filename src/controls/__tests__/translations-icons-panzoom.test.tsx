@@ -19,14 +19,15 @@ describe('translations and icons', () => {
       copyTableAsTsv: 'Copy table as TSV', imageNotAvailable: 'Image not available', openLink: 'Open link',
     });
     const markdown = '```txt\nhello\n```';
-    const screen = render(<Streamdown mode="static" icons={{ copy: <Text testID="copy-icon">C</Text> }}>{markdown}</Streamdown>);
+    const capabilities = { clipboard: { writeText: jest.fn() }, files: { save: jest.fn() } };
+    const screen = render(<Streamdown mode="static" capabilities={capabilities} icons={{ copy: <Text testID="copy-icon">C</Text> }}>{markdown}</Streamdown>);
     expect(screen.getByRole('button', { name: 'Copy Code' })).toBeTruthy();
     expect(screen.getByTestId('copy-icon')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Download file' })).toBeTruthy();
     expect(Object.values(defaultIcons).every(React.isValidElement)).toBe(true);
     expect(screen.queryByText('↓')).toBeNull();
 
-    screen.rerender(<Streamdown mode="static" icons={{ copy: <Text testID="next-copy-icon">N</Text> }}>{markdown}</Streamdown>);
+    screen.rerender(<Streamdown mode="static" capabilities={capabilities} icons={{ copy: <Text testID="next-copy-icon">N</Text> }}>{markdown}</Streamdown>);
     expect(screen.getByTestId('next-copy-icon')).toBeTruthy();
   });
 

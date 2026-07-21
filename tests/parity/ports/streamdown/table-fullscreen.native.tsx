@@ -5,7 +5,7 @@ import { defaultTranslations } from '../../../../src/controls/translations';
 
 describe('TableFullscreenButton native modal', () => {
   it('keeps copy and download actions available inside the native modal', () => {
-    const screen = render(<TableControls table={{ headers: ['A'], rows: [['B']] }} capabilities={{}} translations={defaultTranslations}><Text>Table body</Text></TableControls>);
+    const screen = render(<TableControls table={{ headers: ['A'], rows: [['B']] }} capabilities={{ clipboard: { writeText: jest.fn() }, files: { save: jest.fn() } }} translations={defaultTranslations}><Text>Table body</Text></TableControls>);
     fireEvent.press(screen.getByRole('button', { name: 'View fullscreen' }));
     expect(screen.getAllByRole('button', { name: 'Copy table' })).toHaveLength(2);
     expect(screen.getAllByRole('button', { name: 'Download table' })).toHaveLength(2);

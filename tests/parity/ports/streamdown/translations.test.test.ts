@@ -9,12 +9,14 @@ describe('adapted explicit native translations', () => {
   it('applies custom labels to code and table native controls', () => {
     const code = render(React.createElement(Streamdown, {
       mode: 'static', translations: { downloadFile: 'Datei herunterladen' },
+      capabilities: { files: { save: jest.fn() } },
       children: '```js\ncode\n```',
     }));
     expect(code.getByRole('button', { name: 'Datei herunterladen' })).toBeTruthy();
 
     const table = render(React.createElement(Streamdown, {
       mode: 'static', translations: { copyTableAsMarkdown: 'Tabelle kopieren' },
+      capabilities: { clipboard: { writeText: jest.fn() } },
       children: '| A |\n| - |\n| B |',
     }));
     fireEvent.press(table.getByRole('button', { name: 'Copy table' }));

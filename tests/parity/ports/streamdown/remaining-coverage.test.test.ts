@@ -30,7 +30,7 @@ describe('remaining upstream coverage through native semantics', () => {
   it('honors per-action Mermaid control configuration', async () => {
     // parity:665a01d5c1e88e45eeb577bb8b71fb1f8208b00165900f2f0e19c75b2e7a4231
     const plugin = createMermaidPlugin({ adapter: { families: ['flowchart'], render: async () => ({ kind: 'native', content: h(Text, null, 'diagram') }) } });
-    const screen = render(h(Streamdown, { mode: 'static', plugins: { mermaid: plugin }, controls: { mermaid: { copy: true, download: false, fullscreen: false, panZoom: false } } }, '```mermaid\nflowchart LR\nA-->B\n```'));
+    const screen = render(h(Streamdown, { mode: 'static', plugins: { mermaid: plugin }, capabilities: { clipboard: { writeText: jest.fn() } }, controls: { mermaid: { copy: true, download: false, fullscreen: false, panZoom: false } } }, '```mermaid\nflowchart LR\nA-->B\n```'));
     await waitFor(() => expect(screen.getByText('diagram')).toBeTruthy());
     expect(screen.getByRole('button', { name: 'Copy diagram' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Download diagram' })).toBeNull();
