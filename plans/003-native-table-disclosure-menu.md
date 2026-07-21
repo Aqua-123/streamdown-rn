@@ -6,7 +6,7 @@
 > done.
 >
 > **Drift check (run first)**:
-> `git diff --stat 50828ac..HEAD -- src/components/ui src/controls/TableControls.tsx src/controls/ActionButton.tsx src/controls/__tests__ tests/parity/ports/streamdown/table-dropdowns.native.tsx`
+> `git diff --stat e87c260..HEAD -- src/components/ui src/controls/TableControls.tsx src/controls/ActionButton.tsx src/controls/__tests__ tests/parity/ports/streamdown/table-dropdowns.native.tsx tests/parity/ports/streamdown/table-dropdowns.test.test.ts`
 
 ## Status
 
@@ -15,7 +15,7 @@
 - **Risk**: MED
 - **Depends on**: `plans/002-capability-truthful-native-actions.md`
 - **Category**: bug, accessibility
-- **Planned at**: commit `50828ac`, 2026-07-21
+- **Planned at**: commit `e87c260`, 2026-07-21
 
 ## Why this matters
 
@@ -26,12 +26,15 @@ needs the same hierarchy with native dismissal and focus semantics.
 
 ## Current state
 
-- `src/controls/TableControls.tsx:38-52` renders a trigger toolbar followed by
+- `src/controls/TableControls.tsx:45-62` renders a trigger toolbar followed by
   an in-flow `View` with `minWidth: 180` and generic `ActionButton` children.
 - The trigger has no `accessibilityState.expanded` and the choices have no
   labelled menu/group container.
-- Closing fullscreen does not clear fullscreen-scoped menu state
-  (`TableControls.tsx:58-68`).
+- Closing fullscreen still does not clear fullscreen-scoped menu state
+  (`TableControls.tsx:77-88`).
+- Plan 002 now hides copy and download triggers unless their corresponding
+  clipboard/files providers exist, and hoists successful copy feedback outside
+  the transient list. Preserve both behaviors.
 - The live playground download menu is a floating two-item surface (`CSV`,
   `Markdown`) aligned beneath the download icon.
 - Reuse serialization and capability calls; this plan changes presentation,
@@ -45,7 +48,7 @@ needs the same hierarchy with native dismissal and focus semantics.
 
 | Purpose | Command | Expected on success |
 |---------|---------|---------------------|
-| Unit | `bun run test --runInBand src/controls/__tests__/native-controls.test.tsx tests/parity/ports/streamdown/table-dropdowns.native.tsx` | pass |
+| Unit | `bun run test --silent -- src/controls/__tests__/native-controls.test.tsx tests/parity/ports/streamdown/table-dropdowns.test.test.ts` | 2 suites pass |
 | Typecheck | `bun run type-check` | pass |
 | Device contract | `bun run test:device-contract --silent` | pass |
 
@@ -54,8 +57,17 @@ needs the same hierarchy with native dismissal and focus semantics.
 **In scope**:
 
 - `src/controls/TableControls.tsx`
-- focused unit/parity tests
-- fixture scenario additions needed to open each menu
+- `src/controls/__tests__/native-controls.test.tsx`
+- `tests/parity/ports/streamdown/table-dropdowns.native.tsx`
+- directly affected parity assertions in:
+  - `tests/parity/ports/streamdown/remaining-coverage.test.test.ts`
+  - `tests/parity/ports/streamdown/final-coverage.test.test.ts`
+  - `tests/parity/ports/streamdown/coverage-final.test.test.ts`
+  - `tests/parity/ports/streamdown/table-fullscreen.native.tsx`
+  - `tests/parity/ports/streamdown/download-dropdown.native.tsx`
+  - `tests/parity/ports/streamdown/translations.test.test.ts`
+- fixture scenario additions only if the existing `tables` harness sample
+  cannot exercise both triggers
 - one `.changeset/*.md`
 
 **Out of scope**:
@@ -88,17 +100,26 @@ choice container.
 
 Use `Dropdown.Root`, `Dropdown.Trigger`, `Dropdown.Popup`, and `Dropdown.Item`
 for both copy and download. Keep only one root open at a time using the table's
-existing menu state. Pass theme colors and labels through the primitive's
-public props. Keep serialization and capability calls in `TableControls`.
+existing `{ type, scope }` menu state and each root's controlled `open` and
+`onOpenChange` props. Pass `surfaceColor`, `borderColor`, `color`, and the
+translated labels through the primitive's public props. Keep serialization and
+capability calls in `TableControls`; a successful copy must still set the
+existing stable feedback before the item resolves. A thrown provider error must
+remain inside the open menu through `Dropdown.Item`; do not catch and swallow
+it in the consumer. Convert non-success `CapabilityResult` values into rejected
+selections with the same user-facing wording currently supplied by
+`ActionButton`, so denied/cancelled/failed results do not silently close.
 
 **Verify**: unit tests pass; there is no in-flow format list in the rendered
 table tree.
 
 ### Step 3: Verify inherited disclosure accessibility
 
-Assert the expanded trigger, labelled menu/items, system dismissal, and focus
-restoration already supplied by `Dropdown`. Add consumer assertions only; do
-not duplicate primitive lifecycle logic in `TableControls`.
+Assert the expanded trigger, labelled menu/items, outside/system dismissal,
+selection dismissal, and focus restoration already supplied by `Dropdown`.
+Close any scoped menu when fullscreen closes so reopening cannot resurrect it.
+Add consumer assertions only; do not duplicate primitive lifecycle logic in
+`TableControls`.
 
 **Verify**: device contract sees the expanded trigger and choices; system back
 closes the menu.
@@ -109,7 +130,7 @@ closes the menu.
 - download menu: CSV, Markdown in that order.
 - only one menu open at a time.
 - selection invokes exactly one adapter call and closes.
-- failed selection stays understandable and retryable.
+- thrown and non-success selections stay open, understandable, and retryable.
 - inline and fullscreen menus do not leak state into each other.
 - narrow viewport clamps the menu on-screen.
 
