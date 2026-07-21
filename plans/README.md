@@ -35,7 +35,7 @@ Baseline verified during the assessment:
 | 001 | Restore truthful Mermaid downloads | P0 | S | - | DONE |
 | 002 | Make native actions capability-truthful and runnable | P0 | M | 001 | DONE |
 | 003 | Replace table format lines with a native disclosure menu | P1 | M | 002 | DONE |
-| 004 | Repair shared fullscreen layout and lifecycle | P1 | M | 003 | TODO |
+| 004 | Repair shared fullscreen layout and lifecycle | P1 | M | 003 | DONE |
 | 005 | Align table semantics, columns, and visual chrome | P1 | M | 004 | TODO |
 | 006 | Align code-block styling and active highlighting theme | P1 | M | 002 | TODO |
 | 007 | Complete Mermaid state-diagram and pan/zoom fidelity | P1 | L | 001, 004 | TODO |
