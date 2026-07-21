@@ -1,4 +1,4 @@
-import React, { cloneElement, isValidElement, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { Button } from '../components/ui';
 import type { CapabilityResult } from '../platform/capabilities';
@@ -15,6 +15,8 @@ export interface ActionButtonProps {
   resetAfterMs?: number;
   color?: string;
   expanded?: boolean;
+  radius?: number;
+  focusRingColor?: string;
 }
 
 function resultMessage(result: CapabilityResult): string | null {
@@ -24,7 +26,7 @@ function resultMessage(result: CapabilityResult): string | null {
   } as const)[result.status];
 }
 
-export function ActionButton({ label, icon, disabled, onAction, onResult, buttonRef, successMessage, resetAfterMs = 2000, color, expanded }: ActionButtonProps) {
+export function ActionButton({ label, icon, disabled, onAction, onResult, buttonRef, successMessage, resetAfterMs = 2000, color, expanded, radius, focusRingColor }: ActionButtonProps) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -46,9 +48,6 @@ export function ActionButton({ label, icon, disabled, onAction, onResult, button
     onResult?.(result);
   };
   const visual = icon ?? label;
-  const coloredVisual = isValidElement<{ color?: string }>(visual) && color
-    ? cloneElement(visual, { color })
-    : visual;
   return (
     <View>
       <Button
@@ -58,8 +57,10 @@ export function ActionButton({ label, icon, disabled, onAction, onResult, button
         disabled={disabled || busy}
         onPress={press}
         foregroundColor={color}
+        radius={radius}
+        focusRingColor={focusRingColor}
       >
-        {typeof coloredVisual === 'string' || typeof coloredVisual === 'number' ? <Text style={{ color }}>{coloredVisual}</Text> : coloredVisual}
+        {visual}
       </Button>
       {message ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color }}>{message}</Text> : null}
     </View>

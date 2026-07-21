@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react-native';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Streamdown } from '../../../../src/StreamdownRN';
 import { createCodePlugin, type HighlightResult } from '../../../../src/plugins/code';
-import { getTextStyles, lightTheme } from '../../../../src/themes';
+import { getTextStyles, lightTheme, resolveThemePrimitives } from '../../../../src/themes';
 
 const renderResult = (result: HighlightResult, language = 'javascript') => render(
   React.createElement(Streamdown, {
@@ -27,7 +27,7 @@ const hasTextStyle = (property: string, value: string) =>
 describe('CodeBlockBody native parity', () => {
   it('keeps inline code pills separate from fenced code text and line numbers', () => {
     const styles = getTextStyles(lightTheme);
-    expect(styles.code).toMatchObject({ backgroundColor: lightTheme.colors.codeBackground, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 });
+    expect(styles.code).toMatchObject({ backgroundColor: resolveThemePrimitives(lightTheme).muted, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 });
     expect(styles.codeBlock).not.toEqual(expect.objectContaining({ backgroundColor: expect.anything(), paddingHorizontal: expect.anything(), paddingVertical: expect.anything(), borderRadius: expect.anything() }));
     expect(styles.codeLineNumber).not.toEqual(expect.objectContaining({ backgroundColor: expect.anything(), paddingHorizontal: expect.anything(), paddingVertical: expect.anything(), borderRadius: expect.anything() }));
   });

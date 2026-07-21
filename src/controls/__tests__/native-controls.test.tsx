@@ -2,6 +2,7 @@ import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { Streamdown } from '../../StreamdownRN';
+import { darkTheme } from '../../themes';
 
 describe('native markdown controls', () => {
   // parity:269d04432066d1280c2dd71918500ca9e34655cccfe81020b2c8eb13143e54ad
@@ -24,7 +25,11 @@ describe('native markdown controls', () => {
     const writeText = jest.fn().mockResolvedValue({ status: 'success' });
     const markdown = '```js\nconsole.log("✓")\n```';
     const screen = render(<Streamdown mode="static" capabilities={{ clipboard: { writeText } }}>{markdown}</Streamdown>);
-    fireEvent.press(screen.getByRole('button', { name: 'Copy Code' }));
+    const copyButton = screen.getByRole('button', { name: 'Copy Code' });
+    expect(StyleSheet.flatten(copyButton.props.style)).toMatchObject({ borderRadius: 8, borderWidth: 1, borderColor: 'transparent' });
+    fireEvent(copyButton, 'focus');
+    expect(StyleSheet.flatten(copyButton.props.style).borderColor).toBe(darkTheme.primitives!.ring);
+    fireEvent.press(copyButton);
     await waitFor(() => expect(writeText).toHaveBeenCalledWith('console.log("✓")'));
 
     screen.rerender(<Streamdown mode="static">{markdown}</Streamdown>);
@@ -114,6 +119,8 @@ describe('native markdown controls', () => {
 
     expect(outerSurfaces()).toHaveLength(1);
     expect(innerSurfaces()).toHaveLength(1);
+    expect(StyleSheet.flatten(outerSurfaces()[0].props.style)).toMatchObject({ backgroundColor: darkTheme.primitives!.sidebar, borderColor: darkTheme.primitives!.sidebarBorder });
+    expect(StyleSheet.flatten(innerSurfaces()[0].props.style)).toMatchObject({ backgroundColor: darkTheme.primitives!.background, borderColor: darkTheme.primitives!.border });
     expect(StyleSheet.flatten(toolbars()[0].props.style)).toMatchObject({ alignItems: 'center', gap: 4 });
 
     fireEvent.press(screen.getByRole('button', { name: 'View fullscreen' }));

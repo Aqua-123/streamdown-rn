@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from 'react';
 import type { ThemeConfig } from '../../core/types';
+import { resolveThemePrimitives } from '../../themes';
 import { MermaidBlock, type MermaidBlockProps } from './MermaidBlock';
 
 export { mermaidFileRequest, type MermaidDownloadFormat } from './download';
@@ -41,18 +42,18 @@ const BEAUTIFUL_MERMAID_COLORS: Readonly<Record<string, string>> = {
 
 /** Converts beautiful-mermaid's browser CSS into the strict, offline SVG subset accepted on native. */
 export function normalizeBeautifulMermaidSvg(svg: string, theme?: ThemeConfig): string {
-  const colors = theme?.colors;
-  const palette = colors ? {
-    '--bg': colors.background, '--fg': colors.foreground, '--_text': colors.foreground,
-    '--_text-sec': colors.muted, '--_text-muted': colors.muted, '--_text-faint': colors.muted,
-    '--_line': colors.muted, '--_arrow': colors.foreground, '--_node-fill': colors.codeBackground,
-    '--_node-stroke': colors.border, '--_group-fill': colors.background, '--_group-hdr': colors.codeBackground,
-    '--_inner-stroke': colors.border, '--_key-badge': colors.border,
+  const primitives = theme ? resolveThemePrimitives(theme) : undefined;
+  const palette = primitives ? {
+    '--bg': primitives.background, '--fg': primitives.foreground, '--_text': primitives.foreground,
+    '--_text-sec': primitives.mutedForeground, '--_text-muted': primitives.chart2, '--_text-faint': primitives.chart3,
+    '--_line': primitives.chart2, '--_arrow': primitives.ring, '--_node-fill': primitives.card,
+    '--_node-stroke': primitives.border, '--_group-fill': primitives.background, '--_group-hdr': primitives.muted,
+    '--_inner-stroke': primitives.border, '--_key-badge': primitives.border,
   } : BEAUTIFUL_MERMAID_COLORS;
   return svg
     .replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, '')
     .replace(/\sstyle\s*=\s*(?:"[^"]*"|'[^']*')/gi, '')
-    .replace(/var\(\s*(--[\w-]+)(?:\s*,[^)]*)?\)/gi, (_match, name: string) => palette[name] ?? colors?.foreground ?? '#27272A');
+    .replace(/var\(\s*(--[\w-]+)(?:\s*,[^)]*)?\)/gi, (_match, name: string) => palette[name] ?? primitives?.foreground ?? '#27272A');
 }
 
 /** Adapts Mermaid's compact flowchart arrows to beautiful-mermaid's spaced grammar. */

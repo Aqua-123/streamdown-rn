@@ -1,4 +1,4 @@
-import React, { cloneElement, isValidElement, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { Dropdown } from '../components/ui';
 import type { TableData } from '../core/tableSerialization';
@@ -17,11 +17,7 @@ function capabilityError(result: CapabilityResult): Error {
       : result.status === 'cancelled' ? 'Action cancelled' : 'Action failed');
 }
 
-function coloredIcon(icon: React.ReactNode, color?: string): React.ReactNode {
-  return isValidElement<{ color?: string }>(icon) && color ? cloneElement(icon, { color }) : icon;
-}
-
-export function TableControls({ table, children, capabilities, controls, translations, disabled, icons, color, backgroundColor, surfaceColor, borderColor }: {
+export function TableControls({ table, children, capabilities, controls, translations, disabled, icons, color, backgroundColor, surfaceColor, borderColor, popoverColor, popoverForegroundColor, popoverBorderColor, radius, focusRingColor }: {
   table: TableData;
   children: React.ReactNode;
   capabilities: NativeCapabilities;
@@ -33,6 +29,11 @@ export function TableControls({ table, children, capabilities, controls, transla
   backgroundColor?: string;
   surfaceColor?: string;
   borderColor?: string;
+  popoverColor?: string;
+  popoverForegroundColor?: string;
+  popoverBorderColor?: string;
+  radius?: number;
+  focusRingColor?: string;
 }) {
   const [fullscreen, setFullscreen] = useState(false);
   const [menu, setMenu] = useState<{ type: 'copy' | 'download'; scope: 'inline' | 'fullscreen' } | null>(null);
@@ -58,27 +59,27 @@ export function TableControls({ table, children, capabilities, controls, transla
   };
   const renderActions = (scope: 'inline' | 'fullscreen', includeFullscreen: boolean) => <View accessibilityRole="toolbar" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
     {copy ? <Dropdown.Root open={menu?.type === 'copy' && menu.scope === scope} onOpenChange={(open) => setMenu(open ? { type: 'copy', scope } : null)}>
-      <Dropdown.Trigger accessibilityLabel={translations.copyTable} disabled={disabled} foregroundColor={color}>{coloredIcon(icons?.copy ?? defaultIcons.copy, color)}</Dropdown.Trigger>
-      <Dropdown.Popup accessibilityLabel={translations.copyTable} style={{ borderColor, backgroundColor: surfaceColor }}>
-        <Dropdown.Item accessibilityLabel={translations.copyTableAsMarkdown} disabled={disabled} foregroundColor={color} onSelect={() => copyTable(scope, 'markdown')}>{translations.tableFormatMarkdown}</Dropdown.Item>
-        <Dropdown.Item accessibilityLabel={translations.copyTableAsCsv} disabled={disabled} foregroundColor={color} onSelect={() => copyTable(scope, 'csv')}>{translations.tableFormatCsv}</Dropdown.Item>
-        <Dropdown.Item accessibilityLabel={translations.copyTableAsTsv} disabled={disabled} foregroundColor={color} onSelect={() => copyTable(scope, 'tsv')}>{translations.tableFormatTsv}</Dropdown.Item>
+      <Dropdown.Trigger accessibilityLabel={translations.copyTable} disabled={disabled} foregroundColor={color} radius={radius} focusRingColor={focusRingColor}>{icons?.copy ?? defaultIcons.copy}</Dropdown.Trigger>
+      <Dropdown.Popup accessibilityLabel={translations.copyTable} radius={radius} style={{ borderColor: popoverBorderColor, backgroundColor: popoverColor }}>
+        <Dropdown.Item accessibilityLabel={translations.copyTableAsMarkdown} disabled={disabled} foregroundColor={popoverForegroundColor} radius={radius} focusRingColor={focusRingColor} onSelect={() => copyTable(scope, 'markdown')}>{translations.tableFormatMarkdown}</Dropdown.Item>
+        <Dropdown.Item accessibilityLabel={translations.copyTableAsCsv} disabled={disabled} foregroundColor={popoverForegroundColor} radius={radius} focusRingColor={focusRingColor} onSelect={() => copyTable(scope, 'csv')}>{translations.tableFormatCsv}</Dropdown.Item>
+        <Dropdown.Item accessibilityLabel={translations.copyTableAsTsv} disabled={disabled} foregroundColor={popoverForegroundColor} radius={radius} focusRingColor={focusRingColor} onSelect={() => copyTable(scope, 'tsv')}>{translations.tableFormatTsv}</Dropdown.Item>
       </Dropdown.Popup>
     </Dropdown.Root> : null}
     {download ? <Dropdown.Root open={menu?.type === 'download' && menu.scope === scope} onOpenChange={(open) => setMenu(open ? { type: 'download', scope } : null)}>
-      <Dropdown.Trigger accessibilityLabel={translations.downloadTable} disabled={disabled} foregroundColor={color}>{coloredIcon(icons?.download ?? defaultIcons.download, color)}</Dropdown.Trigger>
-      <Dropdown.Popup accessibilityLabel={translations.downloadTable} style={{ borderColor, backgroundColor: surfaceColor }}>
-        <Dropdown.Item accessibilityLabel={translations.downloadTableAsCsv} disabled={disabled} foregroundColor={color} onSelect={() => downloadTable('csv')}>{translations.tableFormatCsv}</Dropdown.Item>
-        <Dropdown.Item accessibilityLabel={translations.downloadTableAsMarkdown} disabled={disabled} foregroundColor={color} onSelect={() => downloadTable('markdown')}>{translations.tableFormatMarkdown}</Dropdown.Item>
+      <Dropdown.Trigger accessibilityLabel={translations.downloadTable} disabled={disabled} foregroundColor={color} radius={radius} focusRingColor={focusRingColor}>{icons?.download ?? defaultIcons.download}</Dropdown.Trigger>
+      <Dropdown.Popup accessibilityLabel={translations.downloadTable} radius={radius} style={{ borderColor: popoverBorderColor, backgroundColor: popoverColor }}>
+        <Dropdown.Item accessibilityLabel={translations.downloadTableAsCsv} disabled={disabled} foregroundColor={popoverForegroundColor} radius={radius} focusRingColor={focusRingColor} onSelect={() => downloadTable('csv')}>{translations.tableFormatCsv}</Dropdown.Item>
+        <Dropdown.Item accessibilityLabel={translations.downloadTableAsMarkdown} disabled={disabled} foregroundColor={popoverForegroundColor} radius={radius} focusRingColor={focusRingColor} onSelect={() => downloadTable('markdown')}>{translations.tableFormatMarkdown}</Dropdown.Item>
       </Dropdown.Popup>
     </Dropdown.Root> : null}
-    {expand && includeFullscreen ? <ActionButton buttonRef={opener} label={translations.viewFullscreen} icon={icons?.fullscreen ?? defaultIcons.fullscreen} disabled={disabled} color={color} onAction={() => { setFullscreen(true); return { status: 'success' }; }} /> : null}
+    {expand && includeFullscreen ? <ActionButton buttonRef={opener} label={translations.viewFullscreen} icon={icons?.fullscreen ?? defaultIcons.fullscreen} disabled={disabled} color={color} radius={radius} focusRingColor={focusRingColor} onAction={() => { setFullscreen(true); return { status: 'success' }; }} /> : null}
   </View>;
   const renderCopyFeedback = (scope: 'inline' | 'fullscreen') => copyFeedback?.scope === scope
     ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color }}>{translations.copied}</Text>
     : null;
   return (
-    <View style={{ marginVertical: 16, borderWidth: 1, borderColor, borderRadius: 8, backgroundColor: surfaceColor, padding: 8, gap: 8 }}>
+    <View style={{ marginVertical: 16, borderWidth: 1, borderColor, borderRadius: radius ?? 8, backgroundColor: surfaceColor, padding: 8, gap: 8 }}>
       {renderActions('inline', true)}
       {renderCopyFeedback('inline')}
       {children}

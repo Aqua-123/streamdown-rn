@@ -1,10 +1,12 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
-import { Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import Svg from 'react-native-svg';
 import { Streamdown } from '../../StreamdownRN';
 import { PanZoomSurface } from '../PanZoomSurface';
 import { defaultIcons } from '../icons';
 import { defaultTranslations } from '../translations';
+import { darkTheme } from '../../themes';
 
 describe('translations and icons', () => {
   // parity:8f3096717fc1ef319941224adb7c08cf9d7dfff02debdbfd9c949786b558d965
@@ -35,8 +37,13 @@ describe('translations and icons', () => {
     const screen = render(<Streamdown mode="static" theme="dark">{'| A |\n|---|\n| value |\n\n```txt\nhello\n```'}</Streamdown>);
     expect(screen.queryByText('↓')).toBeNull();
     expect(screen.getAllByRole('button').every((button) => button.props.style)).toBe(true);
+    expect(screen.getByRole('button', { name: 'View fullscreen' }).findByType(Svg).props.color).toBe(darkTheme.primitives!.mutedForeground);
+    expect(screen.UNSAFE_getAllByType(View).some(({ props }) => {
+      const style = StyleSheet.flatten(props.style);
+      return style?.borderRadius === 12 && style?.backgroundColor === darkTheme.primitives!.sidebar && style?.borderColor === darkTheme.primitives!.sidebarBorder;
+    })).toBe(true);
     expect(screen.getByText('A').props.style).toEqual(expect.arrayContaining([
-      expect.objectContaining({ color: '#f8fafc' }),
+      expect.objectContaining({ color: darkTheme.primitives!.foreground }),
       expect.objectContaining({ fontWeight: '600' }),
     ]));
   });
@@ -53,11 +60,17 @@ describe('native pan and zoom seam', () => {
   it('renders controls, clamps zoom, resets, and delegates gestures', () => {
     const renderPanZoom = jest.fn(({ children }) => children);
     const screen = render(
-      <PanZoomSurface min={0.75} max={1.25} step={0.25} capabilities={{ gestures: { renderPanZoom } }}>
+      <PanZoomSurface min={0.75} max={1.25} step={0.25} capabilities={{ gestures: { renderPanZoom } }} color={darkTheme.primitives!.mutedForeground} backgroundColor={darkTheme.primitives!.popover} borderColor={darkTheme.primitives!.border} radius={8} focusRingColor={darkTheme.primitives!.ring}>
         <Text>Diagram</Text>
       </PanZoomSurface>
     );
     expect(screen.getByText('Diagram')).toBeTruthy();
+    const toolbar = screen.UNSAFE_getAllByType(View).find((node) => node.props.accessibilityRole === 'toolbar')!;
+    expect(StyleSheet.flatten(toolbar.props.style)).toMatchObject({ backgroundColor: darkTheme.primitives!.popover, borderColor: darkTheme.primitives!.border, borderRadius: 8 });
+    const zoomIn = screen.getByRole('button', { name: 'Zoom in' });
+    expect(StyleSheet.flatten(zoomIn.props.style)).toMatchObject({ borderColor: 'transparent', borderRadius: 8 });
+    fireEvent(zoomIn, 'focus');
+    expect(StyleSheet.flatten(zoomIn.props.style).borderColor).toBe(darkTheme.primitives!.ring);
     fireEvent.press(screen.getByRole('button', { name: 'Zoom in' }));
     expect(screen.getByRole('adjustable').props.accessibilityValue.now).toBe(1.25);
     expect(screen.getByRole('button', { name: 'Zoom in' }).props.accessibilityState.disabled).toBe(true);

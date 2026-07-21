@@ -4,7 +4,7 @@ import { Modal, StyleSheet, Text, View } from 'react-native';
 import { MermaidBlock } from '../../../../src/plugins/mermaid/MermaidBlock';
 import { createMermaidPlugin } from '../../../../src/plugins/mermaid';
 import { defaultTranslations } from '../../../../src/controls/translations';
-import { lightTheme } from '../../../../src/themes';
+import { lightTheme, resolveThemePrimitives } from '../../../../src/themes';
 
 const source = 'graph TD; A-->B';
 const setup = (extra = {}, providerLayout = jest.fn()) => {
@@ -40,7 +40,7 @@ describe('Mermaid native fullscreen', () => {
     if (!toolbar) throw new Error('Expected themed pan/zoom toolbar');
     const surface = screen.getByTestId('provider-surface');
     expect(toolbar.parent?.children.indexOf(toolbar)).toBeGreaterThan(toolbar.parent?.children.indexOf(surface) ?? -1);
-    expect(StyleSheet.flatten(toolbar.props.style)).toMatchObject({ flexDirection: 'row', backgroundColor: lightTheme.colors.background, borderColor: lightTheme.colors.border });
+    expect(StyleSheet.flatten(toolbar.props.style)).toMatchObject({ flexDirection: 'row', backgroundColor: lightTheme.colors.background, borderColor: resolveThemePrimitives(lightTheme).border });
     fireEvent(screen.getByLabelText('Zoom'), 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
     expect(screen.getByLabelText('Zoom').props.accessibilityValue.now).toBe(1.25);
   });
