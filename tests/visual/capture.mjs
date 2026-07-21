@@ -7,6 +7,36 @@ import { fileURLToPath } from 'node:url';
 import { comparePng } from './compare.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const scenarioSemantics = {
+  controls: ['one', 'two', 'Copy table'],
+  code: ['typescript', 'const one = 1;', 'Copy Code'],
+  mermaid: ['Mermaid diagram:', 'flowchart LR'],
+  'mermaid-sequence': ['Mermaid diagram:', 'participant Client'],
+  'mermaid-state': ['Mermaid diagram:', 'Idle'],
+  harness: ['Streamdown Lab', 'Open harness controls'],
+};
+
+function requiredSemantics(entry) {
+  if (entry.scenario === 'fullscreen') return ['Fullscreen fixture', 'Exit fullscreen'];
+  if (entry.scenario === 'harness') return scenarioSemantics.harness;
+  return [`Fixture: ${entry.scenario}`, `Fixture state: ${entry.scenario}`, ...(scenarioSemantics[entry.scenario] ?? [])];
+}
+
+function assertSemantics(output, entry) {
+  const missing = requiredSemantics(entry).filter((value) => !output.includes(value));
+  if (missing.length) throw new Error(`Semantic readiness missing ${missing.join(', ')} for ${entry.id}`);
+}
+
+if (process.argv.includes('--self-test')) {
+  assert.deepEqual(requiredSemantics({ scenario: 'harness' }), ['Streamdown Lab', 'Open harness controls']);
+  assert.throws(
+    () => assertSemantics('Fixture: controls Fixture state: controls one', { id: 'controls-test', scenario: 'controls' }),
+    /Semantic readiness missing two, Copy table for controls-test/,
+  );
+  process.stdout.write('semantic readiness self-test passed\n');
+  process.exit(0);
+}
+
 const matrixPath = path.join(root, 'tests/visual/matrix.json');
 const matrixBytes = fs.readFileSync(matrixPath);
 const config = JSON.parse(matrixBytes.toString('utf8'));
@@ -31,12 +61,13 @@ const baselineManifest = fs.existsSync(baselineManifestPath)
   : undefined;
 if (!update) {
   assert(baselineManifest, `Missing reviewed baseline manifest ${baselineManifestPath}`);
-  assert.equal(baselineManifest.matrixSha256, matrixSha256, 'Visual matrix changed without a reviewed baseline update');
 }
 if (requestedCaseId) {
   assert(config.cases.some(({ id }) => id === requestedCaseId), `Unknown VISUAL_CASE_ID ${requestedCaseId}`);
-  assert(!update || baselineManifest, 'A reviewed manifest is required for a partial baseline update');
-  assert(!baselineManifest || baselineManifest.matrixSha256 === matrixSha256, 'Visual matrix changed; recapture the complete baseline');
+  if (update) {
+    assert(baselineManifest, 'A reviewed manifest is required for a partial baseline update');
+    assert.equal(baselineManifest.matrixSha256, matrixSha256, 'Visual matrix changed; recapture the complete baseline');
+  }
 }
 const selectedCases = requestedCaseId ? config.cases.filter(({ id }) => id === requestedCaseId) : config.cases;
 const artifactHashes = update && requestedCaseId ? { ...baselineManifest.artifacts } : {};
@@ -50,16 +81,29 @@ function wait(ms) { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0,
 
 function androidHierarchy(device, entry) {
   const hierarchyPath = '/sdcard/streamdown-rn-visual.xml';
-  const expected = entry.scenario === 'fullscreen'
-    ? ['Fullscreen fixture', 'Exit fullscreen']
-    : [`Fixture: ${entry.scenario}`];
+  let xml = '';
   for (let attempt = 0; attempt < 20; attempt += 1) {
     run('adb', ['-s', device, 'shell', 'uiautomator', 'dump', hierarchyPath]);
-    const xml = run('adb', ['-s', device, 'exec-out', 'cat', hierarchyPath]);
-    if (expected.every((value) => xml.includes(value))) return xml;
+    xml = run('adb', ['-s', device, 'exec-out', 'cat', hierarchyPath]);
+    try {
+      assertSemantics(xml, entry);
+      return xml;
+    } catch (error) {
+      if (attempt === 19) throw error;
+    }
     wait(500);
   }
-  throw new Error(`Accessibility hierarchy missing ${expected.join(' and ')} for ${entry.id}`);
+  throw new Error(`Accessibility hierarchy unavailable for ${entry.id}`);
+}
+
+function maestroSemantics(device, appId, entry) {
+  for (const expected of requiredSemantics(entry)) {
+    try {
+      run('maestro', ['test', '--platform', 'ios', '--udid', device, '--no-reinstall-driver', '-e', `APP_ID=${appId}`, '-e', `EXPECTED=${expected}`, path.join(root, 'tests/device/maestro/semantic.yaml')]);
+    } catch (error) {
+      throw new Error(`Semantic readiness missing ${expected} for ${entry.id}: ${error.message}`);
+    }
+  }
 }
 
 for (const entry of selectedCases) {
@@ -78,22 +122,26 @@ for (const entry of selectedCases) {
     run('xcrun', ['simctl', 'ui', device, 'appearance', entry.theme]);
     run('xcrun', ['simctl', 'openurl', device, url]);
   }
-  wait(500);
   const actual = path.join(root, 'tests/visual/actual', `${platform}-${entry.id}.png`);
   fs.mkdirSync(path.dirname(actual), { recursive: true });
+  if (entry.scenario === 'harness') {
+    assert(spawnSync('maestro', ['--version']).status === 0, 'maestro is required for harness interaction assertions');
+    assert(appId, 'VISUAL_APP_ID is required for harness interaction assertions');
+    run('maestro', ['test', '--platform', platform, '--udid', device, '--no-reinstall-driver', '-e', `APP_ID=${appId}`, path.join(root, 'tests/device/maestro/harness.yaml')]);
+  }
   if (platform === 'android') {
     androidHierarchy(device, entry);
+    wait(250);
     fs.writeFileSync(actual, run('adb', ['-s', device, 'exec-out', 'screencap', '-p'], { encoding: null }));
   } else {
     assert(spawnSync('maestro', ['--version']).status === 0, 'maestro is required for iOS semantic assertions');
     assert(appId, 'VISUAL_APP_ID is required for iOS semantic assertions');
-    const expected = entry.scenario === 'fullscreen'
-      ? ['Fullscreen fixture', 'Exit fullscreen']
-      : [`Fixture: ${entry.scenario}`, `Fixture state: ${entry.scenario}`];
-    run('maestro', ['test', '--platform', 'ios', '--udid', device, '--no-reinstall-driver', '-e', `APP_ID=${appId}`, '-e', `EXPECTED_PRIMARY=${expected[0]}`, '-e', `EXPECTED_SECONDARY=${expected[1]}`, path.join(root, 'tests/device/maestro/semantic.yaml')]);
+    maestroSemantics(device, appId, entry);
+    wait(250);
     run('xcrun', ['simctl', 'io', device, 'screenshot', actual]);
   }
   const baseline = path.join(root, 'tests/visual/baselines', `${platform}-${entry.id}.png`);
+  if (!update) assert.equal(baselineManifest.matrixSha256, matrixSha256, 'Visual matrix changed without a reviewed baseline update');
   if (update) {
     fs.copyFileSync(actual, baseline);
     artifactHashes[path.basename(baseline)] = createHash('sha256').update(fs.readFileSync(baseline)).digest('hex');

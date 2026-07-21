@@ -1,6 +1,6 @@
 import React, { Profiler, useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { AccessibilityInfo, Linking, ScrollView, StatusBar, Text, View } from 'react-native';
-import { FullscreenModal, Streamdown, createStreamingInstrumentation } from 'streamdown-rn';
+import { AccessibilityInfo, Linking, Platform, SafeAreaView, ScrollView, StatusBar, Text } from 'react-native';
+import { FullscreenModal, Streamdown, createStreamingInstrumentation, darkTheme, lightTheme } from 'streamdown-rn';
 import { createCodePlugin } from 'streamdown-rn/code';
 import { cjk } from 'streamdown-rn/cjk';
 import { createMathPlugin } from 'streamdown-rn/math';
@@ -103,7 +103,7 @@ export default function App() {
   const config = useConfig();
   const metrics = useMemo(() => createStreamingInstrumentation(), []);
   const capabilities = useMemo(() => createFixtureCapabilities(), []);
-  if (config.scenario === 'harness') return <HarnessApp allPlugins={PLUGINS} metrics={metrics} capabilities={capabilities} />;
+  if (config.scenario === 'harness') return <HarnessApp initialTheme={config.theme} allPlugins={PLUGINS} metrics={metrics} capabilities={capabilities} />;
   return <AutomatedFixture config={config} metrics={metrics} capabilities={capabilities} />;
 }
 
@@ -137,10 +137,10 @@ function AutomatedFixture({ config, metrics, capabilities }) {
   }, [metrics, scenario]);
   const markdown = streaming || benchmarking ? source.slice(0, length) : SCENARIOS[scenario] || STATIC;
   const scenarioPlugins = SCENARIO_PLUGINS[scenario] || PLUGINS;
-  const backgroundColor = theme === 'dark' ? '#111827' : '#ffffff';
-  const foregroundColor = theme === 'dark' ? '#e5e7eb' : '#111827';
+  const selectedTheme = theme === 'dark' ? darkTheme : lightTheme;
+  const { background: backgroundColor, foreground: foregroundColor } = selectedTheme.primitives;
   return (
-    <View style={{ flex: 1, backgroundColor }} testID="fixture-root">
+    <SafeAreaView style={{ flex: 1, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0, backgroundColor }} testID="fixture-root">
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={backgroundColor} />
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, paddingTop: 24, width: layout === 'wide' ? 720 : 360, maxWidth: '100%', alignSelf: 'center' }}>
         <Text accessibilityRole="header" style={{ color: foregroundColor }}>Fixture: {scenario}</Text>
@@ -148,7 +148,7 @@ function AutomatedFixture({ config, metrics, capabilities }) {
         <Profiler id="streamdown" onRender={(_id, phase, duration) => console.log('STREAMDOWN_BENCHMARK', JSON.stringify({ type: 'react-commit', phase, durationMs: duration }))}>
           <Streamdown
             mode={streamMode ? 'streaming' : 'static'}
-            theme={theme}
+            theme={selectedTheme}
             dir={direction}
             isAnimating={(streaming || benchmarking) && !checkpoint}
             isComplete={incompleteCode ? false : ((!streaming && !benchmarking) || length >= source.length)}
@@ -161,6 +161,6 @@ function AutomatedFixture({ config, metrics, capabilities }) {
       <FullscreenModal visible={scenario === 'fullscreen'} label="Fullscreen fixture" closeLabel="Exit fullscreen" capabilities={capabilities} onClose={() => {}} color={foregroundColor} backgroundColor={backgroundColor}>
         <Text style={{ color: foregroundColor }}>Fullscreen content</Text>
       </FullscreenModal>
-    </View>
+    </SafeAreaView>
   );
 }

@@ -1,8 +1,9 @@
 appId: ${APP_ID}
 ---
-- launchApp:
-    clearState: false
-- assertVisible: "Streamdown Feature Showcase"
+- assertVisible: "Streamdown Lab"
 - tapOn: "Open harness controls"
 - assertVisible: "Harness controls"
 - assertVisible: "Start"
+- tapOn: "Close controls"
+- assertNotVisible: "Harness controls"
+- assertVisible: "Open harness controls"
