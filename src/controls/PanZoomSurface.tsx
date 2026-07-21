@@ -29,7 +29,7 @@ export function PanZoomSurface({ children, capabilities, min = 0.5, max = 3, ste
   };
   const content = capabilities.gestures?.renderPanZoom({ children, scale, onScaleChange: (value) => set(value) })
     ?? <View style={{ transform: [{ scale }] }}>{children}</View>;
-  return <View>
+  return <View style={{ position: 'relative' }}>
     <View
       accessible
       accessibilityRole="adjustable"
@@ -42,11 +42,11 @@ export function PanZoomSurface({ children, capabilities, min = 0.5, max = 3, ste
         if (event.nativeEvent.actionName === 'decrement') set(scale - step);
       }}
     />
-    {showControls ? <View accessibilityRole="toolbar" style={{ flexDirection: 'row' }}>
+    {content}
+    {showControls ? <View accessibilityRole="toolbar" style={{ position: 'absolute', left: 8, bottom: 8, flexDirection: 'column', borderWidth: 1, borderColor: '#e4e4e7', borderRadius: 8, backgroundColor: '#ffffff' }}>
+      <ActionButton label="Zoom in" icon={icons?.zoomIn ?? defaultIcons.zoomIn} disabled={disabled || scale >= max} color={color} onAction={() => set(scale + step)} />
       <ActionButton label="Zoom out" icon={icons?.zoomOut ?? defaultIcons.zoomOut} disabled={disabled || scale <= min} color={color} onAction={() => set(scale - step)} />
       <ActionButton label="Reset zoom" icon={icons?.zoomReset ?? defaultIcons.zoomReset} disabled={disabled || scale === resetScale} color={color} onAction={() => set(resetScale)} />
-      <ActionButton label="Zoom in" icon={icons?.zoomIn ?? defaultIcons.zoomIn} disabled={disabled || scale >= max} color={color} onAction={() => set(scale + step)} />
     </View> : null}
-    {content}
   </View>;
 }

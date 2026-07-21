@@ -3,6 +3,7 @@ import { fireEvent, render } from '@testing-library/react-native';
 import { Text } from 'react-native';
 import { Streamdown } from '../../StreamdownRN';
 import { PanZoomSurface } from '../PanZoomSurface';
+import { defaultIcons } from '../icons';
 import { defaultTranslations } from '../translations';
 
 describe('translations and icons', () => {
@@ -22,18 +23,20 @@ describe('translations and icons', () => {
     expect(screen.getByRole('button', { name: 'Copy Code' })).toBeTruthy();
     expect(screen.getByTestId('copy-icon')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Download file' })).toBeTruthy();
-    expect(screen.getByText('↓')).toBeTruthy();
+    expect(Object.values(defaultIcons).every(React.isValidElement)).toBe(true);
+    expect(screen.queryByText('↓')).toBeNull();
 
     screen.rerender(<Streamdown mode="static" icons={{ copy: <Text testID="next-copy-icon">N</Text> }}>{markdown}</Streamdown>);
     expect(screen.getByTestId('next-copy-icon')).toBeTruthy();
   });
 
-  it('keeps default control glyphs visible in the dark theme', () => {
+  it('keeps reference SVG controls visible in the dark theme', () => {
     const screen = render(<Streamdown mode="static" theme="dark">{'| A |\n|---|\n| value |\n\n```txt\nhello\n```'}</Streamdown>);
-    expect(screen.getAllByText('↓').every((glyph) => glyph.props.style?.color === '#c9d1d9')).toBe(true);
+    expect(screen.queryByText('↓')).toBeNull();
+    expect(screen.getAllByRole('button').every((button) => button.props.style)).toBe(true);
     expect(screen.getByText('A').props.style).toEqual(expect.arrayContaining([
-      expect.objectContaining({ color: '#c9d1d9' }),
-      expect.objectContaining({ fontWeight: 'bold' }),
+      expect.objectContaining({ color: '#f8fafc' }),
+      expect.objectContaining({ fontWeight: '600' }),
     ]));
   });
 });

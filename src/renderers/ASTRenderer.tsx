@@ -33,6 +33,7 @@ import {
   type IconMap,
   type StreamdownTranslations,
 } from '../controls';
+import { CheckIcon } from '../controls/icons';
 import type { TableData } from '../core/tableSerialization';
 import type { CustomRenderer, PluginConfig, RendererPlugin } from '../plugins/renderers';
 import type { HighlightResult, HighlightToken, ThemeInput } from '../plugins/code';
@@ -254,6 +255,14 @@ function renderParagraph(node: SemanticNode, context: RenderContext, key?: React
     }
   }
   if (children.every((child) => INLINE_NODES.has(child.type))) {
+    if (children.some((child) => child.type === 'inlineMath')) {
+      const rendered = children.map((child, index) => child.type === 'inlineMath'
+        ? renderNode(child, context, true, index)
+        : <Text key={index} style={[styles.paragraph, { marginBottom: 0, writingDirection: context.direction }]}>{renderNode(child, context, true)}</Text>);
+      return withOverride(node, context, false, rendered, () => (
+        <View key={key} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginBottom: context.theme.spacing.block }}>{rendered}</View>
+      ), key);
+    }
     const rendered = renderInlineChildren(node, context);
     return withOverride(node, context, false, rendered, () => (
       <Text key={key} style={[styles.paragraph, { writingDirection: context.direction }]}>{rendered}</Text>
@@ -269,13 +278,17 @@ function renderList(node: SemanticNode, context: RenderContext, key?: React.Key)
   const styles = getTextStyles(context.theme);
   const start = node.start ?? 1;
   const rows = (node.children ?? []).map((item, index) => {
-    const marker = item.checked == null
-      ? (node.ordered ? `${start + index}.` : '•')
-      : (item.checked ? '☑' : '☐');
+    const marker = item.checked == null ? (node.ordered ? `${start + index}.` : '•') : null;
     const body = renderChildren(item, context, false);
     return withOverride(item, context, false, body, () => (
       <View key={index} style={{ flexDirection: 'row', marginBottom: context.theme.spacing.inline }}>
-        <Text accessibilityRole={item.checked == null ? undefined : 'checkbox'} accessibilityLabel={item.checked == null ? undefined : textValue(item)} accessibilityState={item.checked == null ? undefined : { checked: item.checked }} style={[styles.body, { width: 44, minHeight: 44 }]}>{marker}</Text>
+        {item.checked == null
+          ? <Text style={[styles.body, { width: 24 }]}>{marker}</Text>
+          : <View accessible accessibilityRole="checkbox" accessibilityLabel={textValue(item)} accessibilityState={{ checked: item.checked }} style={{ width: 24, minHeight: 24, paddingTop: 4 }}>
+              <View style={{ width: 16, height: 16, borderWidth: 1, borderColor: item.checked ? context.theme.colors.accent : context.theme.colors.border, borderRadius: 3, alignItems: 'center', justifyContent: 'center', backgroundColor: item.checked ? context.theme.colors.accent : 'transparent' }}>
+                {item.checked ? <CheckIcon size={11} color={context.theme.colors.background} /> : null}
+              </View>
+            </View>}
         <View style={{ flexShrink: 1 }}>{body}</View>
       </View>
     ), index);
@@ -285,15 +298,16 @@ function renderList(node: SemanticNode, context: RenderContext, key?: React.Key)
 
 function renderTable(node: SemanticNode, context: RenderContext, key?: React.Key): ReactNode {
   const styles = getTextStyles(context.theme);
+  const blocks = getBlockStyles(context.theme);
   const rows = (node.children ?? []).map((row, rowIndex) => {
     const cells = (row.children ?? []).map((cell, cellIndex) => {
       const value = renderInlineChildren(cell, context);
       return withOverride(cell, context, false, value, () => (
-        <View key={cellIndex} style={{ flex: 1, padding: 8 }}><Text style={[styles.body, rowIndex === 0 ? styles.bold : undefined]}>{value}</Text></View>
+        <View key={cellIndex} style={[rowIndex === 0 ? blocks.tableHeader : blocks.tableCell, { minWidth: 120, flexGrow: 1 }]}><Text style={[styles.body, { fontSize: 14, lineHeight: 20 }, rowIndex === 0 ? styles.bold : undefined]}>{value}</Text></View>
       ), cellIndex);
     });
     return withOverride(row, context, false, cells, () => (
-      <View key={rowIndex} style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: context.theme.colors.border }}>{cells}</View>
+      <View key={rowIndex} style={{ flexDirection: 'row', borderBottomWidth: rowIndex < (node.children?.length ?? 0) - 1 ? 1 : 0, borderBottomColor: context.theme.colors.border }}>{cells}</View>
     ), rowIndex);
   });
   const table: TableData = {
@@ -301,7 +315,7 @@ function renderTable(node: SemanticNode, context: RenderContext, key?: React.Key
     rows: (node.children ?? []).slice(1).map((row) => (row.children ?? []).map(textValue)),
   };
   return withOverride(node, context, false, rows, () => {
-    const content = <View key={key} style={getBlockStyles(context.theme).table}>{rows}</View>;
+    const content = <ScrollView horizontal style={{ borderWidth: 1, borderColor: context.theme.colors.border, borderRadius: 6, backgroundColor: context.theme.colors.background }}><View key={key}>{rows}</View></ScrollView>;
     return <TableControls
       key={key}
       table={table}
@@ -310,8 +324,10 @@ function renderTable(node: SemanticNode, context: RenderContext, key?: React.Key
       translations={context.translations ?? defaultTranslations}
       disabled={context.controlsDisabled ?? context.isStreaming}
       icons={context.icons}
-      color={context.theme.colors.foreground}
+      color={context.theme.colors.muted}
       backgroundColor={context.theme.colors.background}
+      surfaceColor={context.theme.colors.codeBackground}
+      borderColor={context.theme.colors.border}
     >{content}</TableControls>;
   }, key);
 }
@@ -367,21 +383,23 @@ function NativeCodeBlock({ node, context }: { node: SemanticNode; context: Rende
   const showLineNumbers = context.lineNumbers !== false && !/(?:^|\s)noLineNumbers(?:\s|$)/.test(node.meta ?? '');
 
   return (
-    <View style={[blocks.codeBlock, result.bg ? { backgroundColor: result.bg } : undefined]}>
-      <CodeControls
-        code={code}
-        language={node.lang}
-        capabilities={context.capabilities ?? resolveCapabilities()}
-        controls={context.controls}
-        translations={context.translations ?? defaultTranslations}
-        disabled={context.controlsDisabled ?? context.isStreaming}
-        icons={context.icons}
-        color={context.theme.colors.foreground}
-      />
-      {node.lang ? <Text style={{ color: context.theme.colors.muted }}>{node.lang}</Text> : null}
-      {node.meta ? <Text style={{ color: context.theme.colors.muted }}>{node.meta}</Text> : null}
+    <View style={blocks.codeBlock}>
+      <View style={{ minHeight: 32, flexDirection: 'row', alignItems: 'center' }}>
+        <Text style={{ flex: 1, marginLeft: 4, color: context.theme.colors.muted, fontFamily: context.theme.fonts.mono, fontSize: 12, textTransform: 'lowercase' }}>{node.lang ?? ''}</Text>
+        <CodeControls
+          code={code}
+          language={node.lang}
+          capabilities={context.capabilities ?? resolveCapabilities()}
+          controls={context.controls}
+          translations={context.translations ?? defaultTranslations}
+          disabled={context.controlsDisabled ?? context.isStreaming}
+          icons={context.icons}
+          color={context.theme.colors.muted}
+        />
+      </View>
+      {node.meta ? <Text style={{ color: context.theme.colors.muted, fontSize: 12 }}>{node.meta}</Text> : null}
       {loading ? <View accessible accessibilityLabel="Highlighting code" accessibilityState={{ busy: true }} /> : null}
-      <ScrollView horizontal>
+      <ScrollView horizontal style={[{ borderWidth: 1, borderColor: context.theme.colors.border, borderRadius: 6, backgroundColor: context.theme.colors.background, padding: 16 }, result.bg ? { backgroundColor: result.bg } : undefined]}>
         <View>
           {result.tokens.map((line, lineIndex) => (
             <View key={lineIndex} style={{ flexDirection: 'row' }}>
@@ -451,7 +469,7 @@ function renderNode(node: SemanticNode, context: RenderContext, inline = false, 
       const source = node.value ?? '';
       const visual = context.plugins?.math?.render({ source, display: false, errorColor: context.theme.colors.muted });
       return withOverride(node, context, true, source, () => visual
-        ? <Text key={key} accessibilityLabel={source}>{visual}</Text>
+        ? <View key={key} accessible accessibilityLabel={source}>{visual}</View>
         : <Text key={key} style={styles.code}>{source}</Text>, key);
     }
     case 'math': {

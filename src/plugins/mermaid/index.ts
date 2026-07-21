@@ -45,12 +45,43 @@ export function normalizeBeautifulMermaidSvg(svg: string): string {
     .replace(/var\(\s*(--[\w-]+)(?:\s*,[^)]*)?\)/gi, (_match, name: string) => BEAUTIFUL_MERMAID_COLORS[name] ?? '#27272A');
 }
 
-/** Injects beautiful-mermaid plus react-native-svg without making either a core dependency. */
+/** Adapts Mermaid's compact flowchart arrows to beautiful-mermaid's spaced grammar. */
+export function normalizeBeautifulMermaidSource(source: string): string {
+  let output = '';
+  let quote = '';
+  let depth = 0;
+  for (let index = 0; index < source.length; index++) {
+    const char = source[index];
+    if (quote) {
+      output += char;
+      if (char === quote && source[index - 1] !== '\\') quote = '';
+      continue;
+    }
+    if (char === '"' || char === "'") { quote = char; output += char; continue; }
+    if ('[({'.includes(char)) { depth++; output += char; continue; }
+    if ('])}'.includes(char)) { depth = Math.max(0, depth - 1); output += char; continue; }
+    if (depth === 0) {
+      const arrow = ['-.->', '-->', '==>'].find((candidate) => source.startsWith(candidate, index));
+      if (arrow) {
+        output = output.trimEnd() + ` ${arrow} `;
+        index += arrow.length - 1;
+        while (source[index + 1] === ' ') index++;
+        continue;
+      }
+    }
+    output += char;
+  }
+  return output;
+}
+
+/** Injects beautiful-mermaid plus an SVG render surface without bundling the Mermaid engine in core. */
 export function createBeautifulMermaidAdapter(provider: BeautifulMermaidProvider): MermaidAdapter {
   return {
     families: BEAUTIFUL_MERMAID_FAMILIES,
     async render(request) {
-      const result = await provider.render(request);
+      const result = await provider.render(request.family === 'flowchart'
+        ? { ...request, source: normalizeBeautifulMermaidSource(request.source) }
+        : request);
       return { kind: 'svg', ...result, svg: normalizeBeautifulMermaidSvg(result.svg) };
     },
     renderSvg: provider.renderSvg,

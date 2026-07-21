@@ -4,15 +4,21 @@ import { FullscreenModal, Streamdown, createStreamingInstrumentation } from 'str
 import { createCodePlugin } from 'streamdown-rn/code';
 import { cjk } from 'streamdown-rn/cjk';
 import { createMathPlugin } from 'streamdown-rn/math';
-import { createMermaidPlugin } from 'streamdown-rn/mermaid';
+import { createBeautifulMermaidAdapter, createMermaidPlugin } from 'streamdown-rn/mermaid';
+import { RaTeXView } from 'ratex-react-native';
+import { renderMermaidSVG } from 'beautiful-mermaid';
+import { SvgXml } from 'react-native-svg';
 import { buildBenchmarkCorpus } from './benchmarkCorpus';
 
 const STATIC = `# Streamdown RN\n\n- [x] native semantics\n- [ ] streaming\n\n| Metric | Value |\n|---|---:|\n| parity | 100% |\n\n\`\`\`js\nconst hello = 'world';\n\`\`\`\n\nInline math $x^2$ and block math:\n\n$$\\sum_{i=1}^{n}i$$\n\n中文**强调**，مرحبا بالعالم\n\n\`\`\`mermaid\nflowchart LR\nA-->B\n\`\`\`\n`;
 const STREAM = `${STATIC}\n## Incomplete\n\n[link](https://example.com`;
 const BENCHMARK = buildBenchmarkCorpus();
 const code = createCodePlugin({ provider: { languages: ['js', 'typescript'], aliases: { ts: 'typescript' }, highlight: ({ code: source }) => ({ tokens: source.split('\n').map((line) => [{ content: line, color: '#2563eb' }]) }) } });
-const math = createMathPlugin({ adapter: { render: ({ source, display }) => React.createElement(Text, { accessibilityLabel: `${display ? 'Block' : 'Inline'} math: ${source}` }, source) } });
-const mermaid = createMermaidPlugin({ adapter: { families: ['flowchart'], render: ({ source }) => ({ kind: 'native', content: React.createElement(Text, { accessibilityLabel: 'Native flowchart', style: { color: '#8b949e' } }, source) }) } });
+const math = createMathPlugin({ singleDollarTextMath: true, adapter: { render: ({ source, display, errorColor }) => React.createElement(RaTeXView, { latex: source, displayMode: display, fontSize: display ? 22 : 16, color: errorColor }) } });
+const mermaid = createMermaidPlugin({ adapter: createBeautifulMermaidAdapter({
+  render: ({ source }) => ({ svg: renderMermaidSVG(source) }),
+  renderSvg: (svg) => React.createElement(SvgXml, { xml: svg, width: '100%', height: 200 }),
+}) });
 const PLUGINS = { code, cjk, math, mermaid };
 const codeLoading = createCodePlugin({ provider: { languages: ['js'], highlight: () => new Promise(() => {}) } });
 const mathLoading = createMathPlugin({ adapter: { render: ({ source }) => React.createElement(Text, { accessibilityLabel: 'Loading math renderer', accessibilityState: { busy: true } }, `Loading math renderer: ${source}`) } });

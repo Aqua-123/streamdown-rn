@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadHermesResults, verifyHermesResults } from '../benchmarks/verify-hermes.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const read = (relative) => JSON.parse(fs.readFileSync(path.join(root, relative), 'utf8'));
@@ -22,6 +23,9 @@ export function createReleaseReport() {
     const value = read(artifact);
     return value.streamingCharacterization ? { artifact, status: value.streamingCharacterization.status, metrics: value.streamingCharacterization.appendToLayoutMs } : null;
   })).filter(Boolean);
+  let hermes;
+  try { hermes = verifyHermesResults(loadHermesResults()); }
+  catch (error) { hermes = { status: 'blocked', reason: error.message }; }
   return {
     schemaVersion: 1,
     package: { name: pkg.name, version: pkg.version },
@@ -37,8 +41,8 @@ export function createReleaseReport() {
     benchmarks: {
       protocol: { corpusSha256: protocol.corpusSha256, budgets: protocol.budgets },
       characterizations,
-      deltas: [{ status: 'blocked', reason: 'No comparable physical-device release-Hermes baseline and candidate pair.' }],
-      releaseEvidence: evidence.blockers.some((blocker) => /performance|profil|heap|reference device/i.test(blocker)) ? 'blocked' : 'available',
+      deltas: [hermes],
+      releaseEvidence: hermes.status === 'pass' ? 'available' : 'blocked',
     },
     visuals: { status: availableVisualManifests.length === visualManifests.length ? 'available' : 'blocked', required: visualManifests, available: availableVisualManifests },
     blockers: evidence.blockers,

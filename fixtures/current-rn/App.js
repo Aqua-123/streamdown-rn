@@ -1,19 +1,47 @@
 import React, { Profiler, useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { AccessibilityInfo, Linking, SafeAreaView, ScrollView, StatusBar, Text } from 'react-native';
+import { AccessibilityInfo, Linking, ScrollView, StatusBar, Text, View } from 'react-native';
 import { FullscreenModal, Streamdown, createStreamingInstrumentation } from 'streamdown-rn';
 import { createCodePlugin } from 'streamdown-rn/code';
 import { cjk } from 'streamdown-rn/cjk';
 import { createMathPlugin } from 'streamdown-rn/math';
-import { createMermaidPlugin } from 'streamdown-rn/mermaid';
+import { createBeautifulMermaidAdapter, createMermaidPlugin } from 'streamdown-rn/mermaid';
+import { createRendererPlugin } from 'streamdown-rn/renderers';
+import { createHighlighterCore } from 'shiki/core';
+import { createJavaScriptRegexEngine } from 'shiki/engine/javascript';
+import bash from '@shikijs/langs/bash';
+import css from '@shikijs/langs/css';
+import javascript from '@shikijs/langs/javascript';
+import json from '@shikijs/langs/json';
+import python from '@shikijs/langs/python';
+import typescript from '@shikijs/langs/typescript';
+import githubDark from '@shikijs/themes/github-dark';
+import githubLight from '@shikijs/themes/github-light';
+import { RaTeXView } from 'ratex-react-native';
+import { renderMermaidSVG } from 'beautiful-mermaid';
 import { buildBenchmarkCorpus } from './benchmarkCorpus';
+import { ResponsiveMermaidSvg, VegaLiteRenderer } from './fixture-renderers';
+import { HarnessApp } from './harness-app';
 
 const STATIC = `# Streamdown RN\n\n- [x] native semantics\n- [ ] streaming\n\n| Metric | Value |\n|---|---:|\n| parity | 100% |\n\n\`\`\`js\nconst hello = 'world';\n\`\`\`\n\nInline math $x^2$ and block math:\n\n$$\\sum_{i=1}^{n}i$$\n\n中文**强调**，مرحبا بالعالم\n\n\`\`\`mermaid\nflowchart LR\nA-->B\n\`\`\`\n`;
 const STREAM = `${STATIC}\n## Incomplete\n\n[link](https://example.com`;
 const BENCHMARK = buildBenchmarkCorpus();
-const code = createCodePlugin({ provider: { languages: ['js', 'typescript'], aliases: { ts: 'typescript' }, highlight: ({ code: source }) => ({ tokens: source.split('\n').map((line) => [{ content: line, color: '#2563eb' }]) }) } });
-const math = createMathPlugin({ adapter: { render: ({ source, display }) => React.createElement(Text, { accessibilityLabel: `${display ? 'Block' : 'Inline'} math: ${source}` }, source) } });
-const mermaid = createMermaidPlugin({ adapter: { families: ['flowchart'], render: ({ source }) => ({ kind: 'native', content: React.createElement(Text, { accessibilityLabel: 'Native flowchart', style: { color: '#8b949e' } }, source) }) } });
-const PLUGINS = { code, cjk, math, mermaid };
+const highlighter = createHighlighterCore({ themes: [githubLight, githubDark], langs: [bash, css, javascript, json, python, typescript], engine: createJavaScriptRegexEngine({ forgiving: true }) });
+const code = createCodePlugin({ provider: {
+  languages: ['bash', 'css', 'javascript', 'json', 'python', 'typescript'],
+  aliases: { js: 'javascript', jsx: 'javascript', py: 'python', sh: 'bash', shell: 'bash', ts: 'typescript', tsx: 'typescript' },
+  highlight: async ({ code: source, language }) => {
+    const instance = await highlighter;
+    const result = instance.codeToTokens(source, { lang: language, theme: 'github-light' });
+    return { bg: result.bg, fg: result.fg, tokens: result.tokens.map((line) => line.map(({ content, color, fontStyle }) => ({ content, color, fontStyle: fontStyle === 1 ? 'italic' : undefined }))) };
+  },
+} });
+const math = createMathPlugin({ singleDollarTextMath: true, adapter: { render: ({ source, display, errorColor }) => React.createElement(RaTeXView, { latex: source, displayMode: display, fontSize: display ? 22 : 16, color: errorColor }) } });
+const mermaid = createMermaidPlugin({ adapter: createBeautifulMermaidAdapter({
+  render: ({ source }) => ({ svg: renderMermaidSVG(source, { bg: '#ffffff', fg: '#27272a', line: '#3f3f46', accent: '#8b5cf6', muted: '#52525b', surface: '#eeecff', border: '#8b5cf6', font: 'monospace', padding: 30, nodeSpacing: 28, layerSpacing: 44, transparent: true }) }),
+  renderSvg: (svg) => React.createElement(ResponsiveMermaidSvg, { svg }),
+}) });
+const renderers = createRendererPlugin([{ language: ['vega-lite', 'vega'], component: VegaLiteRenderer }]);
+const PLUGINS = { code, cjk, math, mermaid, renderers };
 const codeLoading = createCodePlugin({ provider: { languages: ['js'], highlight: () => new Promise(() => {}) } });
 const mathLoading = createMathPlugin({ adapter: { render: ({ source }) => React.createElement(Text, { accessibilityLabel: 'Loading math renderer', accessibilityState: { busy: true } }, `Loading math renderer: ${source}`) } });
 const mathError = createMathPlugin({ adapter: { render: () => { throw new Error('Math renderer failed'); } } });
@@ -37,6 +65,9 @@ const SCENARIOS = {
   code: '```typescript showLineNumbers {2}\nconst one = 1;\nconst two = 2;\n```',
   math: '$$\\begin{matrix}1&2\\\\3&4\\end{matrix}$$',
   mermaid: '```mermaid\nflowchart LR\nA-->B\n```',
+  'mermaid-sequence': '```mermaid\nsequenceDiagram\n    participant Client\n    participant Server\n    participant Database\n    Client->>Server: POST /api/data\n    Server->>Database: INSERT query\n    Database-->>Server: Success\n    Server-->>Client: 201 Created\n```',
+  'mermaid-state': '```mermaid\nstateDiagram-v2\n    [*] --> Idle\n    Idle --> Loading: fetch()\n    Loading --> Success: 200 OK\n    Loading --> Error: 4xx/5xx\n    Error --> Loading: retry()\n    Success --> Idle: reset()\n```',
+  vega: '```vega-lite\n{"data":{"values":[{"month":"Jan","revenue":28},{"month":"Feb","revenue":55},{"month":"Mar","revenue":43},{"month":"Apr","revenue":91},{"month":"May","revenue":81},{"month":"Jun","revenue":53}]},"encoding":{"x":{"field":"month"},"y":{"field":"revenue","title":"Revenue ($k)"}}}\n```',
   'image-loading': '![Image loading](https://10.255.255.1/streamdown-loading.png)',
   'image-error': '![Image error](https://127.0.0.1:1/streamdown-error.png)',
   'image-retry': '![Image retry](https://127.0.0.1:1/streamdown-retry.png)',
@@ -54,11 +85,11 @@ const SCENARIOS = {
 };
 
 function useConfig() {
-  const [config, setConfig] = useState({ scenario: 'static', theme: 'light', direction: 'ltr', layout: 'narrow' });
+  const [config, setConfig] = useState({ scenario: 'harness', theme: 'light', direction: 'ltr', layout: 'narrow' });
   useEffect(() => {
     const apply = (url) => {
       const params = new URL(url).searchParams;
-      setConfig({ scenario: params.get('scenario') || 'static', theme: params.get('theme') || 'light', direction: params.get('direction') || 'ltr', layout: params.get('layout') || 'narrow', checkpoint: params.get('checkpoint') || '' });
+      setConfig({ scenario: params.get('scenario') || 'harness', theme: params.get('theme') || 'light', direction: params.get('direction') || 'ltr', layout: params.get('layout') || 'narrow', checkpoint: params.get('checkpoint') || '' });
     };
     Linking.getInitialURL().then((url) => url && apply(url));
     const subscription = Linking.addEventListener('url', ({ url }) => apply(url));
@@ -68,7 +99,14 @@ function useConfig() {
 }
 
 export default function App() {
-  const { scenario, theme, direction, layout, checkpoint } = useConfig();
+  const config = useConfig();
+  const metrics = useMemo(() => createStreamingInstrumentation(), []);
+  if (config.scenario === 'harness') return <HarnessApp allPlugins={PLUGINS} metrics={metrics} />;
+  return <AutomatedFixture config={config} metrics={metrics} />;
+}
+
+function AutomatedFixture({ config, metrics }) {
+  const { scenario, theme, direction, layout, checkpoint } = config;
   const streaming = scenario === 'streaming';
   const benchmarking = scenario === 'benchmark';
   const incompleteCode = scenario === 'code-incomplete';
@@ -76,7 +114,6 @@ export default function App() {
   const streamMode = streaming || benchmarking || incompleteCode || interactionDisabled;
   const source = benchmarking ? BENCHMARK : STREAM;
   const [length, setLength] = useState(32);
-  const metrics = useMemo(() => createStreamingInstrumentation(), []);
   const started = React.useRef(performance.now());
   useEffect(() => {
     if ((!streaming && !benchmarking) || checkpoint || length >= source.length) return;
@@ -101,9 +138,9 @@ export default function App() {
   const backgroundColor = theme === 'dark' ? '#111827' : '#ffffff';
   const foregroundColor = theme === 'dark' ? '#e5e7eb' : '#111827';
   return (
-    <SafeAreaView style={{ flex: 1, paddingTop: StatusBar.currentHeight || 24, backgroundColor }} testID="fixture-root">
+    <View style={{ flex: 1, backgroundColor }} testID="fixture-root">
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={backgroundColor} />
-      <ScrollView contentContainerStyle={{ padding: 16, width: layout === 'wide' ? 720 : 360, maxWidth: '100%', alignSelf: 'center' }}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, paddingTop: 24, width: layout === 'wide' ? 720 : 360, maxWidth: '100%', alignSelf: 'center' }}>
         <Text accessibilityRole="header" style={{ color: foregroundColor }}>Fixture: {scenario}</Text>
         <Text style={{ color: foregroundColor }}>Fixture state: {scenario}</Text>
         <Profiler id="streamdown" onRender={(_id, phase, duration) => console.log('STREAMDOWN_BENCHMARK', JSON.stringify({ type: 'react-commit', phase, durationMs: duration }))}>
@@ -121,6 +158,6 @@ export default function App() {
       <FullscreenModal visible={scenario === 'fullscreen'} label="Fullscreen fixture" closeLabel="Exit fullscreen" capabilities={{}} onClose={() => {}} color={foregroundColor} backgroundColor={backgroundColor}>
         <Text style={{ color: foregroundColor }}>Fullscreen content</Text>
       </FullscreenModal>
-    </SafeAreaView>
+    </View>
   );
 }

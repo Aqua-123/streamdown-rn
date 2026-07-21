@@ -17,7 +17,8 @@
     "droppedFramePercent": 1,
     "heapGrowthMiB": 32,
     "firstRenderMs": 250,
-    "coreBundleOptionalMarkerCount": 0
+    "coreBundleOptionalMarkerCount": 0,
+    "sameDeviceMaxRegressionPercent": 10
   },
   "notes": [
     "Only same-device release-Hermes runs are comparable.",

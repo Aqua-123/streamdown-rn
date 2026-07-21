@@ -46,6 +46,9 @@ describe('native semantic renderer', () => {
     for (const text of ['Heading', 'bold', 'italic', 'deleted', 'inline()', 'quote', 'task', 'const n = 1;', 'Column', 'Cell', 'Footnote body']) {
       expect(screen.getByText(text)).toBeTruthy();
     }
+    const checkbox = screen.getByRole('checkbox');
+    expect(screen.queryByText('☑')).toBeNull();
+    expect(checkbox.props.accessibilityState).toEqual({ checked: true });
   });
 
   it('passes native semantic data to block, inline-code, custom, and unknown overrides', () => {

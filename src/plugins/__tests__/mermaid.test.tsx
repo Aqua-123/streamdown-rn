@@ -9,6 +9,7 @@ import {
   BEAUTIFUL_MERMAID_FAMILIES,
   detectMermaidFamily,
   normalizeBeautifulMermaidSvg,
+  normalizeBeautifulMermaidSource,
   sanitizeMermaidSvg,
   type MermaidFamily,
 } from '../mermaid';
@@ -45,6 +46,11 @@ describe('mermaid plugin', () => {
     expect(sanitizeMermaidSvg(normalized)).toContain('marker-end="url(#arrowhead)"');
     expect(() => sanitizeMermaidSvg('<svg><path marker-end="url(https://evil/x)" /></svg>')).toThrow(/unsafe/i);
     expect(() => sanitizeMermaidSvg('<svg><path marker-end="url(#x)" style="fill:red" /></svg>')).toThrow(/unsafe/i);
+  });
+
+  it('adapts compact flowchart arrows without changing labels', () => {
+    expect(normalizeBeautifulMermaidSource('flowchart LR\nA-->B')).toBe('flowchart LR\nA --> B');
+    expect(normalizeBeautifulMermaidSource('flowchart LR\nA["A-->B"]-->C')).toBe('flowchart LR\nA["A-->B"] --> C');
   });
 
   it('sanitizes bounded SVG and rejects active content, links, and oversized output', () => {
@@ -89,12 +95,13 @@ describe('mermaid plugin', () => {
     expect(() => createMermaidPlugin({ config: { nested: 'x'.repeat(21_000) } })).toThrow(/large/i);
   });
 
-  it('renders a supported family through the injected native adapter with source fallback', async () => {
+  it('renders a supported family through the injected native adapter with accessible source semantics', async () => {
     const renderDiagram = jest.fn(async () => ({ kind: 'native' as const, content: <Text testID="native-diagram">visual</Text> }));
     const plugin = createMermaidPlugin({ adapter: { families: ['flowchart'], render: renderDiagram } });
     render(<Streamdown mode="static" plugins={{ mermaid: plugin }}>{'```mermaid\nflowchart LR\nA-->B\n```'}</Streamdown>);
     await waitFor(() => expect(screen.getByTestId('native-diagram')).toBeTruthy());
-    expect(screen.getByText(/flowchart LR/)).toBeTruthy();
+    expect(screen.getByLabelText(/Mermaid diagram: flowchart LR/)).toBeTruthy();
+    expect(screen.queryByText(/flowchart LR/)).toBeNull();
     expect(renderDiagram).toHaveBeenCalledWith(expect.objectContaining({ family: 'flowchart' }));
   });
 
@@ -135,8 +142,10 @@ describe('mermaid plugin', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/exceeds/));
     first.unmount();
     const working = createMermaidPlugin({ adapter });
-    render(<Streamdown mode="static" plugins={{ mermaid: working }} capabilities={{ clipboard: { writeText: clipboard }, share: { shareText: share } }}>{'```mermaid\nflowchart LR\nA-->B\n```'}</Streamdown>);
+    render(<Streamdown mode="static" plugins={{ mermaid: working }} controls={{ mermaid: { share: true } }} capabilities={{ clipboard: { writeText: clipboard }, share: { shareText: share } }}>{'```mermaid\nflowchart LR\nA-->B\n```'}</Streamdown>);
     await waitFor(() => expect(screen.getByLabelText('Zoom')).toBeTruthy());
+    expect(screen.getByTestId('mermaid-block')).toHaveStyle({ padding: 8, borderRadius: 12 });
+    expect(screen.getByTestId('mermaid-surface')).toHaveStyle({ borderWidth: 1, borderRadius: 6 });
     fireEvent.press(screen.getByLabelText('Copy diagram'));
     fireEvent.press(screen.getByLabelText('Share diagram'));
     fireEvent.press(screen.getByLabelText('View fullscreen'));

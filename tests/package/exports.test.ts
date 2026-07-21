@@ -80,6 +80,7 @@ describe('packed package', () => {
     expect(core).not.toContain('remark-cjk-friendly');
     expect(core).not.toMatch(/require\(["']shiki(?:\/|["'])/);
     expect(core).not.toMatch(/require\(["']remark-math["']\)/);
-    expect(core).not.toMatch(/react-native-(?:svg|webview)/);
+    expect(core).toContain('react-native-svg');
+    expect(core).not.toContain('react-native-webview');
   });
 });

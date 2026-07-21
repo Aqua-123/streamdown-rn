@@ -74,6 +74,8 @@
     "benchmark:parser": "bun benchmarks/parser.bench.ts",
     "benchmark:streaming": "bun benchmarks/streaming.bench.ts",
     "benchmark:host": "bun run benchmark:parser && bun run benchmark:streaming",
+    "benchmark:hermes": "node scripts/benchmarks/verify-hermes.mjs",
+    "benchmark:hermes:self-test": "node scripts/benchmarks/verify-hermes.mjs --self-test",
     "parity:refresh": "bun scripts/parity/inventory.ts --source .reference/streamdown",
     "parity:validate": "bun scripts/parity/validate.ts",
     "parity:drift": "bun scripts/parity/check-drift.ts",
@@ -94,6 +96,7 @@
     "react-native": "^0.81.0 || ^0.85.0"
   },
   "dependencies": {
+    "react-native-svg": "15.15.5",
     "remark": "^15.0.1",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",

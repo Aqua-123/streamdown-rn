@@ -12,9 +12,9 @@ describe('controls prop native configuration', () => {
   });
   it('supports mixed and granular table/code families', () => {
     const tableOnly = render(<Streamdown mode="static" controls={{ code: false, table: { copy: true, download: false, fullscreen: false } }}>{markdown}</Streamdown>);
-    expect(tableOnly.getByRole('button', { name: 'Copy table as CSV' })).toBeTruthy();
+    expect(tableOnly.getByRole('button', { name: 'Copy table' })).toBeTruthy();
     expect(tableOnly.queryByRole('button', { name: 'Copy Code' })).toBeNull();
-    expect(tableOnly.queryByRole('button', { name: 'Download table as CSV' })).toBeNull();
+    expect(tableOnly.queryByRole('button', { name: 'Download table' })).toBeNull();
     const codeOnly = render(<Streamdown mode="static" controls={{ table: false, code: { copy: false } }}>{markdown}</Streamdown>);
     expect(codeOnly.queryByRole('button', { name: 'Copy Code' })).toBeNull();
     expect(codeOnly.getByRole('button', { name: 'Download file' })).toBeTruthy();

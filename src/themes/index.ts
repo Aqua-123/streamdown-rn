@@ -16,14 +16,14 @@ import type { ThemeConfig, ThemeColors } from '../core/types';
 // ============================================================================
 
 const darkColors: ThemeColors = {
-  background: '#0d1117',
-  foreground: '#c9d1d9',
-  muted: '#8b949e',
-  accent: '#58a6ff',
-  codeBackground: '#161b22',
-  codeForeground: '#c9d1d9',
-  border: '#30363d',
-  link: '#58a6ff',
+  background: '#020817',
+  foreground: '#f8fafc',
+  muted: '#94a3b8',
+  accent: '#f8fafc',
+  codeBackground: '#1e293b',
+  codeForeground: '#f8fafc',
+  border: '#1e293b',
+  link: '#f8fafc',
   // Syntax highlighting (GitHub Dark style)
   syntaxDefault: '#c9d1d9',
   syntaxKeyword: '#ff7b72',
@@ -37,13 +37,13 @@ const darkColors: ThemeColors = {
 
 const lightColors: ThemeColors = {
   background: '#ffffff',
-  foreground: '#24292e',
-  muted: '#6a737d',
-  accent: '#0366d6',
-  codeBackground: '#f6f8fa',
-  codeForeground: '#24292e',
-  border: '#e1e4e8',
-  link: '#0366d6',
+  foreground: '#09090b',
+  muted: '#71717a',
+  accent: '#0f172a',
+  codeBackground: '#fafafa',
+  codeForeground: '#09090b',
+  border: '#e4e4e7',
+  link: '#0f172a',
   // Syntax highlighting (GitHub Light style)
   syntaxDefault: '#24292e',
   syntaxKeyword: '#d73a49',
@@ -77,9 +77,9 @@ const fonts = {
 // ============================================================================
 
 const spacing = {
-  block: 12,    // Space between blocks
+  block: 16,    // Streamdown's my-4 block rhythm
   inline: 4,    // Inline element spacing
-  indent: 16,   // List/blockquote indent
+  indent: 24,   // Streamdown's nested-list indentation
 };
 
 // ============================================================================
@@ -133,48 +133,54 @@ export function getTextStyles(theme: ThemeConfig) {
       ...withFont('bold'),
       fontSize: 28,
       lineHeight: 36,
-      fontWeight: 'bold' as const,
-      marginBottom: theme.spacing.block,
+      fontWeight: '600' as const,
+      marginTop: 24,
+      marginBottom: 8,
     },
     heading2: {
       color: theme.colors.foreground,
       ...withFont('bold'),
       fontSize: 24,
       lineHeight: 32,
-      fontWeight: 'bold' as const,
-      marginBottom: theme.spacing.block,
+      fontWeight: '600' as const,
+      marginTop: 24,
+      marginBottom: 8,
     },
     heading3: {
       color: theme.colors.foreground,
       ...withFont('bold'),
       fontSize: 20,
       lineHeight: 28,
-      fontWeight: 'bold' as const,
-      marginBottom: theme.spacing.block,
+      fontWeight: '600' as const,
+      marginTop: 24,
+      marginBottom: 8,
     },
     heading4: {
       color: theme.colors.foreground,
       ...withFont('bold'),
       fontSize: 18,
       lineHeight: 26,
-      fontWeight: 'bold' as const,
-      marginBottom: theme.spacing.block,
+      fontWeight: '600' as const,
+      marginTop: 24,
+      marginBottom: 8,
     },
     heading5: {
       color: theme.colors.foreground,
       ...withFont('bold'),
       fontSize: 16,
       lineHeight: 24,
-      fontWeight: 'bold' as const,
-      marginBottom: theme.spacing.block,
+      fontWeight: '600' as const,
+      marginTop: 24,
+      marginBottom: 8,
     },
     heading6: {
       color: theme.colors.foreground,
       ...withFont('bold'),
       fontSize: 14,
       lineHeight: 22,
-      fontWeight: 'bold' as const,
-      marginBottom: theme.spacing.block,
+      fontWeight: '600' as const,
+      marginTop: 24,
+      marginBottom: 8,
     },
     paragraph: {
       color: theme.colors.foreground,
@@ -185,7 +191,7 @@ export function getTextStyles(theme: ThemeConfig) {
     },
     bold: {
       ...withFont('bold'),
-      fontWeight: 'bold' as const,
+      fontWeight: '600' as const,
     },
     italic: {
       fontStyle: 'italic' as const,
@@ -202,6 +208,7 @@ export function getTextStyles(theme: ThemeConfig) {
     },
     link: {
       color: theme.colors.link,
+      fontWeight: '500' as const,
       textDecorationLine: 'underline' as const,
     },
     strikethrough: {
@@ -217,17 +224,18 @@ export function getBlockStyles(theme: ThemeConfig) {
   return {
     codeBlock: {
       backgroundColor: theme.colors.codeBackground,
-      borderRadius: 8,
-      padding: 12,
-      marginBottom: theme.spacing.block,
+      borderRadius: 12,
+      padding: 8,
+      marginVertical: theme.spacing.block,
       borderWidth: 1,
       borderColor: theme.colors.border,
+      gap: 8,
     },
     blockquote: {
       borderLeftWidth: 4,
-      borderLeftColor: theme.colors.muted,
-      paddingLeft: theme.spacing.indent,
-      marginBottom: theme.spacing.block,
+      borderLeftColor: theme.colors.border,
+      paddingLeft: 16,
+      marginVertical: theme.spacing.block,
     },
     list: {
       marginBottom: theme.spacing.block,
@@ -239,26 +247,25 @@ export function getBlockStyles(theme: ThemeConfig) {
     horizontalRule: {
       height: 1,
       backgroundColor: theme.colors.border,
-      marginVertical: theme.spacing.block,
+      marginVertical: 24,
     },
     table: {
-      marginBottom: theme.spacing.block,
+      marginVertical: theme.spacing.block,
       borderWidth: 1,
       borderColor: theme.colors.border,
       borderRadius: 8,
-      overflow: 'hidden' as const,
+      backgroundColor: theme.colors.codeBackground,
+      padding: 8,
+      gap: 8,
     },
     tableHeader: {
       backgroundColor: theme.colors.codeBackground,
-      padding: 8,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
     },
     tableCell: {
-      padding: 8,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
     },
   };
 }
-

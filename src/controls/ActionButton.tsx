@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { cloneElement, isValidElement, useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import type { CapabilityResult } from '../platform/capabilities';
 import { failedCapability } from '../platform/capabilities';
@@ -44,6 +44,9 @@ export function ActionButton({ label, icon, disabled, onAction, onResult, button
     onResult?.(result);
   };
   const visual = icon ?? label;
+  const coloredVisual = isValidElement<{ color?: string }>(visual) && color
+    ? cloneElement(visual, { color })
+    : visual;
   return (
     <View>
       <Pressable
@@ -55,7 +58,7 @@ export function ActionButton({ label, icon, disabled, onAction, onResult, button
         onPress={press}
         style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 }}
       >
-        {typeof visual === 'string' || typeof visual === 'number' ? <Text style={{ color }}>{visual}</Text> : visual}
+        {typeof coloredVisual === 'string' || typeof coloredVisual === 'number' ? <Text style={{ color }}>{coloredVisual}</Text> : coloredVisual}
       </Pressable>
       {message ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color }}>{message}</Text> : null}
     </View>

@@ -17,6 +17,7 @@ describe('adapted explicit native translations', () => {
       mode: 'static', translations: { copyTableAsMarkdown: 'Tabelle kopieren' },
       children: '| A |\n| - |\n| B |',
     }));
+    fireEvent.press(table.getByRole('button', { name: 'Copy table' }));
     expect(table.getByRole('button', { name: 'Tabelle kopieren' })).toBeTruthy();
   });
 

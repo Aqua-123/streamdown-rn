@@ -20,7 +20,7 @@ The active block reparses as text arrives. Completed blocks retain stable identi
 - `src/controls/` owns accessible action UI; `src/platform/` owns injectable native capabilities.
 - `src/plugins/` contains separately exported code, CJK, math, Mermaid, and renderer contracts. Type-only references from core prevent optional runtime dependencies from entering the default bundle.
 
-The default entry never imports Shiki, RaTeX, beautiful-mermaid, react-native-svg, or react-native-webview. Packed Expo fixtures verify that property. Optional-provider Metro resolution is a separate bundling gate and does not prove native rendering.
+The default entry never imports Shiki, RaTeX, beautiful-mermaid, or react-native-webview. It does use `react-native-svg` for the exact Streamdown control-icon paths and task checkmark; Mermaid engines and SVG document rendering remain optional host-injected behavior. Packed Expo fixtures verify that boundary. Optional-provider Metro resolution is a separate bundling gate and does not prove native rendering.
 
 ## Math and Mermaid
 

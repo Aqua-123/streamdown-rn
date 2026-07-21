@@ -31,8 +31,8 @@ describe('Mermaid native component', () => {
   it('uses native theme style plus labelled image semantics instead of DOM className', async () => {
     const adapter: MermaidAdapter = { families: ['flowchart'], render: () => ({ kind: 'native', content: React.createElement(Text, null, 'Chart') }) };
     const screen = render(React.createElement(MermaidBlock, props(createMermaidPlugin({ adapter }))));
-    await waitFor(() => expect(screen.getByRole('image', { name: 'Mermaid diagram' })).toBeTruthy());
-    expect(screen.getByText(source).props.style).toMatchObject({ fontFamily: lightTheme.fonts.mono });
+    await waitFor(() => expect(screen.getByRole('image', { name: `Mermaid diagram: ${source}` })).toBeTruthy());
+    expect(screen.queryByText(source)).toBeNull();
   });
 
   // parity:39a95fa22c7a68442b1a00a87739be207670306f93ce27a533d4f5b031f331ea

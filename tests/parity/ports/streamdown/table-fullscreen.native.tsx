@@ -7,7 +7,11 @@ describe('TableFullscreenButton native modal', () => {
   it('keeps copy and download actions available inside the native modal', () => {
     const screen = render(<TableControls table={{ headers: ['A'], rows: [['B']] }} capabilities={{}} translations={defaultTranslations}><Text>Table body</Text></TableControls>);
     fireEvent.press(screen.getByRole('button', { name: 'View fullscreen' }));
-    expect(screen.getAllByRole('button', { name: 'Copy table as CSV' })).toHaveLength(2);
-    expect(screen.getAllByRole('button', { name: 'Download table as CSV' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Copy table' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Download table' })).toHaveLength(2);
+    fireEvent.press(screen.getAllByRole('button', { name: 'Copy table' })[1]);
+    expect(screen.getByRole('button', { name: 'Copy table as CSV' })).toBeTruthy();
+    fireEvent.press(screen.getAllByRole('button', { name: 'Download table' })[1]);
+    expect(screen.getByRole('button', { name: 'Download table as CSV' })).toBeTruthy();
   });
 });

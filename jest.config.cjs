@@ -7,6 +7,7 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   moduleNameMapper: {
     '^react-native$': '<rootDir>/node_modules/react-native',
+    '^react-native-svg$': '<rootDir>/node_modules/react-native-svg',
     '^remend$': '<rootDir>/node_modules/remend/dist/index.js',
   },
   transformIgnorePatterns: [

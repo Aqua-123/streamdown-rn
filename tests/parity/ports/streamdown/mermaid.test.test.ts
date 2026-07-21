@@ -31,8 +31,8 @@ describe('Mermaid public native behavior', () => {
   // parity:aeae5fca691f2b8d8f4bd506a46d9d562405adeb21f4c00576faf2f741f7911d
   it('renders without crashing and applies native theme styling instead of className', async () => {
     const screen = render(block(createMermaidPlugin({ adapter: adapter() })));
-    await waitFor(() => expect(screen.getByRole('image', { name: 'Mermaid diagram' })).toBeTruthy());
-    expect(screen.getByText(source).props.style).toMatchObject({ color: lightTheme.colors.muted, fontFamily: lightTheme.fonts.mono });
+    await waitFor(() => expect(screen.getByRole('image', { name: `Mermaid diagram: ${source}` })).toBeTruthy());
+    expect(screen.queryByText(source)).toBeNull();
   });
 
   // parity:d1784e4b85b0cd2d2045af0f4aec93f86718d2dd56113225f8e1e0affc203ee2

@@ -40,16 +40,21 @@ describe('native markdown controls', () => {
       <Streamdown mode="static" capabilities={{ clipboard: { writeText }, files: { save } }}>{markdown}</Streamdown>
     );
 
+    fireEvent.press(screen.getByRole('button', { name: 'Copy table' }));
     fireEvent.press(screen.getByRole('button', { name: 'Copy table as CSV' }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith('Name,City\nZoë,東京'));
+    fireEvent.press(screen.getByRole('button', { name: 'Copy table' }));
     fireEvent.press(screen.getByRole('button', { name: 'Copy table as TSV' }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith('Name\tCity\nZoë\t東京'));
+    fireEvent.press(screen.getByRole('button', { name: 'Copy table' }));
     fireEvent.press(screen.getByRole('button', { name: 'Copy table as Markdown' }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(expect.stringContaining('| Zoë | 東京 |')));
+    fireEvent.press(screen.getByRole('button', { name: 'Download table' }));
     fireEvent.press(screen.getByRole('button', { name: 'Download table as CSV' }));
     await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({
       basename: 'table', extension: 'csv', mimeType: 'text/csv;charset=utf-8', content: '\uFEFFName,City\nZoë,東京',
     })));
+    fireEvent.press(screen.getByRole('button', { name: 'Download table' }));
     fireEvent.press(screen.getByRole('button', { name: 'Download table as Markdown' }));
     await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({
       basename: 'table', extension: 'md', mimeType: 'text/markdown;charset=utf-8',
@@ -115,8 +120,10 @@ describe('native markdown controls', () => {
 
     const table = '| A |\n| --- |\n| B |';
     screen.rerender(<Streamdown mode="static" capabilities={{ files: { save: async () => { throw new Error('table save failed'); } } }}>{table}</Streamdown>);
+    fireEvent.press(screen.getByRole('button', { name: 'Download table' }));
     fireEvent.press(screen.getByRole('button', { name: 'Download table as CSV' }));
     await waitFor(() => expect(screen.getByText('table save failed')).toBeTruthy());
+    fireEvent.press(screen.getByRole('button', { name: 'Copy table' }));
     fireEvent.press(screen.getByRole('button', { name: 'Copy table as CSV' }));
     await waitFor(() => expect(screen.getByText('Clipboard unavailable')).toBeTruthy());
   });

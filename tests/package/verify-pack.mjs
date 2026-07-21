@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'streamdown-rn-pack-'));
+const keepTemp = process.env.STREAMDOWN_KEEP_PACK_FIXTURE === '1';
 const fixtures = [
   { id: 'expo54', name: 'Expo 54 / RN 0.81', directory: 'fixtures/expo54' },
   { id: 'expo56', name: 'Expo 56 / RN 0.85', directory: 'fixtures/current-rn' },
@@ -119,8 +120,9 @@ export default function App() { return <><Streamdown mode="static" plugins={plug
       run('npx', ['expo', 'export', '--platform', platform, '--clear', '--output-dir', path.join(consumer, `dist-matrix-${platform}`)], { cwd: consumer });
     }
     process.stdout.write(`Verified ${pack.filename} (${pack.files.length} files) in ${fixture.name}.\n`);
-    fs.rmSync(consumer, { recursive: true, force: true });
+    if (keepTemp) process.stdout.write(`Packed fixture: ${consumer}\n`);
+    else fs.rmSync(consumer, { recursive: true, force: true });
   }
 } finally {
-  fs.rmSync(temp, { recursive: true, force: true });
+  if (!keepTemp) fs.rmSync(temp, { recursive: true, force: true });
 }

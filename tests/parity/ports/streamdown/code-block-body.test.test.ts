@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Streamdown } from '../../../../src/StreamdownRN';
 import { createCodePlugin, type HighlightResult } from '../../../../src/plugins/code';
 
@@ -18,7 +18,8 @@ const renderResult = (result: HighlightResult, language = 'javascript') => rende
 );
 
 const hasViewStyle = (property: string, value: string) =>
-  screen.UNSAFE_getAllByType(View).some((view) => StyleSheet.flatten(view.props.style)?.[property] === value);
+  [...screen.UNSAFE_getAllByType(View), ...screen.UNSAFE_getAllByType(ScrollView)]
+    .some((view) => StyleSheet.flatten(view.props.style)?.[property] === value);
 const hasTextStyle = (property: string, value: string) =>
   screen.UNSAFE_getAllByType(Text).some((text) => StyleSheet.flatten(text.props.style)?.[property] === value);
 

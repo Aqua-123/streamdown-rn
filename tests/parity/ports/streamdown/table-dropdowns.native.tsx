@@ -12,8 +12,10 @@ describe('table direct-action native substitute', () => {
   });
   it('surfaces missing adapters and write failures accessibly without DOM lookup/outside listeners', async () => {
     const screen = render(<TableControls table={table} capabilities={{ clipboard: { writeText: async () => { throw new Error('write failed'); } } }} translations={defaultTranslations}><Text>body</Text></TableControls>);
+    fireEvent.press(screen.getByRole('button', { name: 'Copy table' }));
     fireEvent.press(screen.getByRole('button', { name: 'Copy table as CSV' }));
     await waitFor(() => expect(screen.getByText('write failed')).toBeTruthy());
+    fireEvent.press(screen.getByRole('button', { name: 'Download table' }));
     fireEvent.press(screen.getByRole('button', { name: 'Download table as CSV' }));
     await waitFor(() => expect(screen.getByText('File saving unavailable')).toBeTruthy());
   });

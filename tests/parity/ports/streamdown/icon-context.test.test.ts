@@ -10,10 +10,13 @@ describe('adapted native icon props', () => {
   // parity:e6050ffd777db1f6cddd713334d753aa03c97ea1b5b7b1682d1883013f19aa87
   // parity:15beb43cfce8edefe6d24a9af291a7a8f92a184beeb01ab32520bd0f48c22643
   it('uses exported defaults when no icon map is supplied', () => {
-    expect(defaultIcons.copy).toBe('⧉');
+    expect(React.isValidElement(defaultIcons.copy)).toBe(true);
+    expect(React.isValidElement(defaultIcons.download)).toBe(true);
     const result = render(React.createElement(Streamdown, { mode: 'static', children: markdown }));
-    expect(result.getByText('⧉')).toBeTruthy();
-    expect(result.getByText('↓')).toBeTruthy();
+    expect(result.queryByText('⧉')).toBeNull();
+    expect(result.queryByText('↓')).toBeNull();
+    expect(result.getByRole('button', { name: 'Copy Code' })).toBeTruthy();
+    expect(result.getByRole('button', { name: 'Download file' })).toBeTruthy();
   });
 
   // parity:9077847ae2db8e4b02b6ff877fd5812541b92e111d035e22d1433ca32a514203
@@ -26,7 +29,7 @@ describe('adapted native icon props', () => {
     expect(result.getByTestId('custom-copy')).toBeTruthy();
     result.rerender(React.createElement(Streamdown, { mode: 'static', children: markdown }));
     expect(result.queryByTestId('custom-copy')).toBeNull();
-    expect(result.getByText('⧉')).toBeTruthy();
+    expect(result.getByRole('button', { name: 'Copy Code' })).toBeTruthy();
     result.rerender(React.createElement(Streamdown, {
       mode: 'static', children: markdown,
       icons: { copy: React.createElement(Text, { testID: 'next-copy' }, 'N') },

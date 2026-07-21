@@ -57,6 +57,7 @@ describe('final coverage native adaptations', () => {
   it('reports native table-save failures through deterministic accessible feedback', async () => {
     // parity:e579b579ce0d1eaf91d14ab6c047007751121fd06e1d418373b9ad79136a6403
     const screen = render(h(Streamdown, { mode: 'static', capabilities: { files: { save: async () => { throw new Error('save failed'); } } } }, '| A |\n| - |\n| data |'));
+    fireEvent.press(screen.getByRole('button', { name: 'Download table' }));
     fireEvent.press(screen.getByRole('button', { name: 'Download table as CSV' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('save failed');
   });
