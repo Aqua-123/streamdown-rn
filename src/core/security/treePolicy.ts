@@ -32,9 +32,10 @@ export interface SecurityPolicyOptions extends ResourcePolicy {
   ) => string | null | undefined;
 }
 
-function elementName(node: PolicyNode): string | null {
+function elementName(node: PolicyNode, semanticElement?: string): string | null {
   const dataName = node.data?.hName;
   if (typeof dataName === 'string') return dataName;
+  if (semanticElement) return semanticElement;
   switch (node.type) {
     case 'blockquote': return 'blockquote';
     case 'break': return 'br';
@@ -70,7 +71,11 @@ function sanitizeNodeURL(node: PolicyNode, options: SecurityPolicyOptions): Poli
   return { ...node, url: safe ?? undefined } as PolicyNode;
 }
 
-function filterChildren(parent: PolicyParent, options: SecurityPolicyOptions): PolicyParent {
+function filterChildren(
+  parent: PolicyParent,
+  options: SecurityPolicyOptions,
+  childSemanticElement?: string
+): PolicyParent {
   const children: PolicyNode[] = [];
   parent.children.forEach((original, index) => {
     if (original.type === 'html') {
@@ -80,10 +85,13 @@ function filterChildren(parent: PolicyParent, options: SecurityPolicyOptions): P
 
     let node = sanitizeNodeURL(original, options);
     if ('children' in node && Array.isArray(node.children)) {
-      node = filterChildren(node as PolicyParent, options);
+      const tableCellElement = node.type === 'tableRow' && parent.type === 'table'
+        ? (index === 0 ? 'th' : 'td')
+        : undefined;
+      node = filterChildren(node as PolicyParent, options, tableCellElement);
     }
 
-    const name = elementName(node);
+    const name = elementName(node, childSemanticElement);
     const disallowed = name !== null && (
       (options.allowedElements ? !options.allowedElements.includes(name) : false) ||
       (options.disallowedElements?.includes(name) ?? false) ||

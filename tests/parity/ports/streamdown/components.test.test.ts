@@ -118,15 +118,21 @@ describe('adapted native semantic components', () => {
       types.push(semantic.type);
       return React.createElement(View, null, children);
     };
+    const headers: string[] = [];
+    const Header = ({ children, semantic }: { children?: React.ReactNode; semantic: { type: string } }) => {
+      headers.push(semantic.type);
+      return React.createElement(View, null, children);
+    };
     const result = render(React.createElement(Streamdown, {
-      mode: 'static', components: { table: Override as never, tr: Override as never, td: Override as never },
+      mode: 'static', components: { table: Override as never, tr: Override as never, th: Header as never, td: Override as never },
       children: '| Head |\n| --- |\n| Body |',
     }));
     expect(JSON.stringify(result.toJSON())).toContain('Head');
     expect(JSON.stringify(result.toJSON())).toContain('Body');
     expect(types.filter((type) => type === 'table')).toHaveLength(1);
     expect(types.filter((type) => type === 'tableRow')).toHaveLength(2);
-    expect(types.filter((type) => type === 'tableCell')).toHaveLength(2);
+    expect(headers).toEqual(['tableCell']);
+    expect(types.filter((type) => type === 'tableCell')).toHaveLength(1);
   });
 
   // parity:ec20055cdf97c17254c985f85c95bd26e93a05548d2bd14bcde77b9a2b46539f
