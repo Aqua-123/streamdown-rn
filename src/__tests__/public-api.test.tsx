@@ -1,10 +1,26 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { Text } from 'react-native';
-import StreamdownDefault, { Streamdown, StreamdownRN } from '../index';
+import StreamdownDefault, {
+  Streamdown,
+  StreamdownRN,
+  darkTheme as publicDarkTheme,
+  darkThemePrimitives as publicDarkThemePrimitives,
+  getTheme as publicGetTheme,
+  lightTheme as publicLightTheme,
+  lightThemePrimitives as publicLightThemePrimitives,
+  resolveThemePrimitives as publicResolveThemePrimitives,
+} from '../index';
 import { lightTheme } from '../themes';
 
 describe('Streamdown-compatible native API', () => {
+  it('exports semantic themes and their resolver from the package root', () => {
+    expect(publicGetTheme('light')).toBe(publicLightTheme);
+    expect(publicGetTheme('dark')).toBe(publicDarkTheme);
+    expect(publicResolveThemePrimitives(publicLightTheme)).toEqual(publicLightThemePrimitives);
+    expect(publicResolveThemePrimitives(publicDarkTheme)).toEqual(publicDarkThemePrimitives);
+  });
+
   it('exports Streamdown as the preferred/default component and keeps the alias', () => {
     expect(StreamdownDefault).toBe(Streamdown);
     expect(StreamdownRN).toBe(Streamdown);

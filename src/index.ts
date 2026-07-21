@@ -69,7 +69,21 @@ export type {
   
   // Debug/Observability
   DebugSnapshot,
+
+  // Theme configuration
+  ThemeConfig,
+  ThemeColors,
+  ThemePrimitives,
 } from './core/types';
+
+export {
+  darkTheme,
+  darkThemePrimitives,
+  getTheme,
+  lightTheme,
+  lightThemePrimitives,
+  resolveThemePrimitives,
+} from './themes';
 
 export { normalizeHtmlIndentation } from './core/parser';
 
