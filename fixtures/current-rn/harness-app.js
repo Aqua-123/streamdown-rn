@@ -159,7 +159,7 @@ function Metric({ label, value, palette }) {
   );
 }
 
-export function HarnessApp({ allPlugins, metrics }) {
+export function HarnessApp({ allPlugins, metrics, capabilities }) {
   const { width } = useWindowDimensions();
   const [theme, setTheme] = useState('light');
   const [direction, setDirection] = useState('ltr');
@@ -390,6 +390,7 @@ export function HarnessApp({ allPlugins, metrics }) {
                   isComplete={isComplete}
                   instrumentation={metrics}
                   plugins={enabledPlugins}
+                  capabilities={capabilities}
                 >{markdown}</Streamdown>
               </Profiler>
             ) : (

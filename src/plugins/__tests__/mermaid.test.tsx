@@ -146,15 +146,18 @@ describe('mermaid plugin', () => {
         : pending),
     };
     const plugin = createMermaidPlugin({ adapter });
-    const view = render(<MermaidBlock source={sourceA} plugin={plugin} theme={lightTheme} capabilities={{}} translations={defaultTranslations} />);
-    await waitFor(() => expect(screen.getByLabelText('Download diagram as SVG')).toBeTruthy());
+    const capabilities = { files: { save: jest.fn(() => ({ status: 'success' as const })) } };
+    const view = render(<MermaidBlock source={sourceA} plugin={plugin} theme={lightTheme} capabilities={capabilities} translations={defaultTranslations} />);
+    await waitFor(() => expect(screen.getByText('result A')).toBeTruthy());
+    fireEvent.press(screen.getByLabelText('Download diagram'));
+    expect(screen.getByRole('menuitem', { name: 'Download diagram as SVG' })).toBeTruthy();
 
-    view.rerender(<MermaidBlock source={sourceB} plugin={plugin} theme={lightTheme} capabilities={{}} translations={defaultTranslations} />);
+    view.rerender(<MermaidBlock source={sourceB} plugin={plugin} theme={lightTheme} capabilities={capabilities} translations={defaultTranslations} />);
 
     expect(screen.getByText('result A')).toBeTruthy();
-    expect(screen.queryByLabelText('Download diagram as SVG')).toBeNull();
-    expect(screen.queryByLabelText('Download diagram as PNG')).toBeNull();
-    expect(screen.getByLabelText('Download diagram as MMD')).toBeTruthy();
+    expect(screen.queryByRole('menuitem', { name: 'Download diagram as SVG' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Download diagram as PNG' })).toBeNull();
+    expect(screen.getByRole('menuitem', { name: 'Download diagram as MMD' })).toBeTruthy();
   });
 
   it('rejects oversized diagrams before adapters and exposes copy/share/fullscreen/panzoom seams', async () => {

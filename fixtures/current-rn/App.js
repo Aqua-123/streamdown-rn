@@ -21,6 +21,7 @@ import { renderMermaidSVG } from 'beautiful-mermaid';
 import { buildBenchmarkCorpus } from './benchmarkCorpus';
 import { ResponsiveMermaidSvg, VegaLiteRenderer } from './fixture-renderers';
 import { HarnessApp } from './harness-app';
+import { createFixtureCapabilities } from './native-capabilities';
 
 const STATIC = `# Streamdown RN\n\n- [x] native semantics\n- [ ] streaming\n\n| Metric | Value |\n|---|---:|\n| parity | 100% |\n\n\`\`\`js\nconst hello = 'world';\n\`\`\`\n\nInline math $x^2$ and block math:\n\n$$\\sum_{i=1}^{n}i$$\n\n中文**强调**，مرحبا بالعالم\n\n\`\`\`mermaid\nflowchart LR\nA-->B\n\`\`\`\n`;
 const STREAM = `${STATIC}\n## Incomplete\n\n[link](https://example.com`;
@@ -101,11 +102,12 @@ function useConfig() {
 export default function App() {
   const config = useConfig();
   const metrics = useMemo(() => createStreamingInstrumentation(), []);
-  if (config.scenario === 'harness') return <HarnessApp allPlugins={PLUGINS} metrics={metrics} />;
-  return <AutomatedFixture config={config} metrics={metrics} />;
+  const capabilities = useMemo(() => createFixtureCapabilities(), []);
+  if (config.scenario === 'harness') return <HarnessApp allPlugins={PLUGINS} metrics={metrics} capabilities={capabilities} />;
+  return <AutomatedFixture config={config} metrics={metrics} capabilities={capabilities} />;
 }
 
-function AutomatedFixture({ config, metrics }) {
+function AutomatedFixture({ config, metrics, capabilities }) {
   const { scenario, theme, direction, layout, checkpoint } = config;
   const streaming = scenario === 'streaming';
   const benchmarking = scenario === 'benchmark';
@@ -152,10 +154,11 @@ function AutomatedFixture({ config, metrics }) {
             isComplete={incompleteCode ? false : ((!streaming && !benchmarking) || length >= source.length)}
             instrumentation={metrics}
             plugins={scenarioPlugins}
+            capabilities={capabilities}
           >{markdown}</Streamdown>
         </Profiler>
       </ScrollView>
-      <FullscreenModal visible={scenario === 'fullscreen'} label="Fullscreen fixture" closeLabel="Exit fullscreen" capabilities={{}} onClose={() => {}} color={foregroundColor} backgroundColor={backgroundColor}>
+      <FullscreenModal visible={scenario === 'fullscreen'} label="Fullscreen fixture" closeLabel="Exit fullscreen" capabilities={capabilities} onClose={() => {}} color={foregroundColor} backgroundColor={backgroundColor}>
         <Text style={{ color: foregroundColor }}>Fullscreen content</Text>
       </FullscreenModal>
     </View>

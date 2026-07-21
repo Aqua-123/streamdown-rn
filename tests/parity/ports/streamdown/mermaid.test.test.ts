@@ -107,11 +107,12 @@ describe('Mermaid public native behavior', () => {
   it('saves source, sanitized SVG, and adapter-provided PNG through native capabilities', async () => {
     const save = jest.fn<CapabilityResult, [NativeFileRequest]>(() => ({ status: 'success' }));
     const screen = render(block(createMermaidPlugin({ adapter: adapter() }), { capabilities: { files: { save } } }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Download diagram as PNG' })).toBeTruthy());
-    fireEvent.press(screen.getByRole('button', { name: 'Download diagram as MMD' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Download diagram as SVG' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Download diagram as PNG' }));
-    await waitFor(() => expect(save).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(screen.getByText('Native diagram')).toBeTruthy());
+    for (const [index, format] of ['MMD', 'SVG', 'PNG'].entries()) {
+      fireEvent.press(screen.getByRole('button', { name: 'Download diagram' }));
+      fireEvent.press(screen.getByRole('menuitem', { name: `Download diagram as ${format}` }));
+      await waitFor(() => expect(save).toHaveBeenCalledTimes(index + 1));
+    }
     expect(save.mock.calls.map(([request]) => request.extension)).toEqual(['mmd', 'svg', 'png']);
   });
 

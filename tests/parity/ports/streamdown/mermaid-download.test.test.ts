@@ -20,12 +20,15 @@ const renderBlock = (extra = {}) => {
 describe('Mermaid native downloads', () => {
   // parity:b059ab0f729b96460aa30f1651ac3c084fd3d1d19c808f7a00d2e2a1f10f5433
   // parity:482a1a7588e71a5bdaf9aafe2255e4003f7d1679406ec98badfa499cf62d023c
-  it('exposes format actions directly, with no browser dropdown or outside-click state', async () => {
+  it('opens one download menu with only the available formats', async () => {
     const { screen } = renderBlock();
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Download diagram as SVG' })).toBeTruthy());
-    expect(screen.getByRole('button', { name: 'Download diagram as MMD' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Download diagram as PNG' })).toBeTruthy();
-    expect(screen.queryByRole('menu')).toBeNull();
+    await waitFor(() => expect(screen.getByText('Chart')).toBeTruthy());
+    expect(screen.UNSAFE_queryByProps({ accessibilityRole: 'menu' })).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'Download diagram' }));
+    expect(screen.UNSAFE_getByProps({ accessibilityRole: 'menu' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Download diagram as SVG' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Download diagram as MMD' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Download diagram as PNG' })).toBeTruthy();
   });
 
   // parity:6f7271eac73df04250edc95e1063decbca06fd67c0f4f9c80c6c496b325ec7bd
@@ -33,11 +36,12 @@ describe('Mermaid native downloads', () => {
   // parity:c7a846154dd23ab9779867955db79c8189c34230d26eebf1233df2f5f110aa53
   it('sends exact MMD, SVG, and PNG payloads to the native file capability', async () => {
     const { save, screen } = renderBlock();
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Download diagram as PNG' })).toBeTruthy());
-    for (const name of ['Download diagram as MMD', 'Download diagram as SVG', 'Download diagram as PNG']) {
-      fireEvent.press(screen.getByRole('button', { name }));
+    await waitFor(() => expect(screen.getByText('Chart')).toBeTruthy());
+    for (const [index, name] of ['Download diagram as MMD', 'Download diagram as SVG', 'Download diagram as PNG'].entries()) {
+      fireEvent.press(screen.getByRole('button', { name: 'Download diagram' }));
+      fireEvent.press(screen.getByRole('menuitem', { name }));
+      await waitFor(() => expect(save).toHaveBeenCalledTimes(index + 1));
     }
-    await waitFor(() => expect(save).toHaveBeenCalledTimes(3));
     expect(save.mock.calls[0][0]).toMatchObject({ extension: 'mmd', content: source });
     expect(save.mock.calls[1][0]).toMatchObject({ extension: 'svg', content: '<svg></svg>' });
     expect(save.mock.calls[2][0]).toMatchObject({ extension: 'png', content: result.png });
@@ -60,11 +64,27 @@ describe('Mermaid native downloads', () => {
   });
 
   // parity:885267c56b44aab79a11d59fcf89f15a9b05985dad58e6e0e04154e17f5601c3
-  it('disables every format action while streaming animation is active', async () => {
+  it('disables the download trigger while streaming animation is active', async () => {
     const { screen } = renderBlock({ disabled: true });
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Download diagram as PNG' })).toBeTruthy());
-    for (const name of ['Download diagram as MMD', 'Download diagram as SVG', 'Download diagram as PNG']) {
-      expect(screen.getByRole('button', { name }).props.accessibilityState.disabled).toBe(true);
-    }
+    await waitFor(() => expect(screen.getByText('Chart')).toBeTruthy());
+    const trigger = screen.getByRole('button', { name: 'Download diagram' });
+    expect(trigger.props.accessibilityState).toMatchObject({ disabled: true, expanded: false });
+    fireEvent.press(trigger);
+    expect(screen.UNSAFE_queryByProps({ accessibilityRole: 'menu' })).toBeNull();
+  });
+
+  it('hides downloads without a native file capability and keeps failed saves actionable', async () => {
+    const unavailable = renderBlock({ capabilities: {} });
+    await waitFor(() => expect(unavailable.screen.getByText('Chart')).toBeTruthy());
+    expect(unavailable.screen.queryByRole('button', { name: 'Download diagram' })).toBeNull();
+    unavailable.screen.unmount();
+
+    const save = jest.fn(() => ({ status: 'unavailable' as const }));
+    const failed = renderBlock({ capabilities: { files: { save } } });
+    await waitFor(() => expect(failed.screen.getByText('Chart')).toBeTruthy());
+    fireEvent.press(failed.screen.getByRole('button', { name: 'Download diagram' }));
+    fireEvent.press(failed.screen.getByRole('menuitem', { name: 'Download diagram as MMD' }));
+    await waitFor(() => expect(failed.screen.getByRole('alert')).toHaveTextContent('File saving unavailable'));
+    expect(failed.screen.UNSAFE_getByProps({ accessibilityRole: 'menu' })).toBeTruthy();
   });
 });

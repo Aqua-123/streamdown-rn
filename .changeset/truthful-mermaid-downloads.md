@@ -2,4 +2,4 @@
 "streamdown-rn": patch
 ---
 
-Expose truthful MMD, SVG, and PNG Mermaid downloads without mixing rendered output across source revisions.
+Expose truthful MMD, SVG, and PNG Mermaid downloads from one format menu without mixing rendered output across source revisions.

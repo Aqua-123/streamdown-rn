@@ -26,6 +26,22 @@ export {
   type SkeletonTextProps,
 } from './components';
 
+export {
+  Button,
+  Dropdown,
+  DropdownRoot,
+  DropdownTrigger,
+  DropdownPopup,
+  DropdownItem,
+  type ButtonProps,
+  type ButtonVariant,
+  type DropdownRootProps,
+  type DropdownTriggerProps,
+  type DropdownPopupProps,
+  type DropdownItemProps,
+  type DropdownOpenReason,
+} from './components/ui';
+
 // ============================================================================
 // Security Utilities
 // ============================================================================

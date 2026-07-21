@@ -1,5 +1,6 @@
 import React, { cloneElement, isValidElement, useEffect, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Button } from '../components/ui';
 import type { CapabilityResult } from '../platform/capabilities';
 import { failedCapability } from '../platform/capabilities';
 
@@ -13,6 +14,7 @@ export interface ActionButtonProps {
   successMessage?: string;
   resetAfterMs?: number;
   color?: string;
+  expanded?: boolean;
 }
 
 function resultMessage(result: CapabilityResult): string | null {
@@ -22,7 +24,7 @@ function resultMessage(result: CapabilityResult): string | null {
   } as const)[result.status];
 }
 
-export function ActionButton({ label, icon, disabled, onAction, onResult, buttonRef, successMessage, resetAfterMs = 2000, color }: ActionButtonProps) {
+export function ActionButton({ label, icon, disabled, onAction, onResult, buttonRef, successMessage, resetAfterMs = 2000, color, expanded }: ActionButtonProps) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -49,17 +51,16 @@ export function ActionButton({ label, icon, disabled, onAction, onResult, button
     : visual;
   return (
     <View>
-      <Pressable
+      <Button
         ref={buttonRef}
-        accessibilityRole="button"
         accessibilityLabel={label}
-        accessibilityState={{ disabled: Boolean(disabled), busy }}
+        accessibilityState={{ disabled: Boolean(disabled), busy, ...(expanded === undefined ? {} : { expanded }) }}
         disabled={disabled || busy}
         onPress={press}
-        style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 }}
+        foregroundColor={color}
       >
         {typeof coloredVisual === 'string' || typeof coloredVisual === 'number' ? <Text style={{ color }}>{coloredVisual}</Text> : coloredVisual}
-      </Pressable>
+      </Button>
       {message ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color }}>{message}</Text> : null}
     </View>
   );
