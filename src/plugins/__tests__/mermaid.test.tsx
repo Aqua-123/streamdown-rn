@@ -2,7 +2,10 @@ import React from 'react';
 import { Text } from 'react-native';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { Streamdown } from '../../StreamdownRN';
+import { defaultTranslations } from '../../controls/translations';
+import { lightTheme } from '../../themes';
 import { createRendererPlugin } from '../renderers';
+import { MermaidBlock } from '../mermaid/MermaidBlock';
 import {
   createMermaidPlugin,
   createBeautifulMermaidAdapter,
@@ -130,6 +133,28 @@ describe('mermaid plugin', () => {
     render(<Streamdown mode="streaming" isAnimating plugins={{ mermaid: plugin }}>{'```mermaid\nflowchart LR\nA-->B'}</Streamdown>);
     expect(adapter.render).not.toHaveBeenCalled();
     expect(screen.getByText(/flowchart LR/)).toBeTruthy();
+  });
+
+  it('does not expose stale rendered downloads while a new source is rendering', async () => {
+    const sourceA = 'flowchart LR\nA-->B';
+    const sourceB = 'flowchart LR\nB-->C';
+    const pending = new Promise<never>(() => undefined);
+    const adapter = {
+      families: ['flowchart'] as const,
+      render: jest.fn(({ source }: { source: string }) => source === sourceA
+        ? { kind: 'native' as const, content: <Text>result A</Text>, svg: '<svg><text>A</text></svg>', png: new Uint8Array([1]) }
+        : pending),
+    };
+    const plugin = createMermaidPlugin({ adapter });
+    const view = render(<MermaidBlock source={sourceA} plugin={plugin} theme={lightTheme} capabilities={{}} translations={defaultTranslations} />);
+    await waitFor(() => expect(screen.getByLabelText('Download diagram as SVG')).toBeTruthy());
+
+    view.rerender(<MermaidBlock source={sourceB} plugin={plugin} theme={lightTheme} capabilities={{}} translations={defaultTranslations} />);
+
+    expect(screen.getByText('result A')).toBeTruthy();
+    expect(screen.queryByLabelText('Download diagram as SVG')).toBeNull();
+    expect(screen.queryByLabelText('Download diagram as PNG')).toBeNull();
+    expect(screen.getByLabelText('Download diagram as MMD')).toBeTruthy();
   });
 
   it('rejects oversized diagrams before adapters and exposes copy/share/fullscreen/panzoom seams', async () => {

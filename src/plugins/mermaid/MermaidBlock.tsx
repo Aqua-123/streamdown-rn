@@ -28,7 +28,7 @@ export interface MermaidBlockProps {
 }
 
 export function MermaidBlock({ source, plugin, theme, capabilities, controls, translations, icons, disabled, incomplete }: MermaidBlockProps) {
-  const [result, setResult] = useState<MermaidRenderResult>();
+  const [renderedResult, setRenderedResult] = useState<{ source: string; result: MermaidRenderResult }>();
   const [error, setError] = useState<Error>();
   const [revision, setRevision] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
@@ -43,7 +43,7 @@ export function MermaidBlock({ source, plugin, theme, capabilities, controls, tr
       if (!active) { next.release?.(); return; }
       if (resultRef.current !== next) resultRef.current?.release?.();
       resultRef.current = next;
-      setResult(next);
+      setRenderedResult({ source, result: next });
     }).catch((reason: unknown) => {
       if (active) setError(reason instanceof Error ? reason : new Error(String(reason)));
     });
@@ -55,10 +55,12 @@ export function MermaidBlock({ source, plugin, theme, capabilities, controls, tr
     resultRef.current = undefined;
   }, []);
 
+  const result = renderedResult?.result;
+  const currentResult = renderedResult?.source === source ? result : undefined;
   const visual = result?.content;
   const panZoom = controlEnabled(controls, 'mermaid', 'panZoom');
   const rendered = visual
-    ? <View accessible accessibilityRole="image" accessibilityLabel={`Mermaid diagram: ${source}`}>
+    ? <View accessible accessibilityRole="image" accessibilityLabel={`Mermaid diagram: ${renderedResult?.source ?? source}`}>
       {panZoom ? <PanZoomSurface capabilities={capabilities} icons={icons} disabled={disabled} color={theme.colors.foreground}>{visual}</PanZoomSurface> : visual}
     </View>
     : null;
@@ -71,8 +73,10 @@ export function MermaidBlock({ source, plugin, theme, capabilities, controls, tr
   return <View testID="mermaid-block" style={{ marginVertical: theme.spacing.block, padding: 8, gap: 8, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 12, backgroundColor: theme.colors.codeBackground }}>
     <View style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center' }}>
       <Text style={{ flex: 1, marginLeft: 4, color: theme.colors.muted, fontFamily: theme.fonts.mono, fontSize: 12, textTransform: 'lowercase' }}>mermaid</Text>
-      <View accessibilityRole="toolbar" style={{ flexDirection: 'row' }}>
-        {download ? <ActionButton label={translations.downloadDiagramAsMmd} icon={icons?.download ?? defaultIcons.download} disabled={disabled} color={theme.colors.muted} onAction={() => capabilities.files?.save(mermaidFileRequest(source, result, result?.svg ? 'svg' : 'mmd')) ?? { status: 'unavailable' }} /> : null}
+      <View accessibilityRole="toolbar" style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+        {download ? <ActionButton label={translations.downloadDiagramAsMmd} icon={icons?.download ?? defaultIcons.download} disabled={disabled} color={theme.colors.muted} onAction={() => capabilities.files?.save(mermaidFileRequest(source, result, 'mmd')) ?? { status: 'unavailable' }} /> : null}
+        {download && currentResult?.svg?.trim() ? <ActionButton label={translations.downloadDiagramAsSvg} icon={icons?.download ?? defaultIcons.download} disabled={disabled} color={theme.colors.muted} onAction={() => capabilities.files?.save(mermaidFileRequest(source, currentResult, 'svg')) ?? { status: 'unavailable' }} /> : null}
+        {download && currentResult?.png?.byteLength ? <ActionButton label={translations.downloadDiagramAsPng} icon={icons?.download ?? defaultIcons.download} disabled={disabled} color={theme.colors.muted} onAction={() => capabilities.files?.save(mermaidFileRequest(source, currentResult, 'png')) ?? { status: 'unavailable' }} /> : null}
         {copy ? <ActionButton label={translations.copyDiagram} icon={icons?.copy ?? defaultIcons.copy} disabled={disabled} color={theme.colors.muted} onAction={() => capabilities.clipboard?.writeText(source) ?? { status: 'unavailable' }} /> : null}
         {share ? <ActionButton label={translations.shareDiagram} icon={icons?.share ?? defaultIcons.share} disabled={disabled} color={theme.colors.muted} onAction={() => capabilities.share?.shareText(source, 'Mermaid diagram') ?? { status: 'unavailable' }} /> : null}
         {allowFullscreen ? <ActionButton buttonRef={opener} label={translations.viewFullscreen} icon={icons?.fullscreen ?? defaultIcons.fullscreen} disabled={disabled} color={theme.colors.muted} onAction={() => { setFullscreen(true); return { status: 'success' }; }} /> : null}
