@@ -9,7 +9,7 @@
  */
 
 import { Platform } from 'react-native';
-import type { ThemeConfig, ThemeColors } from '../core/types';
+import type { ThemeConfig, ThemeColors, ThemePrimitives } from '../core/types';
 
 // ============================================================================
 // Color Palettes
@@ -55,6 +55,76 @@ const lightColors: ThemeColors = {
   syntaxOperator: '#d73a49',
 };
 
+export const darkThemePrimitives: Readonly<ThemePrimitives> = Object.freeze({
+  background: '#0a0a0a',
+  foreground: '#fafafa',
+  card: '#171717',
+  cardForeground: '#fafafa',
+  popover: '#171717',
+  popoverForeground: '#fafafa',
+  primary: '#e5e5e5',
+  primaryForeground: '#171717',
+  secondary: '#262626',
+  secondaryForeground: '#fafafa',
+  muted: '#262626',
+  mutedForeground: '#a1a1a1',
+  accent: '#262626',
+  accentForeground: '#fafafa',
+  destructive: '#ff6467',
+  border: 'rgba(255, 255, 255, 0.1)',
+  input: 'rgba(255, 255, 255, 0.15)',
+  ring: '#737373',
+  chart1: '#d4d4d4',
+  chart2: '#737373',
+  chart3: '#525252',
+  chart4: '#404040',
+  chart5: '#262626',
+  sidebar: '#171717',
+  sidebarForeground: '#fafafa',
+  sidebarPrimary: '#1447e6',
+  sidebarPrimaryForeground: '#fafafa',
+  sidebarAccent: '#262626',
+  sidebarAccentForeground: '#fafafa',
+  sidebarBorder: 'rgba(255, 255, 255, 0.1)',
+  sidebarRing: '#737373',
+  radius: 10,
+});
+
+export const lightThemePrimitives: Readonly<ThemePrimitives> = Object.freeze({
+  background: '#ffffff',
+  foreground: '#0a0a0a',
+  card: '#ffffff',
+  cardForeground: '#0a0a0a',
+  popover: '#ffffff',
+  popoverForeground: '#0a0a0a',
+  primary: '#171717',
+  primaryForeground: '#fafafa',
+  secondary: '#f5f5f5',
+  secondaryForeground: '#171717',
+  muted: '#f5f5f5',
+  mutedForeground: '#737373',
+  accent: '#f5f5f5',
+  accentForeground: '#171717',
+  destructive: '#e7000b',
+  border: '#e5e5e5',
+  input: '#e5e5e5',
+  ring: '#a1a1a1',
+  chart1: '#d4d4d4',
+  chart2: '#737373',
+  chart3: '#525252',
+  chart4: '#404040',
+  chart5: '#262626',
+  sidebar: '#fafafa',
+  sidebarForeground: '#0a0a0a',
+  sidebarPrimary: '#171717',
+  sidebarPrimaryForeground: '#fafafa',
+  sidebarAccent: '#f5f5f5',
+  sidebarAccentForeground: '#171717',
+  sidebarBorder: '#e5e5e5',
+  sidebarRing: '#a1a1a1',
+  radius: 10,
+});
+
 // ============================================================================
 // Font Configuration
 // ============================================================================
@@ -89,6 +159,7 @@ const spacing = {
 export const darkTheme: ThemeConfig = {
   colorScheme: 'dark',
   colors: darkColors,
+  primitives: darkThemePrimitives,
   fonts,
   spacing,
 };
@@ -96,6 +167,7 @@ export const darkTheme: ThemeConfig = {
 export const lightTheme: ThemeConfig = {
   colorScheme: 'light',
   colors: lightColors,
+  primitives: lightThemePrimitives,
   fonts,
   spacing,
 };
@@ -104,8 +176,49 @@ export const lightTheme: ThemeConfig = {
  * Get theme by name or return custom theme
  */
 export function getTheme(theme: 'dark' | 'light' | ThemeConfig): ThemeConfig {
-  if (typeof theme === 'object') return theme;
-  return theme === 'light' ? lightTheme : darkTheme;
+  if (theme === 'light') return lightTheme;
+  if (theme === 'dark') return darkTheme;
+  return { ...theme, primitives: resolveThemePrimitives(theme) };
+}
+
+/** Resolve a complete semantic palette without mutating the supplied theme. */
+export function resolveThemePrimitives(theme: ThemeConfig): ThemePrimitives {
+  const { colors } = theme;
+  return {
+    background: colors.background,
+    foreground: colors.foreground,
+    card: colors.codeBackground,
+    cardForeground: colors.codeForeground,
+    popover: colors.codeBackground,
+    popoverForeground: colors.codeForeground,
+    primary: colors.accent,
+    primaryForeground: colors.background,
+    secondary: colors.codeBackground,
+    secondaryForeground: colors.codeForeground,
+    muted: colors.codeBackground,
+    mutedForeground: colors.muted,
+    accent: colors.link,
+    accentForeground: colors.background,
+    destructive: colors.syntaxKeyword,
+    border: colors.border,
+    input: colors.border,
+    ring: colors.border,
+    chart1: colors.syntaxKeyword,
+    chart2: colors.syntaxString,
+    chart3: colors.syntaxNumber,
+    chart4: colors.syntaxFunction,
+    chart5: colors.muted,
+    sidebar: colors.codeBackground,
+    sidebarForeground: colors.codeForeground,
+    sidebarPrimary: colors.link,
+    sidebarPrimaryForeground: colors.background,
+    sidebarAccent: colors.accent,
+    sidebarAccentForeground: colors.background,
+    sidebarBorder: colors.border,
+    sidebarRing: colors.border,
+    radius: 10,
+    ...theme.primitives,
+  };
 }
 
 // ============================================================================

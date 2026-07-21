@@ -26,6 +26,23 @@ export function Example() {
 
 Important streaming properties are `mode`, `isAnimating`, `isComplete`, `parseIncompleteMarkdown`, `animated`, `caret`, and `reducedMotion`. `announceStreaming` is opt-in and coalesced. `components` overrides semantic native elements; `componentRegistry` serves the compact dynamic-component syntax. Consult the emitted `dist/index.d.ts` for the complete contract; `bun run docs:verify` compiles this example against that public declaration.
 
+## Themes
+
+`lightTheme` and `darkTheme` include complete semantic `primitives` for native surfaces, controls, and charts. The palette is precomputed to React Native-compatible hex and `rgba(...)` strings; it does not require runtime OKLCH conversion.
+
+Custom themes keep the existing `colors`, `fonts`, and `spacing` contract. Add only the semantic values you want to override; `getTheme` and `resolveThemePrimitives` fill every missing value from the legacy palette without mutating the supplied theme.
+
+```tsx verify
+import { lightTheme, resolveThemePrimitives, type ThemeConfig } from 'streamdown-rn';
+
+const customTheme: ThemeConfig = {
+  ...lightTheme,
+  primitives: { primary: '#1447e6', radius: 12 },
+};
+
+export const resolvedPrimitives = resolveThemePrimitives(customTheme);
+```
+
 ## Native capabilities
 
 Core has no clipboard or file dependency. A host supplies `NativeCapabilities`, and Streamdown hides copy or download actions when the corresponding provider is absent. Each provider returns a `CapabilityResult`: `success`, `unavailable`, `denied`, `cancelled`, or `failed` with an optional `Error`. Thrown provider errors are also shown as accessible failure feedback.

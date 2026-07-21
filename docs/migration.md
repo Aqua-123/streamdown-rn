@@ -19,6 +19,8 @@ Do not pass `className`, `prefix`, `rehypePlugins`, or `remarkRehypeOptions`; th
 
 The compact dynamic-component syntax remains `[{c:"Name",p:{...}}]`. Prefer `mode="static"` for complete documents. For streams, set `isAnimating` only while tokens are arriving and set `isComplete` when final. Native actions now require explicit capability adapters. Code highlighting is a token-provider plugin rather than an implicit Prism renderer.
 
+Existing custom themes remain source-compatible: `ThemeConfig.colors` keeps its original meanings and `primitives` is optional. Semantic values omitted from a custom theme are derived from its legacy colors. Add partial `primitives` overrides only when a native surface needs a value distinct from that fallback; no OKLCH converter is required at runtime.
+
 ```tsx verify
 import React from 'react';
 import { StreamdownRN } from 'streamdown-rn';
