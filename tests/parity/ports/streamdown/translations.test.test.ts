@@ -20,7 +20,7 @@ describe('adapted explicit native translations', () => {
       children: '| A |\n| - |\n| B |',
     }));
     fireEvent.press(table.getByRole('button', { name: 'Copy table' }));
-    expect(table.getByRole('button', { name: 'Tabelle kopieren' })).toBeTruthy();
+    expect(table.getByRole('menuitem', { name: 'Tabelle kopieren' })).toBeTruthy();
   });
 
   // parity:64afc5ac1551f329b479216f2562c07fc88fdb0ef7379010e66fa52dc509a00d

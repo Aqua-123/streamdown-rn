@@ -1,5 +1,5 @@
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
-import { Modal, Text } from 'react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { AccessibilityInfo, Modal, Text } from 'react-native';
 import { TableControls } from '../../../../src/controls/TableControls';
 import { defaultTranslations } from '../../../../src/controls/translations';
 import { tableFileRequest } from '../../../../src/controls/serialization';
@@ -42,6 +42,30 @@ describe('table format dropdowns', () => {
     fireEvent.press(screen.getByRole('button', { name: 'Copy table' }));
     fireEvent(screen.UNSAFE_getAllByType(Modal).find((modal) => modal.props.visible)!, 'requestClose');
     expect(screen.UNSAFE_queryByProps({ accessibilityRole: 'menu' })).toBeNull();
+  });
+
+  it('restores focus to the trigger whose menu closed', () => {
+    jest.useFakeTimers();
+    const focus = jest.spyOn(AccessibilityInfo, 'setAccessibilityFocus').mockImplementation(() => undefined);
+    const renderer = require('react-native/Libraries/ReactNative/RendererProxy');
+    const find = jest.spyOn(renderer, 'findNodeHandle').mockImplementation((node: any) => node?.props?.accessibilityLabel === 'Download table' ? 22 : 11);
+    const schedule = jest.spyOn(global, 'setTimeout');
+    const screen = render(<TableControls table={table} capabilities={{
+      clipboard: { writeText: jest.fn(() => ({ status: 'success' })) },
+      files: { save: jest.fn(() => ({ status: 'success' })) },
+    }} translations={defaultTranslations}><Text>body</Text></TableControls>);
+
+    fireEvent.press(screen.getByRole('button', { name: 'Download table' }));
+    fireEvent.press(screen.UNSAFE_getByProps({ testID: 'dropdown-dismiss' }));
+    expect(schedule).toHaveBeenCalled();
+    act(() => jest.runOnlyPendingTimers());
+    expect((find.mock.calls[0][0] as any).props.accessibilityLabel).toBe('Download table');
+    expect(focus).toHaveBeenCalledWith(22);
+
+    schedule.mockRestore();
+    find.mockRestore();
+    focus.mockRestore();
+    jest.useRealTimers();
   });
 
   it('hides missing adapters and keeps thrown or non-success selections open for retry', async () => {

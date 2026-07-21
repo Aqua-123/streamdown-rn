@@ -91,7 +91,7 @@ describe('remaining upstream coverage through native semantics', () => {
     // parity:d5420761bee463493be088fe8971f66b630e5d47e79732985e3974ef76a42623
     const screen = render(h(Streamdown, { mode: 'static', capabilities: { files: { save: () => { throw new Error('Markdown save failed'); } } } }, '| A | B |\n| --- | --- |\n| 1 | 2 |'));
     fireEvent.press(screen.getByRole('button', { name: 'Download table' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Download table as Markdown' }));
+    fireEvent.press(screen.getByRole('menuitem', { name: 'Download table as Markdown' }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Markdown save failed'));
   });
 

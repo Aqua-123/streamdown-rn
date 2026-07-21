@@ -10,8 +10,8 @@ describe('TableFullscreenButton native modal', () => {
     expect(screen.getAllByRole('button', { name: 'Copy table' })).toHaveLength(2);
     expect(screen.getAllByRole('button', { name: 'Download table' })).toHaveLength(2);
     fireEvent.press(screen.getAllByRole('button', { name: 'Copy table' })[1]);
-    expect(screen.getByRole('button', { name: 'Copy table as CSV' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Copy table as CSV' })).toBeTruthy();
     fireEvent.press(screen.getAllByRole('button', { name: 'Download table' })[1]);
-    expect(screen.getByRole('button', { name: 'Download table as CSV' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Download table as CSV' })).toBeTruthy();
   });
 });

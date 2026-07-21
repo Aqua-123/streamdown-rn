@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { cloneElement, isValidElement, useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { Dropdown } from '../components/ui';
 import type { TableData } from '../core/tableSerialization';
@@ -15,6 +15,10 @@ function capabilityError(result: CapabilityResult): Error {
   return result.error ?? new Error(result.status === 'unavailable' ? 'Unavailable'
     : result.status === 'denied' ? 'Action denied'
       : result.status === 'cancelled' ? 'Action cancelled' : 'Action failed');
+}
+
+function coloredIcon(icon: React.ReactNode, color?: string): React.ReactNode {
+  return isValidElement<{ color?: string }>(icon) && color ? cloneElement(icon, { color }) : icon;
 }
 
 export function TableControls({ table, children, capabilities, controls, translations, disabled, icons, color, backgroundColor, surfaceColor, borderColor }: {
@@ -54,7 +58,7 @@ export function TableControls({ table, children, capabilities, controls, transla
   };
   const renderActions = (scope: 'inline' | 'fullscreen', includeFullscreen: boolean) => <View accessibilityRole="toolbar" style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
     {copy ? <Dropdown.Root open={menu?.type === 'copy' && menu.scope === scope} onOpenChange={(open) => setMenu(open ? { type: 'copy', scope } : null)}>
-      <Dropdown.Trigger accessibilityLabel={translations.copyTable} disabled={disabled} foregroundColor={color}>{icons?.copy ?? defaultIcons.copy}</Dropdown.Trigger>
+      <Dropdown.Trigger accessibilityLabel={translations.copyTable} disabled={disabled} foregroundColor={color}>{coloredIcon(icons?.copy ?? defaultIcons.copy, color)}</Dropdown.Trigger>
       <Dropdown.Popup accessibilityLabel={translations.copyTable} style={{ borderColor, backgroundColor: surfaceColor }}>
         <Dropdown.Item accessibilityLabel={translations.copyTableAsMarkdown} disabled={disabled} foregroundColor={color} onSelect={() => copyTable(scope, 'markdown')}>{translations.tableFormatMarkdown}</Dropdown.Item>
         <Dropdown.Item accessibilityLabel={translations.copyTableAsCsv} disabled={disabled} foregroundColor={color} onSelect={() => copyTable(scope, 'csv')}>{translations.tableFormatCsv}</Dropdown.Item>
@@ -62,7 +66,7 @@ export function TableControls({ table, children, capabilities, controls, transla
       </Dropdown.Popup>
     </Dropdown.Root> : null}
     {download ? <Dropdown.Root open={menu?.type === 'download' && menu.scope === scope} onOpenChange={(open) => setMenu(open ? { type: 'download', scope } : null)}>
-      <Dropdown.Trigger accessibilityLabel={translations.downloadTable} disabled={disabled} foregroundColor={color}>{icons?.download ?? defaultIcons.download}</Dropdown.Trigger>
+      <Dropdown.Trigger accessibilityLabel={translations.downloadTable} disabled={disabled} foregroundColor={color}>{coloredIcon(icons?.download ?? defaultIcons.download, color)}</Dropdown.Trigger>
       <Dropdown.Popup accessibilityLabel={translations.downloadTable} style={{ borderColor, backgroundColor: surfaceColor }}>
         <Dropdown.Item accessibilityLabel={translations.downloadTableAsCsv} disabled={disabled} foregroundColor={color} onSelect={() => downloadTable('csv')}>{translations.tableFormatCsv}</Dropdown.Item>
         <Dropdown.Item accessibilityLabel={translations.downloadTableAsMarkdown} disabled={disabled} foregroundColor={color} onSelect={() => downloadTable('markdown')}>{translations.tableFormatMarkdown}</Dropdown.Item>

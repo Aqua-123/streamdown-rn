@@ -88,7 +88,7 @@ describe('final upstream coverage through native semantics', () => {
     // parity:f21afb7e2970b7f60e6a62418e3f0e06fdcfb22c4f45bf52cf5e9713dc1f21c0
     const screen = render(h(Streamdown, { mode: 'static', capabilities: { files: { save: () => { throw new Error('Download failed'); } } } }, '| A |\n| --- |\n| Data |'));
     fireEvent.press(screen.getByRole('button', { name: 'Download table' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Download table as CSV' }));
+    fireEvent.press(screen.getByRole('menuitem', { name: 'Download table as CSV' }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Download failed'));
   });
 
