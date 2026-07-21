@@ -33,7 +33,7 @@ Baseline verified during the assessment:
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | 001 | Restore truthful Mermaid downloads | P0 | S | - | DONE |
-| 002 | Make native actions capability-truthful and runnable | P0 | M | 001 | TODO |
+| 002 | Make native actions capability-truthful and runnable | P0 | M | 001 | DONE |
 | 003 | Replace table format lines with a native disclosure menu | P1 | M | 002 | TODO |
 | 004 | Repair shared fullscreen layout and lifecycle | P1 | M | 003 | TODO |
 | 005 | Align table semantics, columns, and visual chrome | P1 | M | 004 | TODO |

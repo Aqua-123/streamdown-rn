@@ -6,7 +6,7 @@
 > bundle isolation. Update `plans/README.md` on completion.
 >
 > **Drift check (run first)**:
-> `git diff --stat 50828ac..HEAD -- src/components/ui src/platform src/controls src/plugins/mermaid/MermaidBlock.tsx fixtures/current-rn docs/api.md docs/plugins.md`
+> `git diff --stat ca2fc2f..HEAD -- src/components/ui src/platform src/controls src/plugins/mermaid/MermaidBlock.tsx fixtures/current-rn docs/api.md docs/plugins.md`
 
 ## Status
 
@@ -15,7 +15,7 @@
 - **Risk**: MED
 - **Depends on**: `plans/001-truthful-mermaid-downloads.md`
 - **Category**: bug, dx
-- **Planned at**: commit `50828ac`, 2026-07-21
+- **Planned at**: commit `ca2fc2f`, 2026-07-21
 
 ## Why this matters
 
@@ -31,15 +31,21 @@ unavailability before the user presses it.
   but not clipboard or files.
 - `src/controls/config.ts:15-20` enables every unspecified control without
   considering capability availability.
-- `CodeControls.tsx`, `TableControls.tsx`, and `MermaidBlock.tsx` render those
-  enabled controls and only discover the missing adapter after a press.
+- `CodeControls.tsx` and `TableControls.tsx` render enabled copy/download
+  controls without checking for `capabilities.clipboard` or
+  `capabilities.files`; they discover a missing adapter only after a press.
+- `src/plugins/mermaid/MermaidBlock.tsx` already hides its download trigger
+  unless `capabilities.files` exists. Match this truthful behavior for code and
+  table actions rather than introducing a second availability policy.
 - `src/components/ui/Button.tsx` is the shared styled press primitive, and
   `src/controls/ActionButton.tsx` owns async capability feedback on top of it.
   Do not add direct `Pressable` controls or another action wrapper.
 - `src/components/ui/Dropdown.tsx` owns controlled/uncontrolled disclosure,
   dismissal, collision positioning, focus restoration, and async item errors.
   Multi-format callers must consume it instead of reproducing those behaviors.
-- `fixtures/current-rn/App.js:147-155` passes plugins but no capabilities.
+- `fixtures/current-rn/native-capabilities.js` and `App.js` already provide real
+  Expo clipboard, temporary-file, and native share/save adapters. This plan
+  must verify that path and must not replace it with mocks.
 - `docs/api.md:14-22` uses no-op successful adapters, not a runnable host recipe.
 
 Existing convention: the core package defines capability interfaces and the
@@ -63,7 +69,8 @@ host owns native dependencies. Keep that boundary.
 - `src/plugins/mermaid/MermaidBlock.tsx`
 - `src/platform/capabilities.ts` and `src/platform/defaults.ts` only if needed
 - focused control tests
-- `fixtures/current-rn/App.js`, `fixtures/current-rn/package.json`
+- `fixtures/current-rn/App.js`, `fixtures/current-rn/harness-app.js`,
+  `fixtures/current-rn/native-capabilities.js`, `fixtures/current-rn/package.json`
 - equivalent Expo 54 fixture files if the documented recipe supports them
 - `docs/api.md`, `docs/plugins.md`, one `.changeset/*.md`
 
@@ -95,12 +102,10 @@ multi-format actions, gate the existing `Dropdown.Trigger`; do not place
 capability behavior inside `Dropdown` itself because it is a generic UI
 primitive.
 
-Choose and document one consistent absent-capability behavior:
-
-- preferred: render the action disabled with an accessibility hint stating the
-  missing capability, so the layout remains stable and host misconfiguration is
-  visible; or
-- hide it only if product review explicitly rejects disabled controls.
+Use the already-landed Mermaid policy: hide copy actions when clipboard is
+absent and download actions when files are absent. Do this at `CodeControls`
+and `TableControls`, where every corresponding consumer route converges. Keep
+explicit `controls: false` behavior unchanged and do not add a registry.
 
 Tests must lock the chosen behavior across code, table, and Mermaid.
 
@@ -116,13 +121,13 @@ state and thrown adapter errors remain accessible.
 **Verify**: after a successful table copy, `Copied` remains observable for the
 configured reset period even though the menu closes.
 
-### Step 3: Put real capabilities in the Release fixture
+### Step 3: Verify the real Release-fixture capabilities
 
-In the fixture only, install the Expo modules required by a runnable clipboard
-and save/share recipe. Implement adapters that actually write clipboard text
-and persist a temporary file before opening the platform share/save surface.
-Pass them through `Streamdown.capabilities`. Keep dependency versions aligned
-with the fixture's Expo SDK.
+Confirm the committed Expo adapters actually write clipboard text and persist a
+temporary file before opening the platform share/save surface, and that both
+automated and harness `Streamdown` paths receive them. Change fixture files only
+if a verification exposes a concrete defect. Keep dependencies fixture-only
+and aligned with its Expo SDK.
 
 If OS save UI cannot be automated, expose a deterministic fixture-only result
 status in addition to manual verification; do not replace the real adapter with
@@ -140,7 +145,8 @@ an absent provider are unavailable.
 
 ## Test plan
 
-- adapter absent: deterministic disabled/hidden state and accessible reason.
+- adapter absent: copy/download triggers are absent across code, table, and
+  Mermaid; unrelated controls remain visible.
 - adapter success, denied, cancelled, thrown failure for copy and save.
 - table success feedback survives menu unmount.
 - the fixture provides clipboard/files and the packed app bundles.
@@ -148,7 +154,7 @@ an absent provider are unavailable.
 
 ## Done criteria
 
-- [ ] No enabled copy/download button lacks its required capability.
+- [ ] No visible copy/download button lacks its required capability.
 - [ ] Fixture buttons invoke real native providers.
 - [ ] Docs contain a compiling real recipe, not success stubs.
 - [ ] Focused tests, docs, pack verification, and typecheck pass.
