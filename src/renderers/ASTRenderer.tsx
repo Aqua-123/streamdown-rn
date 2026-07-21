@@ -689,7 +689,8 @@ function ValidatedRegistryComponent({
   onError?: ComponentErrorHandler;
   resourcePolicy?: ResourcePolicy;
 }) {
-  const onError = directOnError ?? useContext(ComponentErrorContext);
+  const contextualOnError = useContext(ComponentErrorContext);
+  const onError = directOnError ?? contextualOnError;
   const definition = componentRegistry.get(componentName);
   const safeProps = sanitizeProps(props, resourcePolicy);
   const safeStyle = style ? sanitizeProps(style, resourcePolicy) : undefined;

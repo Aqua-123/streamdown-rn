@@ -79,6 +79,7 @@
     "parity:refresh": "bun scripts/parity/inventory.ts --source .reference/streamdown",
     "parity:validate": "bun scripts/parity/validate.ts",
     "parity:drift": "bun scripts/parity/check-drift.ts",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0",
     "type-check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tools.json --noEmit",
     "pack:verify": "node tests/package/verify-pack.mjs",
     "pack:verify-optional-renderers": "node tests/package/verify-optional-renderers.mjs",
@@ -89,7 +90,7 @@
     "release:verify": "node scripts/release/verify.mjs",
     "release:publish": "bunx changeset publish",
     "changeset:verify": "node scripts/release/changesets.mjs",
-    "ci:hosted": "bun run type-check && bun run test --silent && bun run test:parity --silent && bun run test:device-contract --silent && bun run parity:validate && bun run parity:drift --candidate-root .reference/streamdown && bun run build && bun run docs:verify && bun run licenses:verify && bun run advisories:verify && bun run release:report:verify && bun run changeset:verify && bun run pack:verify && bun run pack:verify-optional-renderers"
+    "ci:hosted": "bun run lint && bun run type-check && bun run test --silent && bun run test:parity --silent && bun run test:device-contract --silent && bun run parity:validate && bun run parity:drift --candidate-root .reference/streamdown && bun run build && bun run docs:verify && bun run licenses:verify && bun run advisories:verify && bun run release:report:verify && bun run changeset:verify && bun run pack:verify && bun run pack:verify-optional-renderers"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -111,7 +112,10 @@
     "@types/node": "26.1.1",
     "@types/react": "19.1.17",
     "@types/react-test-renderer": "19.1.0",
+    "@typescript-eslint/parser": "^8",
     "babel-jest": "29.7.0",
+    "eslint": "^9",
+    "eslint-plugin-react-hooks": "^7",
     "jest": "29.7.0",
     "pixelmatch": "7.2.0",
     "pngjs": "7.0.0",
