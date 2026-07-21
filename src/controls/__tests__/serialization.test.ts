@@ -32,6 +32,18 @@ describe('native control serialization', () => {
     });
   });
 
+  it.each([
+    ['jsx', 'jsx'], ['tsx', 'tsx'], ['c', 'c'], ['cpp', 'cpp'], ['c++', 'cpp'],
+    ['csharp', 'cs'], ['c#', 'cs'], ['go', 'go'], ['java', 'java'], ['rust', 'rs'],
+    ['rs', 'rs'], ['shellscript', 'sh'], ['sh', 'sh'],
+  ])('maps %s code downloads to .%s', (language, extension) => {
+    expect(codeFileRequest('source', language).extension).toBe(extension);
+  });
+
+  it('keeps unknown code downloads on the .txt fallback', () => {
+    expect(codeFileRequest('source', 'unknown').extension).toBe('txt');
+  });
+
   it('accepts image bytes only with fixed safe MIME metadata', () => {
     expect(imageFileRequest(new Uint8Array([137, 80, 78, 71]), 'image/png', '../chart')).toMatchObject({
       basename: 'chart', extension: 'png', mimeType: 'image/png',

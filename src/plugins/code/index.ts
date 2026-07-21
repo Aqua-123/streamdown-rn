@@ -21,6 +21,7 @@ export interface HighlightOptions {
   code: string;
   language: string;
   themes: [ThemeInput, ThemeInput];
+  colorScheme?: 'light' | 'dark';
 }
 
 export interface TokenProvider {
@@ -46,6 +47,8 @@ export interface CodePluginOptions {
   maxCacheUnits?: number;
   /** Provider input ceiling in UTF-16 code units. Larger blocks stay readable as plain code. */
   maxCodeLength?: number;
+  /** Maximum time for an asynchronous provider request. */
+  highlightTimeoutMs?: number;
   onError?: (error: Error) => void;
 }
 
@@ -71,6 +74,7 @@ export function createCodePlugin(options: CodePluginOptions = {}): CodeHighlight
   const limit = positiveInteger(options.cacheSize, 128, 'cacheSize');
   const maxCodeLength = positiveInteger(options.maxCodeLength, 1_000_000, 'maxCodeLength');
   const maxCacheUnits = positiveInteger(options.maxCacheUnits, 256_000, 'maxCacheUnits');
+  const highlightTimeoutMs = positiveInteger(options.highlightTimeoutMs, 15_000, 'highlightTimeoutMs');
   const languages = new Set(provider?.languages.map((language) => language.toLowerCase()) ?? []);
   const aliases = Object.fromEntries(
     Object.entries(provider?.aliases ?? {}).map(([alias, language]) => [alias.toLowerCase(), language.toLowerCase()])
@@ -78,7 +82,11 @@ export function createCodePlugin(options: CodePluginOptions = {}): CodeHighlight
   const cache = new Map<string, HighlightResult>();
   const cacheCosts = new Map<string, number>();
   let cachedUnits = 0;
-  const pending = new Map<string, Set<(result: HighlightResult) => void>>();
+  type PendingEntry = {
+    subscribers: Set<(result: HighlightResult) => void>;
+    timer?: ReturnType<typeof setTimeout>;
+  };
+  const pending = new Map<string, PendingEntry>();
   const themeIds = new WeakMap<object, number>();
   let nextThemeId = 1;
   const themeKey = (theme: ThemeInput): string => {
@@ -91,8 +99,8 @@ export function createCodePlugin(options: CodePluginOptions = {}): CodeHighlight
     return `theme:${id}`;
   };
   const normalize = (language: string) => aliases[language.trim().toLowerCase()] ?? language.trim().toLowerCase();
-  const keyFor = ({ code, language, themes: selected }: HighlightOptions) =>
-    JSON.stringify([normalize(language), themeKey(selected[0]), themeKey(selected[1]), code]);
+  const keyFor = ({ code, language, themes: selected, colorScheme = 'dark' }: HighlightOptions) =>
+    JSON.stringify([normalize(language), themeKey(selected[0]), themeKey(selected[1]), colorScheme, code]);
   const remember = (key: string, result: HighlightResult) => {
     const cost = key.length + JSON.stringify(result).length;
     if (cost > maxCacheUnits) return;
@@ -117,7 +125,7 @@ export function createCodePlugin(options: CodePluginOptions = {}): CodeHighlight
     supportsLanguage: (language) => languages.has(normalize(language)),
     highlight(input, callback) {
       const normalized = normalize(input.language);
-      const request = { ...input, language: normalized };
+      const request = { ...input, language: normalized, colorScheme: input.colorScheme ?? 'dark' };
       if (!provider || !languages.has(normalized) || input.code.length > maxCodeLength) {
         return plainCodeResult(input.code);
       }
@@ -128,34 +136,46 @@ export function createCodePlugin(options: CodePluginOptions = {}): CodeHighlight
         cache.set(key, cached);
         return cached;
       }
-      const isPending = pending.has(key);
-      const subscribers = pending.get(key) ?? new Set();
+      const existing = pending.get(key);
       if (callback) {
-        subscribers.add(callback);
+        existing?.subscribers.add(callback);
       }
-      if (isPending) return null;
-      pending.set(key, subscribers);
+      if (existing) return null;
+      const entry: PendingEntry = { subscribers: new Set(callback ? [callback] : []) };
+      pending.set(key, entry);
       try {
         const result = provider.highlight(request);
         if (!isPromiseLike(result)) {
           remember(key, result);
-          pending.delete(key);
+          if (pending.get(key) === entry) pending.delete(key);
           return result;
         }
-        void result.then((highlighted) => {
-          remember(key, highlighted);
-          pending.get(key)?.forEach((subscriber) => subscriber(highlighted));
+        entry.timer = setTimeout(() => {
+          if (pending.get(key) !== entry) return;
           pending.delete(key);
+          const fallback = plainCodeResult(input.code);
+          options.onError?.(new Error(`Code highlighting timed out after ${highlightTimeoutMs}ms`));
+          entry.subscribers.forEach((subscriber) => subscriber(fallback));
+        }, highlightTimeoutMs);
+        (entry.timer as unknown as { unref?: () => void }).unref?.();
+        void result.then((highlighted) => {
+          if (pending.get(key) !== entry) return;
+          clearTimeout(entry.timer);
+          pending.delete(key);
+          remember(key, highlighted);
+          entry.subscribers.forEach((subscriber) => subscriber(highlighted));
         }).catch((reason: unknown) => {
+          if (pending.get(key) !== entry) return;
+          clearTimeout(entry.timer);
+          pending.delete(key);
           const fallback = plainCodeResult(input.code);
           options.onError?.(reason instanceof Error ? reason : new Error(String(reason)));
-          pending.get(key)?.forEach((subscriber) => subscriber(fallback));
-          pending.delete(key);
+          entry.subscribers.forEach((subscriber) => subscriber(fallback));
         });
         return null;
       } catch (reason) {
         options.onError?.(reason instanceof Error ? reason : new Error(String(reason)));
-        pending.delete(key);
+        if (pending.get(key) === entry) pending.delete(key);
         return plainCodeResult(input.code);
       }
     },

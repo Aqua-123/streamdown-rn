@@ -14,9 +14,12 @@ import { createBeautifulMermaidAdapter, createMermaidPlugin } from 'streamdown-r
 import { createOfflineWebViewAdapter } from 'streamdown-rn/mermaid/webview';
 
 const code = createCodePlugin({
+  highlightTimeoutMs: 15_000,
   provider: {
     languages: ['text'],
-    highlight: ({ code: source }) => ({ tokens: [[{ content: source }]] }),
+    highlight: ({ code: source, colorScheme }) => ({
+      tokens: [[{ content: source, color: colorScheme === 'light' ? '#24292e' : '#c9d1d9' }]],
+    }),
   },
 });
 const math = createMathPlugin({ adapter: { render: ({ source }) => <Text>{source}</Text> } });
@@ -41,6 +44,6 @@ export function RichMessage() {
 }
 ```
 
-The code provider can be synchronous or asynchronous and always falls back to plain code. A Shiki JavaScript-regex-engine setup has Expo 56 Release-Hermes correctness evidence but is not a core dependency. Native math adapters are synchronous React renderers; RaTeX has the same simulator/emulator correctness evidence. The beautiful-mermaid adapter covers flowchart, state, sequence, class, ER, and XY syntax and normalizes its browser CSS into the strict offline native SVG subset before sanitization. Unsupported Mermaid syntax must route to the separately imported offline WebView contract or remain readable source.
+The code provider can be synchronous or asynchronous and always falls back to plain code. `HighlightOptions.colorScheme` is the resolved active `light` or `dark` scheme, so providers can select a matching palette. Custom `ThemeConfig.colorScheme` values are optional and default to `dark`. Highlights are cached per scheme. Asynchronous requests time out after `highlightTimeoutMs` (15 seconds by default), release their pending cache entry, and leave readable plain code; the option must be a positive integer. A Shiki JavaScript-regex-engine setup has Expo 56 Release-Hermes correctness evidence but is not a core dependency. Native math adapters are synchronous React renderers; RaTeX has the same simulator/emulator correctness evidence. The beautiful-mermaid adapter covers flowchart, state, sequence, class, ER, and XY syntax and normalizes its browser CSS into the strict offline native SVG subset before sanitization. Unsupported Mermaid syntax must route to the separately imported offline WebView contract or remain readable source.
 
 The WebView controller does not ship react-native-webview or executable assets. The host owns a pinned offline asset bundle, CSP enforcement, navigation/network/file denial, surface rendering, and release. The bridge carries only bounded status identifiers, never diagram DOM. Native Release mount and offline-load correctness pass on the pinned simulators; physical resource proof remains blocked. See [compatibility](./compatibility.md).

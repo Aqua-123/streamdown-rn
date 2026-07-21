@@ -41,11 +41,18 @@ export function tableFileRequest(
 
 const codeTypes: Record<string, [string, string]> = {
   javascript: ['js', 'text/javascript;charset=utf-8'], js: ['js', 'text/javascript;charset=utf-8'],
+  jsx: ['jsx', 'text/javascript;charset=utf-8'],
   typescript: ['ts', 'text/typescript;charset=utf-8'], ts: ['ts', 'text/typescript;charset=utf-8'],
+  tsx: ['tsx', 'text/typescript;charset=utf-8'],
   json: ['json', 'application/json;charset=utf-8'], html: ['html', 'text/html;charset=utf-8'],
   css: ['css', 'text/css;charset=utf-8'], markdown: ['md', 'text/markdown;charset=utf-8'], md: ['md', 'text/markdown;charset=utf-8'],
   python: ['py', 'text/x-python;charset=utf-8'], py: ['py', 'text/x-python;charset=utf-8'],
   shell: ['sh', 'text/x-shellscript;charset=utf-8'], bash: ['sh', 'text/x-shellscript;charset=utf-8'],
+  shellscript: ['sh', 'text/x-shellscript;charset=utf-8'], sh: ['sh', 'text/x-shellscript;charset=utf-8'],
+  c: ['c', 'text/x-c;charset=utf-8'], cpp: ['cpp', 'text/x-c++src;charset=utf-8'], 'c++': ['cpp', 'text/x-c++src;charset=utf-8'],
+  csharp: ['cs', 'text/x-csharp;charset=utf-8'], 'c#': ['cs', 'text/x-csharp;charset=utf-8'],
+  go: ['go', 'text/x-go;charset=utf-8'], java: ['java', 'text/x-java-source;charset=utf-8'],
+  rust: ['rs', 'text/x-rust;charset=utf-8'], rs: ['rs', 'text/x-rust;charset=utf-8'],
 };
 
 export function codeFileRequest(content: string, language?: string | null, basename = 'code'): NativeFileRequest {

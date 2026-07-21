@@ -32,6 +32,17 @@ describe('native markdown controls', () => {
     expect(screen.queryByRole('button', { name: 'Download file' })).toBeNull();
   });
 
+  it('orders code controls as download then copy with compact shared-button alignment', () => {
+    const screen = render(<Streamdown mode="static" capabilities={{
+      clipboard: { writeText: jest.fn() },
+      files: { save: jest.fn() },
+    }}>{'```js\nsource\n```'}</Streamdown>);
+    const toolbar = screen.UNSAFE_getAllByType(View).find((node) => node.props.accessibilityRole === 'toolbar')!;
+    expect(screen.getAllByRole('button').map((node) => node.props.accessibilityLabel))
+      .toEqual(['Download file', 'Copy Code']);
+    expect(StyleSheet.flatten(toolbar.props.style)).toMatchObject({ alignItems: 'center', gap: 4 });
+  });
+
   it('copies table formats and passes fixed download metadata to the adapter', async () => {
     const writeText = jest.fn().mockResolvedValue({ status: 'success' });
     const save = jest.fn().mockResolvedValue({ status: 'success' });

@@ -87,12 +87,14 @@ const spacing = {
 // ============================================================================
 
 export const darkTheme: ThemeConfig = {
+  colorScheme: 'dark',
   colors: darkColors,
   fonts,
   spacing,
 };
 
 export const lightTheme: ThemeConfig = {
+  colorScheme: 'light',
   colors: lightColors,
   fonts,
   spacing,
@@ -205,6 +207,17 @@ export function getTextStyles(theme: ThemeConfig) {
       paddingHorizontal: 4,
       paddingVertical: 2,
       borderRadius: 4,
+    },
+    codeBlock: {
+      ...withFont('mono'),
+      fontSize: 14,
+      color: theme.colors.codeForeground,
+    },
+    codeLineNumber: {
+      ...withFont('mono'),
+      fontSize: 14,
+      color: theme.colors.muted,
+      minWidth: 32,
     },
     link: {
       color: theme.colors.link,

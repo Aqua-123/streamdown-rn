@@ -30,9 +30,9 @@ const highlighter = createHighlighterCore({ themes: [githubLight, githubDark], l
 const code = createCodePlugin({ provider: {
   languages: ['bash', 'css', 'javascript', 'json', 'python', 'typescript'],
   aliases: { js: 'javascript', jsx: 'javascript', py: 'python', sh: 'bash', shell: 'bash', ts: 'typescript', tsx: 'typescript' },
-  highlight: async ({ code: source, language }) => {
+  highlight: async ({ code: source, language, colorScheme }) => {
     const instance = await highlighter;
-    const result = instance.codeToTokens(source, { lang: language, theme: 'github-light' });
+    const result = instance.codeToTokens(source, { lang: language, theme: colorScheme === 'light' ? 'github-light' : 'github-dark' });
     return { bg: result.bg, fg: result.fg, tokens: result.tokens.map((line) => line.map(({ content, color, fontStyle }) => ({ content, color, fontStyle: fontStyle === 1 ? 'italic' : undefined }))) };
   },
 } });
