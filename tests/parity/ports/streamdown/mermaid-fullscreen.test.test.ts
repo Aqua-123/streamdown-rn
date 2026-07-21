@@ -1,21 +1,22 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
-import { Modal, Text } from 'react-native';
+import { Modal, StyleSheet, Text, View } from 'react-native';
 import { MermaidBlock } from '../../../../src/plugins/mermaid/MermaidBlock';
 import { createMermaidPlugin } from '../../../../src/plugins/mermaid';
 import { defaultTranslations } from '../../../../src/controls/translations';
 import { lightTheme } from '../../../../src/themes';
 
 const source = 'graph TD; A-->B';
-const setup = (extra = {}) => {
+const setup = (extra = {}, providerLayout = jest.fn()) => {
   const restore = jest.fn();
   const plugin = createMermaidPlugin({ adapter: { families: ['flowchart'], render: () => ({
-    kind: 'native' as const, content: React.createElement(Text, null, 'Fullscreen chart'),
+    kind: 'native' as const,
+    content: React.createElement(View, { testID: 'provider-surface', onLayout: providerLayout }, React.createElement(Text, null, 'Fullscreen chart')),
   }) } });
   const screen = render(React.createElement(MermaidBlock, {
     source, plugin, theme: lightTheme, capabilities: { focus: { restore } }, translations: defaultTranslations, ...extra,
   }));
-  return { restore, screen };
+  return { providerLayout, restore, screen };
 };
 
 describe('Mermaid native fullscreen', () => {
@@ -23,11 +24,18 @@ describe('Mermaid native fullscreen', () => {
   // parity:feace3b9d1cfffb2f099d85d84085b3363c1fd2a4a0461105f099ca227cbac7c
   // parity:23cf6d7da908764972abc83ebf6f41f43f2d1c3cdce3b4591a711152389c6c76
   it('renders an accessible action and moves the chart into a native modal', async () => {
-    const { screen } = setup();
+    const { providerLayout, screen } = setup();
     await waitFor(() => expect(screen.getByText('Fullscreen chart')).toBeTruthy());
     fireEvent.press(screen.getByRole('button', { name: 'View fullscreen' }));
     expect(screen.UNSAFE_getByType(Modal).props.visible).toBe(true);
     expect(screen.getByText('Fullscreen chart')).toBeTruthy();
+    expect(StyleSheet.flatten(screen.getByTestId('fullscreen-content-canvas').props.style)).toMatchObject({ flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center' });
+    expect(StyleSheet.flatten(screen.getByTestId('mermaid-fullscreen-canvas').props.style)).toMatchObject({ flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center' });
+    fireEvent(screen.getByTestId('provider-surface'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 320, height: 240 } } });
+    expect(providerLayout).toHaveBeenCalledWith(expect.objectContaining({ nativeEvent: { layout: expect.objectContaining({ width: 320, height: 240 }) } }));
+    expect(screen.getByLabelText('Zoom')).toBeTruthy();
+    fireEvent(screen.getByLabelText('Zoom'), 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
+    expect(screen.getByLabelText('Zoom').props.accessibilityValue.now).toBe(1.25);
   });
 
   // parity:ba4aba987b9c4099b831410a7014d9543b92820eb349bc486e00c85851387e22
@@ -38,7 +46,8 @@ describe('Mermaid native fullscreen', () => {
     fireEvent.press(screen.getByRole('button', { name: 'View fullscreen' }));
     expect(screen.UNSAFE_getByType(Modal).props).toMatchObject({ transparent: false, visible: true });
     fireEvent.press(screen.getByRole('button', { name: 'Exit fullscreen' }));
-    expect(screen.UNSAFE_queryByType(Modal)).toBeNull();
+    expect(screen.UNSAFE_getByType(Modal).props.visible).toBe(false);
+    expect(screen.queryByText('Fullscreen chart')).toBeTruthy();
   });
 
   // parity:0f7c1e1ba80470f9a4226cfe914ac9f7f7f94e502fcd539044a0058da6e14ad1
@@ -49,7 +58,9 @@ describe('Mermaid native fullscreen', () => {
     await waitFor(() => expect(screen.getByText('Fullscreen chart')).toBeTruthy());
     fireEvent.press(screen.getByRole('button', { name: 'View fullscreen' }));
     fireEvent(screen.UNSAFE_getByType(Modal), 'requestClose');
-    expect(screen.UNSAFE_queryByType(Modal)).toBeNull();
+    expect(screen.UNSAFE_getByType(Modal).props.visible).toBe(false);
+    expect(restore).not.toHaveBeenCalled();
+    fireEvent(screen.UNSAFE_getByType(Modal), 'dismiss');
     expect(restore).toHaveBeenCalledTimes(1);
   });
 
@@ -59,6 +70,8 @@ describe('Mermaid native fullscreen', () => {
     await waitFor(() => expect(screen.getByText('Fullscreen chart')).toBeTruthy());
     fireEvent.press(screen.getByRole('button', { name: 'View fullscreen' }));
     fireEvent.press(screen.getByRole('button', { name: 'Exit fullscreen' }));
+    expect(restore).not.toHaveBeenCalled();
+    fireEvent(screen.UNSAFE_getByType(Modal), 'dismiss');
     expect(restore).toHaveBeenCalledTimes(1);
   });
 
@@ -71,6 +84,14 @@ describe('Mermaid native fullscreen', () => {
     fireEvent(screen.getByText('Fullscreen chart'), 'press');
     fireEvent(screen.getByText('Fullscreen chart'), 'keyDown', { nativeEvent: { key: 'Enter' } });
     expect(screen.UNSAFE_getByType(Modal).props.visible).toBe(true);
+  });
+
+  it('keeps failed-render source selectable in the full-size canvas', async () => {
+    const plugin = createMermaidPlugin({ adapter: { families: ['flowchart'], render: async () => { throw new Error('render failed'); } }, maxRetries: 0 });
+    const screen = render(React.createElement(MermaidBlock, { source, plugin, theme: lightTheme, capabilities: {}, translations: defaultTranslations }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('render failed'));
+    fireEvent.press(screen.getByRole('button', { name: 'View fullscreen' }));
+    expect(screen.getByTestId('fullscreen-content-canvas').findAllByType(Text).some((text) => text.props.selectable && text.props.children === source)).toBe(true);
   });
 
   // parity:8d967daee4fdf27752095c1fe8bd6052aa0545fbcbecd838869953db26053846

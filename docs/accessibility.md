@@ -1,6 +1,6 @@
 # Accessibility
 
-Native controls expose roles, labels, disabled/busy state, 44-point targets, adjustable zoom actions, modal semantics, system-back handling, and focus restoration. Streaming announcements are off by default and coalesced when enabled. Reduced motion disables suffix/caret animation through either the platform preference or the explicit test seam.
+Native controls expose roles, labels, disabled/busy state, 44-point targets, adjustable zoom actions, modal semantics, system-back handling, and focus restoration after fullscreen dismissal completes. Streaming announcements are off by default and coalesced when enabled. Reduced motion disables suffix/caret animation through either the platform preference or the explicit test seam.
 
 ```tsx verify
 import React from 'react';

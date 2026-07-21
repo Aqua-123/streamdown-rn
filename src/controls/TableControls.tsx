@@ -84,6 +84,7 @@ export function TableControls({ table, children, capabilities, controls, transla
       {children}
       <FullscreenModal
         visible={fullscreen}
+        contentMode="document"
         label={translations.tableFullscreen}
         closeLabel={translations.exitFullscreen}
         capabilities={capabilities}
@@ -92,7 +93,7 @@ export function TableControls({ table, children, capabilities, controls, transla
         icons={icons}
         color={color}
         backgroundColor={backgroundColor}
-      ><View>{renderActions('fullscreen', false)}{renderCopyFeedback('fullscreen')}{children}</View></FullscreenModal>
+      ><View style={{ gap: 8 }}>{renderActions('fullscreen', false)}{renderCopyFeedback('fullscreen')}{children}</View></FullscreenModal>
     </View>
   );
 }

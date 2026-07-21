@@ -71,16 +71,20 @@ describe('native markdown controls', () => {
     expect(screen.getAllByText('B')).toHaveLength(2);
     fireEvent.press(screen.getByRole('button', { name: 'Exit fullscreen' }));
     expect(screen.queryByRole('alert', { name: 'Table fullscreen' })).toBeNull();
+    expect(restore).not.toHaveBeenCalled();
+    fireEvent(screen.UNSAFE_getByType(Modal), 'dismiss');
 
     fireEvent.press(screen.getByRole('button', { name: 'View fullscreen' }));
     fireEvent(screen.UNSAFE_getByType(Modal), 'requestClose');
     expect(screen.queryByRole('alert', { name: 'Table fullscreen' })).toBeNull();
+    fireEvent(screen.UNSAFE_getByType(Modal), 'dismiss');
 
     fireEvent.press(screen.getByRole('button', { name: 'View fullscreen' }));
     const reopened = screen.getByRole('alert', { name: 'Table fullscreen' });
     fireEvent(reopened, 'accessibilityAction', { nativeEvent: { actionName: 'escape' } });
     expect(screen.queryByRole('alert', { name: 'Table fullscreen' })).toBeNull();
-    expect(restore).toHaveBeenCalled();
+    fireEvent(screen.UNSAFE_getByType(Modal), 'dismiss');
+    expect(restore).toHaveBeenCalledTimes(3);
     expect(restore).toHaveBeenLastCalledWith(expect.anything());
   });
 
