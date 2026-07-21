@@ -29,7 +29,7 @@ export interface MermaidBlockProps {
 }
 
 export function MermaidBlock({ source, plugin, theme, capabilities, controls, translations, icons, disabled, incomplete }: MermaidBlockProps) {
-  const [renderedResult, setRenderedResult] = useState<{ source: string; result: MermaidRenderResult }>();
+  const [renderedResult, setRenderedResult] = useState<{ source: string; theme: ThemeConfig; revision: number; plugin: DiagramPlugin; result: MermaidRenderResult }>();
   const [error, setError] = useState<Error>();
   const [revision, setRevision] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
@@ -40,25 +40,29 @@ export function MermaidBlock({ source, plugin, theme, capabilities, controls, tr
   useEffect(() => {
     let active = true;
     setError(undefined);
+    setRenderedResult(undefined);
+    resultRef.current?.release?.();
+    resultRef.current = undefined;
     if (incomplete) return () => { active = false; };
-    void plugin.render(source).then((next) => {
+    void plugin.render(source, theme).then((next) => {
       if (!active) { next.release?.(); return; }
-      if (resultRef.current !== next) resultRef.current?.release?.();
       resultRef.current = next;
-      setRenderedResult({ source, result: next });
+      setRenderedResult({ source, theme, revision, plugin, result: next });
     }).catch((reason: unknown) => {
       if (active) setError(reason instanceof Error ? reason : new Error(String(reason)));
     });
     return () => { active = false; };
-  }, [incomplete, plugin, revision, source]);
+  }, [incomplete, plugin, revision, source, theme]);
 
   useEffect(() => () => {
     resultRef.current?.release?.();
     resultRef.current = undefined;
   }, []);
 
-  const result = renderedResult?.result;
-  const currentResult = renderedResult?.source === source ? result : undefined;
+  const result = !incomplete && renderedResult?.source === source && renderedResult.theme === theme && renderedResult.revision === revision && renderedResult.plugin === plugin
+    ? renderedResult.result
+    : undefined;
+  const currentResult = result;
   const visual = result?.content;
   const panZoom = controlEnabled(controls, 'mermaid', 'panZoom');
   const rendered = visual
@@ -69,7 +73,7 @@ export function MermaidBlock({ source, plugin, theme, capabilities, controls, tr
       accessibilityLabel={`Mermaid diagram: ${renderedResult?.source ?? source}`}
       style={fullscreen ? { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center' } : undefined}
     >
-      {panZoom ? <PanZoomSurface capabilities={capabilities} icons={icons} disabled={disabled} color={theme.colors.foreground}>{visual}</PanZoomSurface> : visual}
+      {panZoom ? <PanZoomSurface capabilities={capabilities} icons={icons} disabled={disabled} color={theme.colors.foreground} backgroundColor={theme.colors.background} borderColor={theme.colors.border}>{visual}</PanZoomSurface> : visual}
     </View>
     : null;
   const copy = controlEnabled(controls, 'mermaid', 'copy') && Boolean(capabilities.clipboard);

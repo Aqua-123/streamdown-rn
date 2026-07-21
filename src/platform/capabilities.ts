@@ -43,6 +43,7 @@ export interface NativeCapabilities {
     shareText: (text: string, title?: string) => Promise<CapabilityResult> | CapabilityResult;
   };
   gestures?: {
+    /** Host-owned two-axis pan and pinch surface; core owns bounded scale and actions. */
     renderPanZoom: (props: PanZoomRenderProps) => ReactNode;
   };
   announcements?: {

@@ -6,7 +6,8 @@ import { PanZoomSurface } from '../../../../src/controls/PanZoomSurface';
 describe('PanZoom native surface', () => {
   // parity:cb9ae818e57c9fed8ab3fd45b2b18aca0e0ae803969e21ce71466fda55964cf0
   it('can hide visual controls while retaining the accessible gesture surface', () => {
-    const screen = render(React.createElement(PanZoomSurface, { capabilities: {}, showControls: false, children: React.createElement(Text, null, 'Chart') }));
+    const renderPanZoom = jest.fn(({ children }) => children);
+    const screen = render(React.createElement(PanZoomSurface, { capabilities: { gestures: { renderPanZoom } }, showControls: false, children: React.createElement(Text, null, 'Chart') }));
     expect(screen.queryByRole('toolbar')).toBeNull();
     expect(screen.getByRole('adjustable')).toBeTruthy();
   });
@@ -14,7 +15,8 @@ describe('PanZoom native surface', () => {
   // parity:50464705071d5951b5997f6cc07a7788226cc2852a5d5b9750ce1da1aba0b62b
   // parity:e62b6cb800bda1d0dccad3bf47f01830bf0198a59eeaa6d263405b7bbbe570c0
   it('honors bounded initial zoom and resets to the neutral native scale', () => {
-    const screen = render(React.createElement(PanZoomSurface, { capabilities: {}, initialScale: 2, min: 0.5, max: 3, children: React.createElement(Text, null, 'Chart') }));
+    const renderPanZoom = jest.fn(({ children }) => children);
+    const screen = render(React.createElement(PanZoomSurface, { capabilities: { gestures: { renderPanZoom } }, initialScale: 2, min: 0.5, max: 3, children: React.createElement(Text, null, 'Chart') }));
     expect(screen.getByRole('adjustable').props.accessibilityValue.now).toBe(2);
     fireEvent.press(screen.getByRole('button', { name: 'Reset zoom' }));
     expect(screen.getByRole('adjustable').props.accessibilityValue.now).toBe(1);
@@ -34,9 +36,11 @@ describe('PanZoom native surface', () => {
   // parity:dfea50c6250bdf8d126acb9b4501690ad1486f56322ec7b83c2fe6e28beb683f
   // parity:a285a2ce14fec2494ed7ae1600599424775c6c24766ea397753c0f9869b56a7a
   // parity:34a605356accea4f36a0b9ee004e574567e95bee781b2a2f4674f5b358ccfa0c
-  it('uses native layout and adjustable accessibility semantics instead of DOM class and application props', () => {
+  it('renders neutral content without false zoom semantics when gestures are absent', () => {
     const screen = render(React.createElement(PanZoomSurface, { capabilities: {}, children: React.createElement(Text, null, 'Chart') }));
-    expect(screen.getByRole('adjustable').props).toMatchObject({ accessibilityLabel: 'Zoom', accessibilityValue: { min: 0.5, max: 3, now: 1 } });
-    expect(screen.UNSAFE_getByProps({ accessibilityRole: 'toolbar' })).toBeTruthy();
+    expect(screen.getByText('Chart')).toBeTruthy();
+    expect(screen.queryByRole('adjustable')).toBeNull();
+    expect(screen.queryByRole('toolbar')).toBeNull();
+    expect(screen.toJSON()).not.toHaveStyle({ transform: expect.anything() });
   });
 });

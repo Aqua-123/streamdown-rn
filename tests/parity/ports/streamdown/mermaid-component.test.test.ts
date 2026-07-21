@@ -75,7 +75,7 @@ describe('Mermaid native component', () => {
   });
 
   // parity:d0999a27f39269817eff6b59168e6c94b15c8d4a13f2d53ea1e7ef8d9e03f4ce
-  it('keeps the last valid native render visible when a later source fails', async () => {
+  it('clears the last valid native render when a later source fails', async () => {
     const renderAdapter = jest.fn(({ source: next }: { source: string }) => {
       if (next.includes('invalid')) throw new Error('invalid');
       return { kind: 'native' as const, content: React.createElement(Text, null, 'Last valid chart') };
@@ -85,7 +85,7 @@ describe('Mermaid native component', () => {
     await waitFor(() => expect(screen.getByText('Last valid chart')).toBeTruthy());
     screen.rerender(React.createElement(MermaidBlock, { ...props(plugin), source: 'graph invalid' }));
     await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
-    expect(screen.getByText('Last valid chart')).toBeTruthy();
+    expect(screen.queryByText('Last valid chart')).toBeNull();
   });
 
   // parity:27484b2f8b2d424dff9eeff176a44c5dbc9f53e8a9c872e323fcc171c345868a
