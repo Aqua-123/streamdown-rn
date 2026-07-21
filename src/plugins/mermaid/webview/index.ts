@@ -14,6 +14,15 @@ export interface OfflineBridgeRequest {
   source: string;
   display?: boolean;
   config?: Readonly<Record<string, unknown>>;
+  theme?: {
+    colorScheme?: 'light' | 'dark';
+    background: string;
+    foreground: string;
+    muted: string;
+    border: string;
+    surface: string;
+    mono: string;
+  };
   navigation: 'disabled';
   links: 'disabled';
   maxMessageBytes: number;
@@ -146,7 +155,16 @@ export function createOfflineWebViewAdapter(options: OfflineWebViewAdapterOption
   const mermaid: MermaidAdapter = {
     families: ['*'],
     async render(request: MermaidRenderRequest) {
-      const surfaceId = await execute({ kind: 'mermaid', source: request.source, config: request.config });
+      const theme = request.theme && {
+        colorScheme: request.theme.colorScheme,
+        background: request.theme.colors.background,
+        foreground: request.theme.colors.foreground,
+        muted: request.theme.colors.muted,
+        border: request.theme.colors.border,
+        surface: request.theme.colors.codeBackground,
+        mono: request.theme.fonts.mono,
+      };
+      const surfaceId = await execute({ kind: 'mermaid', source: request.source, config: request.config, theme });
       surfaces.add(surfaceId);
       try {
         return { kind: 'native', content: options.renderSurface(surfaceId, 'mermaid'), release: () => releaseSurface(surfaceId) };

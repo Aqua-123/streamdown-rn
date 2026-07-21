@@ -100,3 +100,5 @@ export function Message({ markdown }: { markdown: string }) {
 ```
 
 The save provider writes only to Expo's cache and then opens the native share/save sheet, so it does not need storage permission or invent a destination. `expo-sharing` resolves without distinguishing a dismissed sheet; return `cancelled` only from an API that explicitly reports dismissal.
+
+Mermaid pan and zoom are host-owned. Supply `capabilities.gestures.renderPanZoom` to render a two-axis pan/pinch surface from `{ children, scale, onScaleChange }`; Streamdown owns the bounded scale and accessible actions. When this provider is absent, diagram content remains untransformed and zoom controls and adjustable semantics are omitted.

@@ -24,7 +24,8 @@ describe('PanZoom native interactions', () => {
 
   // parity:fde7b979215bad5c9947342e5d66bc9abf5666e368bbe7a45c0eb699af78f66e
   it('provides a platform-neutral zoom-out action as the wheel-down substitute', () => {
-    const screen = render(React.createElement(PanZoomSurface, { capabilities: {}, step: 0.25, children: React.createElement(Text, null, 'Chart') }));
+    const renderPanZoom = ({ children }: PanZoomRenderProps) => children;
+    const screen = render(React.createElement(PanZoomSurface, { capabilities: { gestures: { renderPanZoom } }, step: 0.25, children: React.createElement(Text, null, 'Chart') }));
     fireEvent(screen.getByRole('adjustable'), 'accessibilityAction', { nativeEvent: { actionName: 'decrement' } });
     expect(screen.getByRole('adjustable').props.accessibilityValue.now).toBe(0.75);
   });
@@ -32,9 +33,10 @@ describe('PanZoom native interactions', () => {
   // parity:12205c696182c0807d4902e4c4c637276d369c66557d74185a6bf80c4efdcc86
   // parity:2ec99a7ab63743b448dc7f397ae9269bb8840776d84da0beeb11f29f9debe88f
   it('keeps controls in native flow rather than applying browser fullscreen coordinates', () => {
-    const screen = render(React.createElement(PanZoomSurface, { capabilities: {}, children: React.createElement(Text, null, 'Chart') }));
+    const renderPanZoom = ({ children }: PanZoomRenderProps) => children;
+    const screen = render(React.createElement(PanZoomSurface, { capabilities: { gestures: { renderPanZoom } }, children: React.createElement(Text, null, 'Chart') }));
     const toolbar = screen.UNSAFE_getByProps({ accessibilityRole: 'toolbar' });
-    expect(toolbar.props.style).toEqual({ flexDirection: 'row' });
+    expect(toolbar.props.style).toEqual(expect.objectContaining({ flexDirection: 'row' }));
     expect(toolbar.props.style).not.toHaveProperty('position');
   });
 });

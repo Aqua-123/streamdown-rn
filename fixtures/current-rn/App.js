@@ -38,7 +38,7 @@ const code = createCodePlugin({ provider: {
 } });
 const math = createMathPlugin({ singleDollarTextMath: true, adapter: { render: ({ source, display, errorColor }) => React.createElement(RaTeXView, { latex: source, displayMode: display, fontSize: display ? 22 : 16, color: errorColor }) } });
 const mermaid = createMermaidPlugin({ adapter: createBeautifulMermaidAdapter({
-  render: ({ source }) => ({ svg: renderMermaidSVG(source, { bg: '#ffffff', fg: '#27272a', line: '#3f3f46', accent: '#8b5cf6', muted: '#52525b', surface: '#eeecff', border: '#8b5cf6', font: 'monospace', padding: 30, nodeSpacing: 28, layerSpacing: 44, transparent: true }) }),
+  render: ({ source, theme }) => ({ svg: renderMermaidSVG(source, { bg: theme?.colors.background ?? '#ffffff', fg: theme?.colors.foreground ?? '#27272a', line: theme?.colors.muted ?? '#3f3f46', accent: theme?.colors.accent ?? '#8b5cf6', muted: theme?.colors.muted ?? '#52525b', surface: theme?.colors.codeBackground ?? '#eeecff', border: theme?.colors.border ?? '#8b5cf6', font: theme?.fonts.mono ?? 'monospace', padding: 30, nodeSpacing: 28, layerSpacing: 44, transparent: true }) }),
   renderSvg: (svg) => React.createElement(ResponsiveMermaidSvg, { svg }),
 }) });
 const renderers = createRendererPlugin([{ language: ['vega-lite', 'vega'], component: VegaLiteRenderer }]);

@@ -58,7 +58,7 @@ describe('final upstream coverage through native semantics', () => {
       families: ['flowchart'],
       render: async () => ({ kind: 'native', content: h(Text, null, 'diagram') }),
     } });
-    const screen = render(h(Streamdown, { mode: 'static', plugins: { mermaid: plugin }, controls: { mermaid: true } }, '```mermaid\nflowchart LR\nA-->B\n```'));
+    const screen = render(h(Streamdown, { mode: 'static', plugins: { mermaid: plugin }, controls: { mermaid: true }, capabilities: { gestures: { renderPanZoom: ({ children }) => children } } }, '```mermaid\nflowchart LR\nA-->B\n```'));
     await waitFor(() => expect(screen.getByLabelText('Zoom')).toBeTruthy());
   });
 
@@ -68,7 +68,7 @@ describe('final upstream coverage through native semantics', () => {
       families: ['flowchart'],
       render: async () => ({ kind: 'native', content: h(Text, null, 'diagram') }),
     } });
-    const screen = render(h(Streamdown, { mode: 'static', plugins: { mermaid: plugin }, controls: {} }, '```mermaid\nflowchart LR\nA-->B\n```'));
+    const screen = render(h(Streamdown, { mode: 'static', plugins: { mermaid: plugin }, controls: {}, capabilities: { gestures: { renderPanZoom: ({ children }) => children } } }, '```mermaid\nflowchart LR\nA-->B\n```'));
     await waitFor(() => expect(screen.getByLabelText('Zoom')).toBeTruthy());
     expect(screen.getByRole('button', { name: 'View fullscreen' })).toBeTruthy();
   });
@@ -76,7 +76,7 @@ describe('final upstream coverage through native semantics', () => {
   it('ignores unrelated accessibility actions while not zooming', () => {
     // parity:50b460bf65810234c75411008dfc53c39818094fbe46772574f111bde20cd9bd
     const screen = render(h(PanZoomSurface, {
-      capabilities: {},
+      capabilities: { gestures: { renderPanZoom: ({ children }) => children } },
       children: h(Text, null, 'content'),
     }));
     const adjustable = screen.getByLabelText('Zoom');

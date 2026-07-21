@@ -1,4 +1,5 @@
 import type { ComponentType, ReactNode } from 'react';
+import type { ThemeConfig } from '../../core/types';
 import { MermaidBlock, type MermaidBlockProps } from './MermaidBlock';
 
 export { mermaidFileRequest, type MermaidDownloadFormat } from './download';
@@ -11,6 +12,7 @@ export interface MermaidRenderRequest {
   source: string;
   family: MermaidFamily;
   config: MermaidConfig;
+  theme?: ThemeConfig;
 }
 
 export type MermaidRenderResult =
@@ -38,11 +40,19 @@ const BEAUTIFUL_MERMAID_COLORS: Readonly<Record<string, string>> = {
 };
 
 /** Converts beautiful-mermaid's browser CSS into the strict, offline SVG subset accepted on native. */
-export function normalizeBeautifulMermaidSvg(svg: string): string {
+export function normalizeBeautifulMermaidSvg(svg: string, theme?: ThemeConfig): string {
+  const colors = theme?.colors;
+  const palette = colors ? {
+    '--bg': colors.background, '--fg': colors.foreground, '--_text': colors.foreground,
+    '--_text-sec': colors.muted, '--_text-muted': colors.muted, '--_text-faint': colors.muted,
+    '--_line': colors.muted, '--_arrow': colors.foreground, '--_node-fill': colors.codeBackground,
+    '--_node-stroke': colors.border, '--_group-fill': colors.background, '--_group-hdr': colors.codeBackground,
+    '--_inner-stroke': colors.border, '--_key-badge': colors.border,
+  } : BEAUTIFUL_MERMAID_COLORS;
   return svg
     .replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, '')
     .replace(/\sstyle\s*=\s*(?:"[^"]*"|'[^']*')/gi, '')
-    .replace(/var\(\s*(--[\w-]+)(?:\s*,[^)]*)?\)/gi, (_match, name: string) => BEAUTIFUL_MERMAID_COLORS[name] ?? '#27272A');
+    .replace(/var\(\s*(--[\w-]+)(?:\s*,[^)]*)?\)/gi, (_match, name: string) => palette[name] ?? colors?.foreground ?? '#27272A');
 }
 
 /** Adapts Mermaid's compact flowchart arrows to beautiful-mermaid's spaced grammar. */
@@ -82,7 +92,7 @@ export function createBeautifulMermaidAdapter(provider: BeautifulMermaidProvider
       const result = await provider.render(request.family === 'flowchart'
         ? { ...request, source: normalizeBeautifulMermaidSource(request.source) }
         : request);
-      return { kind: 'svg', ...result, svg: normalizeBeautifulMermaidSvg(result.svg) };
+      return { kind: 'svg', ...result, svg: normalizeBeautifulMermaidSvg(result.svg, request.theme) };
     },
     renderSvg: provider.renderSvg,
   };
@@ -98,7 +108,7 @@ export interface DiagramPlugin {
   type: 'diagram';
   language: 'mermaid';
   getMermaid(config?: MermaidConfig): MermaidInstance;
-  render(source: string): Promise<MermaidRenderResult>;
+  render(source: string, theme?: ThemeConfig): Promise<MermaidRenderResult>;
   maxSourceLength: number;
   maxSvgLength: number;
   onError?: (error: Error) => void;
@@ -167,7 +177,20 @@ function resolveConfig(options: MermaidConfig | undefined, next: MermaidConfig =
 }
 
 export function detectMermaidFamily(source: string): MermaidFamily {
-  const first = source.trimStart().split(/[\s{]/, 1)[0];
+  const skipComments = (value: string) => {
+    let next = value.trimStart();
+    while (/^%%[^\r\n]*(?:\r?\n|$)/.test(next)) next = next.replace(/^%%[^\r\n]*(?:\r?\n|$)/, '').trimStart();
+    return next;
+  };
+  let view = skipComments(source);
+  const opening = view.match(/^---[ \t]*(?:\r?\n|$)/);
+  if (opening) {
+    const rest = view.slice(opening[0].length);
+    const closing = rest.match(/^[ \t]*---[ \t]*(?:\r?\n|$)/m);
+    if (!closing || closing.index === undefined) return 'invalid';
+    view = skipComments(rest.slice(closing.index + closing[0].length));
+  }
+  const first = view.split(/[\s{]/, 1)[0];
   if (/^(?:flowchart|graph)$/i.test(first)) return 'flowchart';
   if (/^sequenceDiagram$/i.test(first)) return 'sequence';
   if (/^classDiagram$/i.test(first)) return 'class';
@@ -191,7 +214,7 @@ export function sanitizeMermaidSvg(svg: string, maxLength = 1_000_000): string {
   for (const match of svg.matchAll(/\sd\s*=\s*["']([^"']*)["']/gi)) {
     if (match[1].length > 100_000) throw new Error('Mermaid SVG path data is too large');
   }
-  for (const match of svg.matchAll(/(?:^|[^\d.-])(-?\d+(?:\.\d+)?(?:e[+-]?\d+)?)(?=[^\d.-]|$)/gi)) {
+  for (const match of svg.matchAll(/(?:^|[^\d.#-])(-?\d+(?:\.\d+)?(?:e[+-]?\d+)?)(?=[^\d.-]|$)/gi)) {
     if (Math.abs(Number(match[1])) > 10_000_000) throw new Error('Mermaid SVG numeric value is too large');
   }
   for (const match of svg.matchAll(/\s(?:width|height)\s*=\s*["']([\d.]+)(?:px)?["']/gi)) {
@@ -210,7 +233,7 @@ export function createMermaidPlugin(options: MermaidPluginOptions = {}): Diagram
   const retries = nonnegativeInteger(options.maxRetries, 0, 'maxRetries');
   let config = resolveConfig(options.config);
 
-  const render = async (source: string): Promise<MermaidRenderResult> => {
+  const render = async (source: string, theme?: ThemeConfig): Promise<MermaidRenderResult> => {
     if (source.length > maxSourceLength) {
       const error = new Error(`Mermaid source exceeds ${maxSourceLength} characters`);
       options.onError?.(error);
@@ -229,7 +252,7 @@ export function createMermaidPlugin(options: MermaidPluginOptions = {}): Diagram
     for (let attempt = 0; attempt <= retries; attempt++) {
       let supplied: MermaidRenderResult | undefined;
       try {
-        supplied = await adapter.render({ source, family, config });
+        supplied = await adapter.render({ source, family, config, theme });
         const result: MermaidRenderResult = supplied.svg
           ? { ...supplied, svg: sanitizeMermaidSvg(supplied.svg, maxSvgLength) }
           : { ...supplied };

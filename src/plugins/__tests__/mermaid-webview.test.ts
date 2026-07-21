@@ -6,6 +6,7 @@ import { createMermaidPlugin } from '../mermaid';
 import { Streamdown } from '../../StreamdownRN';
 import fs from 'node:fs';
 import path from 'node:path';
+import { darkTheme } from '../../themes';
 
 describe('offline WebView adapter contract', () => {
   it('uses offline assets, a strict bridge request, and sanitizes the response', async () => {
@@ -15,8 +16,15 @@ describe('offline WebView adapter contract', () => {
       return JSON.stringify({ id: request.id, type: 'rendered', surfaceId: request.id });
     }), release: jest.fn(), dispose: jest.fn() };
     const adapter = createOfflineWebViewAdapter({ assets: { mermaidJs: '/* bundled mermaid with harmless https: docs text */' }, transport, assetDigest: 'sha256-pinned', renderSurface: (surface) => `visual:${surface}` });
-    await expect(createMermaidPlugin({ fullFidelityAdapter: adapter.mermaid }).render('gantt\ntitle Offline')).resolves.toMatchObject({ kind: 'native', content: 'visual:streamdown-rn-1' });
-    expect(transport.render).toHaveBeenCalledWith(expect.objectContaining({ kind: 'mermaid', navigation: 'disabled', links: 'disabled', contentSecurityPolicy: expect.stringContaining("default-src 'none'"), assetDigest: 'sha256-pinned' }), expect.anything(), expect.objectContaining({ mermaidJs: expect.any(String) }));
+    await expect(createMermaidPlugin({ config: { theme: 'forest' }, fullFidelityAdapter: adapter.mermaid }).render('gantt\ntitle Offline', darkTheme)).resolves.toMatchObject({ kind: 'native', content: 'visual:streamdown-rn-1' });
+    expect(transport.render).toHaveBeenCalledWith(expect.objectContaining({
+      kind: 'mermaid', navigation: 'disabled', links: 'disabled', contentSecurityPolicy: expect.stringContaining("default-src 'none'"), assetDigest: 'sha256-pinned',
+      config: expect.objectContaining({ theme: 'forest', securityLevel: 'strict' }),
+      theme: {
+        colorScheme: 'dark', background: darkTheme.colors.background, foreground: darkTheme.colors.foreground,
+        muted: darkTheme.colors.muted, border: darkTheme.colors.border, surface: darkTheme.colors.codeBackground, mono: darkTheme.fonts.mono,
+      },
+    }), expect.anything(), expect.objectContaining({ mermaidJs: expect.any(String) }));
     adapter.dispose();
     expect(transport.dispose).toHaveBeenCalled();
   });

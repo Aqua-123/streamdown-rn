@@ -4,7 +4,7 @@ import type { NativeCapabilities } from '../platform/capabilities';
 import { ActionButton } from './ActionButton';
 import { defaultIcons, type IconMap } from './icons';
 
-export function PanZoomSurface({ children, capabilities, min = 0.5, max = 3, step = 0.25, initialScale = 1, showControls = true, disabled, icons, color }: {
+export function PanZoomSurface({ children, capabilities, min = 0.5, max = 3, step = 0.25, initialScale = 1, showControls = true, disabled, icons, color, backgroundColor, borderColor }: {
   children: React.ReactNode;
   capabilities: NativeCapabilities;
   min?: number;
@@ -15,6 +15,8 @@ export function PanZoomSurface({ children, capabilities, min = 0.5, max = 3, ste
   disabled?: boolean;
   icons?: IconMap;
   color?: string;
+  backgroundColor?: string;
+  borderColor?: string;
 }) {
   if (!Number.isFinite(min) || !Number.isFinite(max) || min <= 0 || max < min) throw new TypeError('PanZoomSurface requires finite bounds with 0 < min <= max');
   if (!Number.isFinite(step) || step <= 0) throw new TypeError('PanZoomSurface step must be positive and finite');
@@ -27,9 +29,10 @@ export function PanZoomSurface({ children, capabilities, min = 0.5, max = 3, ste
     setScale(clamp(next));
     return { status: 'success' as const };
   };
-  const content = capabilities.gestures?.renderPanZoom({ children, scale, onScaleChange: (value) => set(value) })
-    ?? <View style={{ transform: [{ scale }] }}>{children}</View>;
-  return <View style={{ position: 'relative' }}>
+  const renderPanZoom = capabilities.gestures?.renderPanZoom;
+  if (!renderPanZoom) return <>{children}</>;
+  const content = renderPanZoom({ children, scale, onScaleChange: (value) => set(value) });
+  return <View>
     <View
       accessible
       accessibilityRole="adjustable"
@@ -43,7 +46,7 @@ export function PanZoomSurface({ children, capabilities, min = 0.5, max = 3, ste
       }}
     />
     {content}
-    {showControls ? <View accessibilityRole="toolbar" style={{ position: 'absolute', left: 8, bottom: 8, flexDirection: 'column', borderWidth: 1, borderColor: '#e4e4e7', borderRadius: 8, backgroundColor: '#ffffff' }}>
+    {showControls ? <View accessibilityRole="toolbar" style={{ flexDirection: 'row', borderWidth: 1, borderColor: borderColor ?? '#e4e4e7', borderRadius: 8, backgroundColor: backgroundColor ?? '#ffffff' }}>
       <ActionButton label="Zoom in" icon={icons?.zoomIn ?? defaultIcons.zoomIn} disabled={disabled || scale >= max} color={color} onAction={() => set(scale + step)} />
       <ActionButton label="Zoom out" icon={icons?.zoomOut ?? defaultIcons.zoomOut} disabled={disabled || scale <= min} color={color} onAction={() => set(scale - step)} />
       <ActionButton label="Reset zoom" icon={icons?.zoomReset ?? defaultIcons.zoomReset} disabled={disabled || scale === resetScale} color={color} onAction={() => set(resetScale)} />

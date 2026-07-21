@@ -9,14 +9,15 @@ import { lightTheme } from '../../../../src/themes';
 const source = 'graph TD; A-->B';
 const setup = (extra = {}, providerLayout = jest.fn()) => {
   const restore = jest.fn();
+  const renderPanZoom = jest.fn(({ children }) => children);
   const plugin = createMermaidPlugin({ adapter: { families: ['flowchart'], render: () => ({
     kind: 'native' as const,
     content: React.createElement(View, { testID: 'provider-surface', onLayout: providerLayout }, React.createElement(Text, null, 'Fullscreen chart')),
   }) } });
   const screen = render(React.createElement(MermaidBlock, {
-    source, plugin, theme: lightTheme, capabilities: { focus: { restore } }, translations: defaultTranslations, ...extra,
+    source, plugin, theme: lightTheme, capabilities: { focus: { restore }, gestures: { renderPanZoom } }, translations: defaultTranslations, ...extra,
   }));
-  return { providerLayout, restore, screen };
+  return { providerLayout, renderPanZoom, restore, screen };
 };
 
 describe('Mermaid native fullscreen', () => {
@@ -24,7 +25,7 @@ describe('Mermaid native fullscreen', () => {
   // parity:feace3b9d1cfffb2f099d85d84085b3363c1fd2a4a0461105f099ca227cbac7c
   // parity:23cf6d7da908764972abc83ebf6f41f43f2d1c3cdce3b4591a711152389c6c76
   it('renders an accessible action and moves the chart into a native modal', async () => {
-    const { providerLayout, screen } = setup();
+    const { providerLayout, renderPanZoom, screen } = setup();
     await waitFor(() => expect(screen.getByText('Fullscreen chart')).toBeTruthy());
     fireEvent.press(screen.getByRole('button', { name: 'View fullscreen' }));
     expect(screen.UNSAFE_getByType(Modal).props.visible).toBe(true);
@@ -34,6 +35,12 @@ describe('Mermaid native fullscreen', () => {
     fireEvent(screen.getByTestId('provider-surface'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 320, height: 240 } } });
     expect(providerLayout).toHaveBeenCalledWith(expect.objectContaining({ nativeEvent: { layout: expect.objectContaining({ width: 320, height: 240 }) } }));
     expect(screen.getByLabelText('Zoom')).toBeTruthy();
+    expect(renderPanZoom).toHaveBeenCalledWith(expect.objectContaining({ children: expect.anything(), scale: 1 }));
+    const toolbar = screen.UNSAFE_getAllByProps({ accessibilityRole: 'toolbar' }).find((candidate) => StyleSheet.flatten(candidate.props.style)?.backgroundColor === lightTheme.colors.background);
+    if (!toolbar) throw new Error('Expected themed pan/zoom toolbar');
+    const surface = screen.getByTestId('provider-surface');
+    expect(toolbar.parent?.children.indexOf(toolbar)).toBeGreaterThan(toolbar.parent?.children.indexOf(surface) ?? -1);
+    expect(StyleSheet.flatten(toolbar.props.style)).toMatchObject({ flexDirection: 'row', backgroundColor: lightTheme.colors.background, borderColor: lightTheme.colors.border });
     fireEvent(screen.getByLabelText('Zoom'), 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
     expect(screen.getByLabelText('Zoom').props.accessibilityValue.now).toBe(1.25);
   });

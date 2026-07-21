@@ -3,7 +3,7 @@ import { Text } from 'react-native';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { Streamdown } from '../../StreamdownRN';
 import { defaultTranslations } from '../../controls/translations';
-import { lightTheme } from '../../themes';
+import { darkTheme, lightTheme } from '../../themes';
 import { createRendererPlugin } from '../renderers';
 import { MermaidBlock } from '../mermaid/MermaidBlock';
 import {
@@ -31,6 +31,19 @@ describe('mermaid plugin', () => {
     expect(detectMermaidFamily('not mermaid')).toBe('invalid');
   });
 
+  it('detects families after complete leading comments, directives, and frontmatter only', async () => {
+    expect(detectMermaidFamily('  %% comment\nflowchart LR\nA-->B')).toBe('flowchart');
+    expect(detectMermaidFamily('%%{init: {"theme":"dark"}}%%\nstateDiagram-v2\n[*] --> A')).toBe('state');
+    expect(detectMermaidFamily('---\ntitle: Example\n---\nsequenceDiagram\nA->>B: Hi')).toBe('sequence');
+    expect(detectMermaidFamily('---\ntitle: Missing close\nflowchart LR')).toBe('invalid');
+    expect(detectMermaidFamily('title\n---\n---\nflowchart LR')).toBe('invalid');
+
+    const source = ' %% keep exactly\r\nflowchart LR\r\nA-->B';
+    const renderDiagram = jest.fn(() => ({ kind: 'native' as const, content: null }));
+    await createMermaidPlugin({ adapter: { families: ['flowchart'], render: renderDiagram } }).render(source);
+    expect(renderDiagram).toHaveBeenCalledWith(expect.objectContaining({ source }));
+  });
+
   it('binds every beautiful-mermaid family to sanitized host SVG rendering', async () => {
     const provider = { render: jest.fn(async () => ({ svg: '<svg><text>safe</text></svg>' })), renderSvg: jest.fn((svg: string) => <Text>{svg}</Text>) };
     const adapter = createBeautifulMermaidAdapter(provider);
@@ -49,6 +62,24 @@ describe('mermaid plugin', () => {
     expect(sanitizeMermaidSvg(normalized)).toContain('marker-end="url(#arrowhead)"');
     expect(() => sanitizeMermaidSvg('<svg><path marker-end="url(https://evil/x)" /></svg>')).toThrow(/unsafe/i);
     expect(() => sanitizeMermaidSvg('<svg><path marker-end="url(#x)" style="fill:red" /></svg>')).toThrow(/unsafe/i);
+  });
+
+  it('maps beautiful-mermaid variables to the active light and dark palettes', async () => {
+    const svg = '<svg fill="var(--bg)"><text fill="var(--_text)" stroke="var(--_line)"/><rect fill="var(--_node-fill)" stroke="var(--_node-stroke)"/><g fill="var(--_group-fill)"/><path fill="var(--_group-hdr)" stroke="var(--_key-badge)"/></svg>';
+    for (const theme of [lightTheme, darkTheme]) {
+      const normalized = normalizeBeautifulMermaidSvg(svg, theme);
+      expect(normalized).toContain(`fill="${theme.colors.background}"`);
+      expect(normalized).toContain(`fill="${theme.colors.foreground}"`);
+      expect(normalized).toContain(`stroke="${theme.colors.muted}"`);
+      expect(normalized).toContain(`fill="${theme.colors.codeBackground}"`);
+      expect(normalized).toContain(`stroke="${theme.colors.border}"`);
+      expect(sanitizeMermaidSvg(normalized)).toBe(normalized);
+    }
+
+    const provider = { render: jest.fn(() => ({ svg })), renderSvg: jest.fn(() => null) };
+    const result = await createBeautifulMermaidAdapter(provider).render({ source: 'stateDiagram-v2', family: 'state', config: {}, theme: darkTheme });
+    expect(result.svg).toContain(`fill="${darkTheme.colors.codeBackground}"`);
+    expect(provider.render).toHaveBeenCalledWith(expect.objectContaining({ theme: darkTheme }));
   });
 
   it('adapts compact flowchart arrows without changing labels', () => {
@@ -139,10 +170,11 @@ describe('mermaid plugin', () => {
     const sourceA = 'flowchart LR\nA-->B';
     const sourceB = 'flowchart LR\nB-->C';
     const pending = new Promise<never>(() => undefined);
+    const release = jest.fn();
     const adapter = {
       families: ['flowchart'] as const,
       render: jest.fn(({ source }: { source: string }) => source === sourceA
-        ? { kind: 'native' as const, content: <Text>result A</Text>, svg: '<svg><text>A</text></svg>', png: new Uint8Array([1]) }
+        ? { kind: 'native' as const, content: <Text>result A</Text>, svg: '<svg><text>A</text></svg>', png: new Uint8Array([1]), release }
         : pending),
     };
     const plugin = createMermaidPlugin({ adapter });
@@ -154,10 +186,31 @@ describe('mermaid plugin', () => {
 
     view.rerender(<MermaidBlock source={sourceB} plugin={plugin} theme={lightTheme} capabilities={capabilities} translations={defaultTranslations} />);
 
-    expect(screen.getByText('result A')).toBeTruthy();
+    expect(screen.queryByText('result A')).toBeNull();
+    expect(release).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('menuitem', { name: 'Download diagram as SVG' })).toBeNull();
     expect(screen.queryByRole('menuitem', { name: 'Download diagram as PNG' })).toBeNull();
     expect(screen.getByRole('menuitem', { name: 'Download diagram as MMD' })).toBeTruthy();
+  });
+
+  it('rerenders for theme changes and releases late obsolete results', async () => {
+    const pending: Array<(result: { kind: 'native'; content: React.ReactNode; release: () => void }) => void> = [];
+    const releases = [jest.fn(), jest.fn()];
+    const adapter = {
+      families: ['flowchart'] as const,
+      render: jest.fn(() => new Promise<{ kind: 'native'; content: React.ReactNode; release: () => void }>((resolve) => pending.push(resolve))),
+    };
+    const plugin = createMermaidPlugin({ adapter });
+    const view = render(<MermaidBlock source="flowchart LR\nA-->B" plugin={plugin} theme={lightTheme} capabilities={{}} translations={defaultTranslations} />);
+    view.rerender(<MermaidBlock source="flowchart LR\nA-->B" plugin={plugin} theme={darkTheme} capabilities={{}} translations={defaultTranslations} />);
+
+    expect(adapter.render.mock.calls.map(([request]) => request.theme)).toEqual([lightTheme, darkTheme]);
+    pending[0]({ kind: 'native', content: <Text>light result</Text>, release: releases[0] });
+    await waitFor(() => expect(releases[0]).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText('light result')).toBeNull();
+    pending[1]({ kind: 'native', content: <Text>dark result</Text>, release: releases[1] });
+    await waitFor(() => expect(screen.getByText('dark result')).toBeTruthy());
+    expect(releases[1]).not.toHaveBeenCalled();
   });
 
   it('hides copy and download without providers while keeping unrelated Mermaid controls', async () => {
@@ -168,7 +221,7 @@ describe('mermaid plugin', () => {
     expect(screen.queryByLabelText('Copy diagram')).toBeNull();
     expect(screen.queryByLabelText('Download diagram')).toBeNull();
     expect(screen.getByLabelText('View fullscreen')).toBeTruthy();
-    expect(screen.getByLabelText('Zoom')).toBeTruthy();
+    expect(screen.queryByLabelText('Zoom')).toBeNull();
   });
 
   it('rejects oversized diagrams before adapters and exposes copy/share/fullscreen/panzoom seams', async () => {
@@ -181,7 +234,7 @@ describe('mermaid plugin', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/exceeds/));
     first.unmount();
     const working = createMermaidPlugin({ adapter });
-    render(<Streamdown mode="static" plugins={{ mermaid: working }} controls={{ mermaid: { share: true } }} capabilities={{ clipboard: { writeText: clipboard }, share: { shareText: share } }}>{'```mermaid\nflowchart LR\nA-->B\n```'}</Streamdown>);
+    render(<Streamdown mode="static" plugins={{ mermaid: working }} controls={{ mermaid: { share: true } }} capabilities={{ clipboard: { writeText: clipboard }, share: { shareText: share }, gestures: { renderPanZoom: ({ children }) => children } }}>{'```mermaid\nflowchart LR\nA-->B\n```'}</Streamdown>);
     await waitFor(() => expect(screen.getByLabelText('Zoom')).toBeTruthy());
     expect(screen.getByTestId('mermaid-block')).toHaveStyle({ padding: 8, borderRadius: 12 });
     expect(screen.getByTestId('mermaid-surface')).toHaveStyle({ borderWidth: 1, borderRadius: 6 });
