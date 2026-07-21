@@ -76,7 +76,7 @@ describe('CodeBlock multi-language native parity', () => {
 
   it('exposes native code-block semantics through language labels and controls', () => {
     // parity:17302f388f9efe8c37426456705e8b5f999531602356049a252fd9e1bf84bcf4
-    render(stream({ mode: 'static' }, '```javascript\nconst x = 1;\n```'));
+    render(stream({ mode: 'static', capabilities: { clipboard: clipboard(), files: { save: jest.fn() } } }, '```javascript\nconst x = 1;\n```'));
     expect(screen.getByText('javascript')).toBeTruthy();
     expect(screen.getByLabelText('Copy Code')).toBeTruthy();
     expect(screen.getByLabelText('Download file')).toBeTruthy();

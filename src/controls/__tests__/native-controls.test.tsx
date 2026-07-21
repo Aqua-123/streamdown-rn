@@ -20,7 +20,7 @@ describe('native markdown controls', () => {
   // parity:931f836d1f5410d56e7ed39d0f577726bc8bcf2ffa88a2c7dbe5f2c99afec3ba
   // parity:cda3b65d2ab72004c6d94bdf6551a649a816f39d3f2b5cb7c275c66946b8cb60
   // parity:54b9b3720aeeaf7bdda8c1d70142deae2e9a03977249dbe68ed55de420e09fce
-  it('copies code and reports unavailable clipboard state accessibly', async () => {
+  it('copies code only when a clipboard provider exists', async () => {
     const writeText = jest.fn().mockResolvedValue({ status: 'success' });
     const markdown = '```js\nconsole.log("✓")\n```';
     const screen = render(<Streamdown mode="static" capabilities={{ clipboard: { writeText } }}>{markdown}</Streamdown>);
@@ -28,8 +28,8 @@ describe('native markdown controls', () => {
     await waitFor(() => expect(writeText).toHaveBeenCalledWith('console.log("✓")'));
 
     screen.rerender(<Streamdown mode="static">{markdown}</Streamdown>);
-    fireEvent.press(screen.getByRole('button', { name: 'Copy Code' }));
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Clipboard unavailable'));
+    expect(screen.queryByRole('button', { name: 'Copy Code' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Download file' })).toBeNull();
   });
 
   it('copies table formats and passes fixed download metadata to the adapter', async () => {
@@ -90,7 +90,7 @@ describe('native markdown controls', () => {
     // parity:1f6e0a13569e2b6cbd6d8ee0989a5cfb3b2a3a355a721a4c603a01dae91a2e78
     const markdown = '```txt\nhello\n```';
     const screen = render(
-      <Streamdown mode="static" controls={{ code: { copy: true, download: false } }} translations={{ copyCode: 'Kopieren' }}>
+      <Streamdown mode="static" capabilities={{ clipboard: { writeText: jest.fn() } }} controls={{ code: { copy: true, download: false } }} translations={{ copyCode: 'Kopieren' }}>
         {markdown}
       </Streamdown>
     );
@@ -98,7 +98,7 @@ describe('native markdown controls', () => {
     expect(screen.queryByRole('button', { name: 'Download file' })).toBeNull();
   });
 
-  it('models cancelled and thrown adapter actions as accessible feedback', async () => {
+  it('models denied, cancelled, and thrown adapter actions as accessible feedback', async () => {
     // parity:d2965b26f66379748b0801212f602be0799cbbd5a421414219d29a190a1ef135
     // parity:97ebb8966bb6928a4bb0ca9d67403d97e5d49476c06bc9900c70ea20c1979651
     // parity:3d6ab31d58191711adbb0740aa9715ab89f7be8395df52478592d95b1dbf7cbe
@@ -113,19 +113,48 @@ describe('native markdown controls', () => {
     await waitFor(() => expect(screen.getByText('disk full')).toBeTruthy());
 
     screen.rerender(<Streamdown mode="static" capabilities={{
+      clipboard: { writeText: async () => ({ status: 'denied' }) },
+    }}>{markdown}</Streamdown>);
+    fireEvent.press(screen.getByRole('button', { name: 'Copy Code' }));
+    await waitFor(() => expect(screen.getByText('Action denied')).toBeTruthy());
+
+    screen.rerender(<Streamdown mode="static" capabilities={{
       clipboard: { writeText: async () => { throw new Error('clipboard failed'); } },
     }}>{markdown}</Streamdown>);
     fireEvent.press(screen.getByRole('button', { name: 'Copy Code' }));
     await waitFor(() => expect(screen.getByText('clipboard failed')).toBeTruthy());
 
     const table = '| A |\n| --- |\n| B |';
-    screen.rerender(<Streamdown mode="static" capabilities={{ files: { save: async () => { throw new Error('table save failed'); } } }}>{table}</Streamdown>);
+    screen.rerender(<Streamdown mode="static" capabilities={{
+      clipboard: { writeText: async () => { throw new Error('table copy failed'); } },
+      files: { save: async () => { throw new Error('table save failed'); } },
+    }}>{table}</Streamdown>);
     fireEvent.press(screen.getByRole('button', { name: 'Download table' }));
     fireEvent.press(screen.getByRole('button', { name: 'Download table as CSV' }));
     await waitFor(() => expect(screen.getByText('table save failed')).toBeTruthy());
     fireEvent.press(screen.getByRole('button', { name: 'Copy table' }));
     fireEvent.press(screen.getByRole('button', { name: 'Copy table as CSV' }));
-    await waitFor(() => expect(screen.getByText('Clipboard unavailable')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('table copy failed')).toBeTruthy());
+    expect(screen.getByRole('button', { name: 'Copy table as CSV' })).toBeTruthy();
+  });
+
+  it('keeps successful table copy feedback visible after its menu closes', async () => {
+    const table = '| A |\n| --- |\n| B |';
+    const screen = render(<Streamdown mode="static" capabilities={{
+      clipboard: { writeText: async () => ({ status: 'success' }) },
+    }}>{table}</Streamdown>);
+    fireEvent.press(screen.getByRole('button', { name: 'Copy table' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Copy table as CSV' }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Copied'));
+    expect(screen.queryByRole('button', { name: 'Copy table as CSV' })).toBeNull();
+  });
+
+  it('hides unavailable table actions while leaving fullscreen available', () => {
+    const table = '| A |\n| --- |\n| B |';
+    const screen = render(<Streamdown mode="static">{table}</Streamdown>);
+    expect(screen.queryByRole('button', { name: 'Copy table' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Download table' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'View fullscreen' })).toBeTruthy();
   });
 
   it('disables active streaming controls and hides configured families', () => {
@@ -141,7 +170,7 @@ describe('native markdown controls', () => {
 
   it('disables controls in finalized blocks while the response is still streaming', () => {
     const markdown = '```txt\nstable\n```\n\nactive';
-    const screen = render(<Streamdown isAnimating>{markdown}</Streamdown>);
+    const screen = render(<Streamdown isAnimating capabilities={{ clipboard: { writeText: jest.fn() } }}>{markdown}</Streamdown>);
     expect(screen.getByRole('button', { name: 'Copy Code' }).props.accessibilityState)
       .toMatchObject({ disabled: true });
   });

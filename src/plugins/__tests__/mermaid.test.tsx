@@ -160,6 +160,17 @@ describe('mermaid plugin', () => {
     expect(screen.getByRole('menuitem', { name: 'Download diagram as MMD' })).toBeTruthy();
   });
 
+  it('hides copy and download without providers while keeping unrelated Mermaid controls', async () => {
+    const adapter = { families: ['flowchart'] as const, render: jest.fn(async () => ({ kind: 'native' as const, content: <Text>visual</Text> })) };
+    const plugin = createMermaidPlugin({ adapter });
+    render(<Streamdown mode="static" plugins={{ mermaid: plugin }}>{'```mermaid\nflowchart LR\nA-->B\n```'}</Streamdown>);
+    await waitFor(() => expect(screen.getByText('visual')).toBeTruthy());
+    expect(screen.queryByLabelText('Copy diagram')).toBeNull();
+    expect(screen.queryByLabelText('Download diagram')).toBeNull();
+    expect(screen.getByLabelText('View fullscreen')).toBeTruthy();
+    expect(screen.getByLabelText('Zoom')).toBeTruthy();
+  });
+
   it('rejects oversized diagrams before adapters and exposes copy/share/fullscreen/panzoom seams', async () => {
     const adapter = { families: ['flowchart'] as const, render: jest.fn(async () => ({ kind: 'native' as const, content: <Text>visual</Text> })) };
     const clipboard = jest.fn(() => ({ status: 'success' as const }));
@@ -175,6 +186,7 @@ describe('mermaid plugin', () => {
     expect(screen.getByTestId('mermaid-block')).toHaveStyle({ padding: 8, borderRadius: 12 });
     expect(screen.getByTestId('mermaid-surface')).toHaveStyle({ borderWidth: 1, borderRadius: 6 });
     fireEvent.press(screen.getByLabelText('Copy diagram'));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Copied'));
     fireEvent.press(screen.getByLabelText('Share diagram'));
     fireEvent.press(screen.getByLabelText('View fullscreen'));
     expect(clipboard).toHaveBeenCalledWith('flowchart LR\nA-->B');

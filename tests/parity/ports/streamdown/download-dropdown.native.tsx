@@ -20,10 +20,12 @@ describe('TableDownload controls native outcomes', () => {
     screen.rerender(<TableControls table={table} capabilities={{ files: { save } }} translations={defaultTranslations} disabled><Text>body</Text></TableControls>);
     expect(screen.getByRole('button', { name: 'Download table' }).props.accessibilityState.disabled).toBe(true);
   });
-  it('surfaces unavailable and failed saves without a DOM table lookup', async () => {
+  it('hides an unavailable save action and surfaces provider failures without a DOM table lookup', async () => {
     const screen = render(<TableControls table={table} capabilities={{}} translations={defaultTranslations}><Text>body</Text></TableControls>);
+    expect(screen.queryByRole('button', { name: 'Download table' })).toBeNull();
+    screen.rerender(<TableControls table={table} capabilities={{ files: { save: () => { throw new Error('File save failed'); } } }} translations={defaultTranslations}><Text>body</Text></TableControls>);
     fireEvent.press(screen.getByRole('button', { name: 'Download table' }));
     fireEvent.press(screen.getByRole('button', { name: 'Download table as CSV' }));
-    await waitFor(() => expect(screen.getByText('File saving unavailable')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('File save failed')).toBeTruthy());
   });
 });

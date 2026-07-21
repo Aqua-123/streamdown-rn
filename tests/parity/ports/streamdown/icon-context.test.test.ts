@@ -5,6 +5,7 @@ import { Streamdown } from '../../../../src/StreamdownRN';
 import { defaultIcons } from '../../../../src/controls';
 
 const markdown = '```txt\nhello\n```';
+const capabilities = { clipboard: { writeText: jest.fn() }, files: { save: jest.fn() } };
 
 describe('adapted native icon props', () => {
   // parity:e6050ffd777db1f6cddd713334d753aa03c97ea1b5b7b1682d1883013f19aa87
@@ -12,7 +13,7 @@ describe('adapted native icon props', () => {
   it('uses exported defaults when no icon map is supplied', () => {
     expect(React.isValidElement(defaultIcons.copy)).toBe(true);
     expect(React.isValidElement(defaultIcons.download)).toBe(true);
-    const result = render(React.createElement(Streamdown, { mode: 'static', children: markdown }));
+    const result = render(React.createElement(Streamdown, { mode: 'static', children: markdown, capabilities }));
     expect(result.queryByText('⧉')).toBeNull();
     expect(result.queryByText('↓')).toBeNull();
     expect(result.getByRole('button', { name: 'Copy Code' })).toBeTruthy();
@@ -24,14 +25,16 @@ describe('adapted native icon props', () => {
   it('recalculates native icons when the prop changes to or from undefined', () => {
     const result = render(React.createElement(Streamdown, {
       mode: 'static', children: markdown,
+      capabilities,
       icons: { copy: React.createElement(Text, { testID: 'custom-copy' }, 'C') },
     }));
     expect(result.getByTestId('custom-copy')).toBeTruthy();
-    result.rerender(React.createElement(Streamdown, { mode: 'static', children: markdown }));
+    result.rerender(React.createElement(Streamdown, { mode: 'static', children: markdown, capabilities }));
     expect(result.queryByTestId('custom-copy')).toBeNull();
     expect(result.getByRole('button', { name: 'Copy Code' })).toBeTruthy();
     result.rerender(React.createElement(Streamdown, {
       mode: 'static', children: markdown,
+      capabilities,
       icons: { copy: React.createElement(Text, { testID: 'next-copy' }, 'N') },
     }));
     expect(result.getByTestId('next-copy')).toBeTruthy();
@@ -41,11 +44,12 @@ describe('adapted native icon props', () => {
   // parity:e76aa73987da4e6abbeb9fd4da680fa4ef41dca1b5fbc0e0f73fc46aa89b47ff
   it('handles icon key-count changes and stable references without losing defaults', () => {
     const icons = { copy: React.createElement(Text, { testID: 'copy' }, 'C') };
-    const result = render(React.createElement(Streamdown, { mode: 'static', children: markdown, icons }));
-    result.rerender(React.createElement(Streamdown, { mode: 'static', children: markdown, icons }));
+    const result = render(React.createElement(Streamdown, { mode: 'static', children: markdown, icons, capabilities }));
+    result.rerender(React.createElement(Streamdown, { mode: 'static', children: markdown, icons, capabilities }));
     expect(result.getByTestId('copy')).toBeTruthy();
     result.rerender(React.createElement(Streamdown, {
       mode: 'static', children: markdown,
+      capabilities,
       icons: { ...icons, download: React.createElement(Text, { testID: 'download' }, 'D') },
     }));
     expect(result.getByTestId('copy')).toBeTruthy();
