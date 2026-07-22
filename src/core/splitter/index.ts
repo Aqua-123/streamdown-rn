@@ -5,15 +5,12 @@ import { logDebug, logStateSnapshot } from './logger';
 import { processLines } from './processLines';
 import { finalizeBlock } from './finalizeBlock';
 import { hasIncompleteCodeFence } from '../blockSemantics';
+import { findCodeBlockClose, findComponentClose } from './blockClosers';
 
-const SPLITTER_VERSION = 'char-level-v1';
+const SPLITTER_VERSION = 'range-v2';
 
 /**
- * Process new content character-by-character.
- * 
- * This ensures consistent block boundary detection regardless of chunk size.
- * Whether content arrives 1 character at a time or 1000 characters at once,
- * block boundaries are detected at the exact character position.
+ * Process appended content at line and explicit-block boundaries.
  */
 export function processNewContent(
   registry: BlockRegistry,
@@ -47,13 +44,14 @@ export function processNewContent(
 
   if (fullText.length <= registry.cursor) return registry;
 
-  // Process each new character individually to ensure consistent
-  // block boundary detection regardless of chunk size
   let currentRegistry = registry;
-  
-  for (let i = registry.cursor; i < fullText.length; i++) {
-    // Process content up to position i+1 (one character at a time)
-    currentRegistry = processSingleCharacter(currentRegistry, fullText, i + 1);
+
+  while (currentRegistry.cursor < fullText.length) {
+    currentRegistry = processRange(
+      currentRegistry,
+      fullText,
+      nextBoundary(currentRegistry, fullText)
+    );
   }
 
   // The splitter needs character-level boundary detection, but incomplete-tag
@@ -71,10 +69,9 @@ export function processNewContent(
 }
 
 /**
- * Process content up to a specific position (single character increment).
- * This is the core of character-level processing.
+ * Process content up to a structural boundary.
  */
-function processSingleCharacter(
+function processRange(
   registry: BlockRegistry,
   fullText: string,
   endPos: number
@@ -103,6 +100,34 @@ function processSingleCharacter(
     activeStartPos: registry.activeBlock?.startPos ?? registry.cursor,
     canFinalizeCodeBlock: endPos === fullText.length || fullText[endPos] === '\n' || fullText[endPos] === '\r',
   });
+}
+
+function nextBoundary(registry: BlockRegistry, fullText: string): number {
+  const { cursor, activeBlock } = registry;
+
+  if (activeBlock?.type === 'codeBlock') {
+    const close = findCodeBlockClose(fullText.slice(activeBlock.startPos));
+    return close === null ? fullText.length : activeBlock.startPos + close;
+  }
+
+  if (activeBlock?.type === 'component') {
+    const close = findComponentClose(fullText.slice(activeBlock.startPos));
+    return close === null ? fullText.length : activeBlock.startPos + close;
+  }
+
+  if (/\n\n+$/.test(activeBlock?.content ?? '') && /\S/.test(fullText[cursor])) {
+    return cursor + 1;
+  }
+
+  if (fullText[cursor] === '\n') return cursor + 1;
+
+  const newline = fullText.indexOf('\n', cursor);
+  const lineEnd = newline === -1 ? fullText.length : newline;
+  const line = fullText.slice(cursor, lineEnd);
+  const componentPrefix = line.match(/^\[\{c:\s*"[^"]+"/);
+  if (componentPrefix) return cursor + componentPrefix[0].length;
+
+  return lineEnd;
 }
 
 export function resetRegistry(): BlockRegistry {

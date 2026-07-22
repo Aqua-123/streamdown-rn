@@ -12,6 +12,15 @@ function semanticTypes(source: string): string[] {
   return parseSemanticDocument(source).children.map((node) => node.type);
 }
 
+function registryShape(registry: BlockRegistry) {
+  return {
+    blocks: registry.blocks.map(({ type, content, startPos, endPos }) => ({ type, content, startPos, endPos })),
+    activeBlock: registry.activeBlock,
+    cursor: registry.cursor,
+    blockCounter: registry.blockCounter,
+  };
+}
+
 describe('stream source and semantic invariance', () => {
   const documents = [
     '',
@@ -31,6 +40,39 @@ describe('stream source and semantic invariance', () => {
     expect(chunked.source).toBe(source);
     expect(single.source).toBe(source);
     expect(semanticTypes(chunked.source ?? '')).toEqual(semanticTypes(single.source ?? ''));
+  });
+
+  it('keeps exact splitter state across character, token, line, and whole chunks', () => {
+    const source = [
+      '# Heading',
+      '',
+      '```ts',
+      'const value = 1;',
+      '```',
+      '',
+      '| a | b |',
+      '| --- | --- |',
+      '| 1 | 2 |',
+      '',
+      '[{c:"Card",p:{"title":"A }] value"}}]',
+      '',
+      'tail\r\nwith CRLF',
+    ].join('\n');
+    const characters = Array.from({ length: source.length }, (_, index) => index + 1);
+    const tokens = characters.filter((cut) => cut % 7 === 0);
+    const lines = characters.filter((cut) => source[cut - 1] === '\n');
+    const expected = registryShape(stream(source, []));
+
+    for (const cuts of [characters, tokens, lines]) {
+      expect(registryShape(stream(source, cuts))).toEqual(expected);
+    }
+  });
+
+  it('ingests a whole 64 KiB paragraph in one range', () => {
+    const source = 'a'.repeat(64 * 1024);
+    const registry = processNewContent(resetRegistry(), source);
+    expect(registry.cursor).toBe(source.length);
+    expect(registry.activeBlock).toMatchObject({ type: 'paragraph', content: source, startPos: 0 });
   });
 
   it('keeps empty appends as identity and resets on shorter/equal/longer replacement', () => {

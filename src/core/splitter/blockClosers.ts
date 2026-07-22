@@ -19,8 +19,22 @@ export function isCodeBlockClosed(content: string): boolean {
   return closePattern.test(lastLine);
 }
 
+export function findCodeBlockClose(content: string): number | null {
+  const openMatch = content.match(/^(`{3,}|~{3,})/);
+  if (!openMatch) return null;
+
+  const fence = openMatch[1];
+  const closePattern = new RegExp(`^${fence[0]}{${fence.length},}[ \\t]*(?=\\r?$)`, 'm');
+  const match = closePattern.exec(content.slice(openMatch[0].length));
+  return match ? openMatch[0].length + match.index + match[0].length : null;
+}
+
 export function isComponentClosed(content: string): boolean {
-  if (!content.startsWith('[{')) return false;
+  return findComponentClose(content) !== null;
+}
+
+export function findComponentClose(content: string): number | null {
+  if (!content.startsWith('[{')) return null;
 
   let braceDepth = 1;
   let bracketDepth = 1;
@@ -59,10 +73,9 @@ export function isComponentClosed(content: string): boolean {
       content[i - 1] === '}' &&
       char === ']'
     ) {
-      return true;
+      return i + 1;
     }
   }
 
-  return false;
+  return null;
 }
-
