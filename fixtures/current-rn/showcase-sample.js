@@ -25,7 +25,7 @@ Regular paragraph text with **bold**, *italic*, ***bold italic***, and ~~striket
 
 Visit [Streamdown on GitHub](https://github.com/haydenbleasel/streamdown) or paste a raw URL like https://streamdown.dev and it becomes a link automatically.
 
-![Streamdown logo](https://streamdown.dev/og.png)
+![Demo photo](https://images.unsplash.com/photo-1784712577709-6e1cdd6be106?q=80&w=987&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)
 
 ---
 

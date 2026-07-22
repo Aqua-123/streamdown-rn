@@ -20,7 +20,7 @@ const scenarioSemantics = {
   mermaid: ['Mermaid diagram:', 'flowchart LR'],
   'mermaid-sequence': ['Mermaid diagram:', 'participant Client'],
   'mermaid-state': ['Mermaid diagram:', 'Idle'],
-  harness: ['Streamdown Lab', 'Open harness controls'],
+  harness: ['Streamdown Feature Showcase', 'Open harness controls'],
 };
 
 export function requiredVisualSemantics(entry) {

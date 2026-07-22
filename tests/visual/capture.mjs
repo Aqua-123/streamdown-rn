@@ -15,7 +15,7 @@ function assertSemantics(output, entry) {
 }
 
 if (process.argv.includes('--self-test')) {
-  assert.deepEqual(requiredVisualSemantics({ scenario: 'harness' }), ['Streamdown Lab', 'Open harness controls']);
+  assert.deepEqual(requiredVisualSemantics({ scenario: 'harness' }), ['Streamdown Feature Showcase', 'Open harness controls']);
   assert.throws(
     () => assertSemantics('Fixture: controls Fixture state: controls one', { id: 'controls-test', scenario: 'controls' }),
     /Semantic readiness missing two, Copy table for controls-test/,

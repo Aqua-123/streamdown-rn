@@ -5,6 +5,7 @@ module.exports = {
     '<rootDir>/tests/parity/**/*.test.ts?(x)',
   ],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
+  modulePathIgnorePatterns: ['<rootDir>/.sample/'],
   moduleNameMapper: {
     '^react-native$': '<rootDir>/node_modules/react-native',
     '^react-native-svg$': '<rootDir>/node_modules/react-native-svg',

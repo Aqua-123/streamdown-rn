@@ -1,9 +1,10 @@
 appId: ${APP_ID}
 ---
-- assertVisible: "Streamdown Lab"
+- assertVisible: "Streamdown Feature Showcase"
+- assertVisible: "Play streaming"
 - tapOn: "Open harness controls"
 - assertVisible: "Harness controls"
-- assertVisible: "Start"
+- assertVisible: "Playback settings"
 - tapOn: "Close controls"
 - assertNotVisible: "Harness controls"
 - assertVisible: "Open harness controls"

@@ -77,6 +77,8 @@
     "build": "node scripts/build/clean.mjs && tsc -p tsconfig.json && node scripts/build/finalize-esm.mjs",
     "prepack": "npm run build",
     "dev": "tsc --watch",
+    "sample:android": "node scripts/sample.mjs android",
+    "sample:ios": "node scripts/sample.mjs ios",
     "test": "jest --runInBand",
     "test:parity": "jest --runInBand --testMatch='<rootDir>/tests/parity/**/*.test.ts?(x)'",
     "test:device-contract": "jest --runInBand --testMatch='<rootDir>/tests/device/**/*.test.ts?(x)'",

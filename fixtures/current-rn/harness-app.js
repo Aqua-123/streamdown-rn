@@ -13,7 +13,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Rect } from 'react-native-svg';
 import { Streamdown, darkTheme, lightTheme } from 'streamdown-rn';
 import { DEFAULT_SAMPLE, HARNESS_SAMPLES } from './harness-samples';
 import { initialPlaybackState, playbackReducer, progressPercent } from './harness-state';
@@ -21,12 +21,10 @@ import { initialPlaybackState, playbackReducer, progressPercent } from './harnes
 const STATUS_COLORS = {
   light: {
     success: '#16a34a',
-    warning: '#f59e0b',
     track: '#e4e4e7',
   },
   dark: {
     success: '#4ade80',
-    warning: '#fbbf24',
     track: '#3f3f46',
   },
 };
@@ -73,6 +71,22 @@ function ActionButton({ label, onPress, palette, primary = false, disabled = fal
       })}
     >
       <Text style={{ color: primary ? palette.accentText : palette.text, fontSize: 13, fontWeight: '700' }}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function FloatingAction({ children, label, onPress, palette, disabled = false, testID }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      testID={testID}
+      style={({ pressed }) => ({ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: palette.surfaceRaised, borderWidth: 1, borderColor: palette.borderStrong, boxShadow: '0 6px 18px rgba(0,0,0,0.18)', opacity: disabled ? 0.42 : pressed ? 0.72 : 1 })}
+    >
+      {children}
     </Pressable>
   );
 }
@@ -191,9 +205,6 @@ export function HarnessApp({ initialTheme, allPlugins, metrics, capabilities }) 
   ), [allPlugins, pluginState]);
 
   const markdown = streamingMode ? sample.markdown.slice(0, playback.cursor) : sample.markdown;
-  const status = !streamingMode ? 'Static preview' : playback.status === 'running' ? 'Streaming' : playback.status === 'complete' ? 'Complete' : playback.status === 'paused' ? 'Paused' : 'Ready to stream';
-  const statusColor = playback.status === 'running' ? palette.success : playback.status === 'complete' || !streamingMode ? palette.text : palette.warning;
-
   const chooseSample = (nextId) => {
     setSampleId(nextId);
     setStreamingMode(false);
@@ -215,18 +226,6 @@ export function HarnessApp({ initialTheme, allPlugins, metrics, capabilities }) 
     setIsComplete(false);
     dispatch({ type: 'reset' });
   };
-  const step = () => {
-    setStreamingMode(true);
-    setIsComplete(false);
-    dispatch({ type: 'step', total, chunkSize });
-  };
-  const finish = () => {
-    setStreamingMode(true);
-    setIsComplete(true);
-    dispatch({ type: 'finish', total });
-    AccessibilityInfo.announceForAccessibility('Stream complete');
-  };
-
   return (
     <SafeAreaView style={{ flex: 1, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0, paddingBottom: Platform.OS === 'android' ? 12 : 0, backgroundColor: palette.canvas }} testID="streamdown-lab">
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={palette.canvas} />
@@ -235,18 +234,6 @@ export function HarnessApp({ initialTheme, allPlugins, metrics, capabilities }) 
         keyboardDismissMode="on-drag"
         contentContainerStyle={{ width: '100%', maxWidth: 820, alignSelf: 'center', paddingHorizontal: compact ? 14 : 20, paddingTop: 10, paddingBottom: 116 }}
       >
-        <View style={{ paddingHorizontal: 4, paddingTop: 10, paddingBottom: 18 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <Text style={{ color: palette.muted, fontSize: 11, lineHeight: 16, letterSpacing: 1.2, fontWeight: '800', textTransform: 'uppercase' }}>Interactive harness</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 11, minHeight: 34, borderRadius: 99, backgroundColor: palette.surface, borderColor: palette.border, borderWidth: 1 }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: statusColor }} />
-              <Text accessibilityLiveRegion="polite" style={{ color: palette.text, fontSize: 11, fontWeight: '700' }}>{status}</Text>
-            </View>
-          </View>
-          <Text accessibilityRole="header" style={{ color: palette.text, fontSize: compact ? 32 : 36, lineHeight: compact ? 38 : 42, fontWeight: '800', letterSpacing: -1.2, marginTop: 8 }}>Streamdown Lab</Text>
-          <Text style={{ color: palette.muted, fontSize: 14, lineHeight: 21, marginTop: 8, maxWidth: 600 }}>Exercise native Markdown components, streaming transitions, plugin fallbacks, themes, and performance from one focused surface.</Text>
-        </View>
-
         <Modal animationType="slide" transparent visible={sheetOpen} onRequestClose={() => setSheetOpen(false)} statusBarTranslucent>
           <View style={{ flex: 1, justifyContent: 'flex-end' }}>
             <Pressable accessibilityRole="button" accessibilityLabel="Close controls" onPress={() => setSheetOpen(false)} style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.42)' }} />
@@ -303,14 +290,8 @@ export function HarnessApp({ initialTheme, allPlugins, metrics, capabilities }) 
         </Panel>
 
         <Panel palette={palette} style={{ marginBottom: 12 }}>
-          <SectionTitle title="Playback" detail="Drive the same append lifecycle used by an LLM token stream." palette={palette} />
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            <ActionButton label="Reset" onPress={reset} palette={palette} testID="playback-reset" />
-            <ActionButton label="Step" onPress={step} palette={palette} testID="playback-step" />
-            <ActionButton label={playback.status === 'running' ? 'Pause' : 'Start'} onPress={playback.status === 'running' ? pause : start} palette={palette} primary testID="playback-toggle" />
-            <ActionButton label="Finish" onPress={finish} palette={palette} disabled={playback.status === 'complete' && streamingMode} testID="playback-finish" />
-          </View>
-          <View style={{ flexDirection: compact ? 'column' : 'row', gap: 12, marginTop: 14 }}>
+          <SectionTitle title="Playback settings" detail="Tune the LLM-style append lifecycle." palette={palette} />
+          <View style={{ flexDirection: compact ? 'column' : 'row', gap: 12 }}>
             <View style={{ flex: 1 }}>
               <Text style={{ color: palette.muted, fontSize: 11, marginBottom: 7 }}>Append interval</Text>
               <Segment label="Append interval" options={[{ label: 'Fast 16ms', value: 16 }, { label: 'Natural 40ms', value: 40 }, { label: 'Slow 120ms', value: 120 }]} value={intervalMs} onChange={setIntervalMs} palette={palette} />
@@ -367,14 +348,7 @@ export function HarnessApp({ initialTheme, allPlugins, metrics, capabilities }) 
           </View>
         </Modal>
 
-        <Panel palette={palette} style={{ padding: 0, overflow: 'hidden', marginBottom: 12 }}>
-          <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 13, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomColor: palette.border, borderBottomWidth: 1 }}>
-            <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={{ color: palette.text, fontSize: 15, fontWeight: '700' }}>Native preview</Text>
-              <Text style={{ color: palette.muted, fontSize: 11, lineHeight: 16, marginTop: 2 }}>{streamingMode ? `${playback.cursor.toLocaleString()} of ${total.toLocaleString()} characters` : 'Full static document'}</Text>
-            </View>
-          </View>
-          <View style={{ padding: compact ? 16 : 22, minHeight: 220, backgroundColor: palette.canvas }} testID="markdown-preview">
+        <View style={{ minHeight: 220, backgroundColor: palette.canvas, marginBottom: 12 }} testID="markdown-preview">
             {markdown ? (
               <Profiler id="streamdown-harness" onRender={(_id, _phase, duration) => { lastCommitMs.current = duration; commitCount.current += 1; }}>
                 <Streamdown
@@ -390,14 +364,24 @@ export function HarnessApp({ initialTheme, allPlugins, metrics, capabilities }) 
               </Profiler>
             ) : (
               <View style={{ minHeight: 170, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: palette.faint, fontSize: 13 }}>Press Start or Step to append the first chunk.</Text>
+                <Text style={{ color: palette.faint, fontSize: 13 }}>Press Play to start streaming.</Text>
               </View>
             )}
-          </View>
-        </Panel>
+        </View>
 
         <Text style={{ color: palette.faint, textAlign: 'center', fontSize: 10, lineHeight: 16 }}>Streamdown RN · Expo 56 · React Native 0.85</Text>
       </ScrollView>
+      <View style={{ position: 'absolute', right: 18, bottom: 94, flexDirection: 'row', gap: 10 }}>
+        <FloatingAction label="Play streaming" onPress={start} palette={palette} disabled={playback.status === 'running'} testID="playback-play">
+          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none"><Path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" stroke={palette.text} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" /></Svg>
+        </FloatingAction>
+        <FloatingAction label="Pause streaming" onPress={pause} palette={palette} disabled={playback.status !== 'running'} testID="playback-pause">
+          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none"><Rect x={14} y={3} width={5} height={18} rx={1} stroke={palette.text} strokeWidth={2} /><Rect x={5} y={3} width={5} height={18} rx={1} stroke={palette.text} strokeWidth={2} /></Svg>
+        </FloatingAction>
+        <FloatingAction label="Reset streaming" onPress={reset} palette={palette} testID="playback-reset">
+          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none"><Path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke={palette.text} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" /><Path d="M3 3v5h5" stroke={palette.text} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" /></Svg>
+        </FloatingAction>
+      </View>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Open harness controls"
