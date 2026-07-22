@@ -1,36 +1,42 @@
 import remend from "remend";
 
 describe("horizontal rule handling", () => {
+  // parity:0ae905a8f298d41525f8f48ad2723cbd8ec0e126225e960be49e7ab9f812538b
   it("should preserve complete horizontal rules with hyphens", () => {
     expect(remend("---")).toBe("---");
     expect(remend("----")).toBe("----");
     expect(remend("-----")).toBe("-----");
   });
 
+  // parity:1880c6cceb9bbe8c2950cec9da95a09a41b0bf286900c63492ae6df49262701d
   it("should preserve complete horizontal rules with asterisks", () => {
     expect(remend("***")).toBe("***");
     expect(remend("****")).toBe("****");
     expect(remend("*****")).toBe("*****");
   });
 
+  // parity:9410723e3b41625afef1f4d5095d36b700ed6d384de5025acef53d48b6f88f23
   it("should preserve complete horizontal rules with underscores", () => {
     expect(remend("___")).toBe("___");
     expect(remend("____")).toBe("____");
     expect(remend("_____")).toBe("_____");
   });
 
+  // parity:381dd2d2a102edac88754f96d3c68b5857ff3f9a5a79c0dd689aaa20f10fa2e4
   it("should preserve horizontal rules with spaces", () => {
     expect(remend("- - -")).toBe("- - -");
     expect(remend("* * *")).toBe("* * *");
     expect(remend("_ _ _")).toBe("_ _ _");
   });
 
+  // parity:6af466b695e41b329f51e1eb039dd5ac3f32d1a3fd6f0b1d87fe1004fb4fd82e
   it("should preserve horizontal rules with mixed spacing", () => {
     expect(remend("-  -  -")).toBe("-  -  -");
     expect(remend("*   *   *")).toBe("*   *   *");
     expect(remend("_    _    _")).toBe("_    _    _");
   });
 
+  // parity:df65b582d30255c080b42adfc329284129d0283fef8e5cc7d9b979837f05d0b5
   it("should not confuse horizontal rules with emphasis", () => {
     // *** on its own line should be recognized as a horizontal rule
     expect(remend("Text before\n***\nText after")).toBe(
@@ -43,12 +49,14 @@ describe("horizontal rule handling", () => {
     );
   });
 
+  // parity:255994ac42605477e1b6568d3990d45a4fb5165aaf2d29e50bcc62e9c18b1107
   it("should handle horizontal rules at the end of text", () => {
     expect(remend("Some text\n\n---")).toBe("Some text\n\n---");
     expect(remend("Some text\n\n***")).toBe("Some text\n\n***");
     expect(remend("Some text\n\n___")).toBe("Some text\n\n___");
   });
 
+  // parity:480858cc5435813c1588dc166e36b88eb47dd5ed8538816fe51bd9be1dde3470
   it("should handle horizontal rules at the start of text", () => {
     expect(remend("---\n\nSome text")).toBe("---\n\nSome text");
     // *** on its own line should be recognized as a horizontal rule
@@ -57,32 +65,38 @@ describe("horizontal rule handling", () => {
     expect(remend("___\n\nSome text")).toBe("___\n\nSome text");
   });
 
+  // parity:3af12aa6aa86e3cda8d797672bc8550aec28ee316d88f1b323e5cccc53423391
   it("should handle multiple horizontal rules", () => {
     expect(remend("Section 1\n\n---\n\nSection 2\n\n---\n\nSection 3")).toBe(
       "Section 1\n\n---\n\nSection 2\n\n---\n\nSection 3"
     );
   });
 
+  // parity:6e18debfe6dd8dfe8adf0bfbd40bc5bc55d72a90b0f79b31cfa30479cb244d28
   it("should not confuse two asterisks with horizontal rule start", () => {
     // ** is bold, not a horizontal rule
     expect(remend("Text with **bold")).toBe("Text with **bold**");
   });
 
+  // parity:df046fa879fc034cfec89c6b2950433d497a21fa54300ab9cd9d71b6556ec610
   it("should not confuse two hyphens with horizontal rule", () => {
     // -- is not a valid horizontal rule (needs 3+)
     expect(remend("Text with --")).toBe("Text with --");
   });
 
+  // parity:542a42bb63ac1d2c4be0d900543ab5eb36f23fe02f023772c8c68a3bd9d088c9
   it("should handle horizontal rules after lists", () => {
     const text = "- Item 1\n- Item 2\n\n---\n\nNew section";
     expect(remend(text)).toBe(text);
   });
 
+  // parity:4dd078a9825759a39701b2f6858c50718604bcda6698de9a0824ec423dc8cfac
   it("should handle horizontal rules before headings", () => {
     const text = "---\n\n# Heading";
     expect(remend(text)).toBe(text);
   });
 
+  // parity:77fd6116eeba0d12661cc5d2e1942946416df3c0b2467f71f81c3e147c744e40
   it("should handle partial horizontal rules during streaming", () => {
     // Two characters - not yet a valid horizontal rule
     expect(remend("--")).toBe("--");
@@ -93,12 +107,14 @@ describe("horizontal rule handling", () => {
     expect(remend("Text\n\n--")).toBe("Text\n\n--");
   });
 
+  // parity:c972710e5363f2dd3a33697bd6e7749ea29c1c6f6b59e5b7288f67a292768377
   it("should not add closing markers to standalone asterisk sequences that could be rules", () => {
     // 4+ asterisks should not be completed as bold-italic
     expect(remend("****")).toBe("****");
     expect(remend("*****")).toBe("*****");
   });
 
+  // parity:bf8a4dc35a70594a1d28bc7f634c96b798a497d6f16dd0166e9dfbbf0f0fc9f4
   it("should handle horizontal rules with leading whitespace", () => {
     // Up to 3 spaces before a horizontal rule is valid
     expect(remend("   ---")).toBe("   ---");
@@ -106,6 +122,7 @@ describe("horizontal rule handling", () => {
     expect(remend(" ___")).toBe(" ___");
   });
 
+  // parity:920e8f9368dfc39fee03679d39be26270e356b36a042d0983572f28d0d11bb48
   it("should handle horizontal rule-like patterns in text", () => {
     // Horizontal rules need to be on their own line
     // When --- appears inline, it's treated as text, not a horizontal rule
@@ -114,11 +131,13 @@ describe("horizontal rule handling", () => {
     );
   });
 
+  // parity:a6ecb596d77c86f39974ff6cac0c645f884f874802051865ec29b071fb9c24a0
   it("should not complete emphasis when asterisks form potential horizontal rule", () => {
     // Text ending with newline then *** should not add closing ***
     expect(remend("Text\n***")).toBe("Text\n***");
   });
 
+  // parity:378052565b6e752e098f8534da96a7d451385df5e258f10237548f981a22483a
   it("should handle horizontal rules in complex markdown", () => {
     const text = `# Title
 
@@ -132,25 +151,3 @@ More content.`;
     expect(remend(text)).toBe(text);
   });
 });
-
-/* Pinned parity evidence:
- * parity:0ae905a8f298d41525f8f48ad2723cbd8ec0e126225e960be49e7ab9f812538b
- * parity:1880c6cceb9bbe8c2950cec9da95a09a41b0bf286900c63492ae6df49262701d
- * parity:9410723e3b41625afef1f4d5095d36b700ed6d384de5025acef53d48b6f88f23
- * parity:381dd2d2a102edac88754f96d3c68b5857ff3f9a5a79c0dd689aaa20f10fa2e4
- * parity:6af466b695e41b329f51e1eb039dd5ac3f32d1a3fd6f0b1d87fe1004fb4fd82e
- * parity:df65b582d30255c080b42adfc329284129d0283fef8e5cc7d9b979837f05d0b5
- * parity:255994ac42605477e1b6568d3990d45a4fb5165aaf2d29e50bcc62e9c18b1107
- * parity:480858cc5435813c1588dc166e36b88eb47dd5ed8538816fe51bd9be1dde3470
- * parity:3af12aa6aa86e3cda8d797672bc8550aec28ee316d88f1b323e5cccc53423391
- * parity:6e18debfe6dd8dfe8adf0bfbd40bc5bc55d72a90b0f79b31cfa30479cb244d28
- * parity:df046fa879fc034cfec89c6b2950433d497a21fa54300ab9cd9d71b6556ec610
- * parity:542a42bb63ac1d2c4be0d900543ab5eb36f23fe02f023772c8c68a3bd9d088c9
- * parity:4dd078a9825759a39701b2f6858c50718604bcda6698de9a0824ec423dc8cfac
- * parity:77fd6116eeba0d12661cc5d2e1942946416df3c0b2467f71f81c3e147c744e40
- * parity:c972710e5363f2dd3a33697bd6e7749ea29c1c6f6b59e5b7288f67a292768377
- * parity:bf8a4dc35a70594a1d28bc7f634c96b798a497d6f16dd0166e9dfbbf0f0fc9f4
- * parity:920e8f9368dfc39fee03679d39be26270e356b36a042d0983572f28d0d11bb48
- * parity:a6ecb596d77c86f39974ff6cac0c645f884f874802051865ec29b071fb9c24a0
- * parity:378052565b6e752e098f8534da96a7d451385df5e258f10237548f981a22483a
- */

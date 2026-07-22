@@ -30,28 +30,28 @@ function hasTextAncestor(node: NativeTestNode): boolean {
 }
 
 describe('native code block hierarchy', () => {
+  // parity:386c3176a5a1f92b49dc8b636d999e06a31da180c3896117d709b739634d9429
   it('keeps fenced code outside paragraph-native text containers', () => {
-    // parity:386c3176a5a1f92b49dc8b636d999e06a31da180c3896117d709b739634d9429
     const screen = render(subject('Here is some text.\n\n```typescript\nconst foo = "bar";\n```\n\nMore text after.'));
     expect(hasAncestor(screen.getByTestId('code-block'), 'paragraph')).toBe(false);
   });
 
+  // parity:d266ca8753110197b302029a2307446d16211304808ffcb53e838778d0103460
   it('keeps inline code inside its paragraph-native text container', () => {
-    // parity:d266ca8753110197b302029a2307446d16211304808ffcb53e838778d0103460
     const screen = render(subject('This is a paragraph with `inline code` in it.'));
     expect(hasAncestor(screen.getByTestId('inline-code'), 'paragraph')).toBe(true);
   });
 
+  // parity:f9ee342477ee36e5e4b0b861935f9ef07d3c366802a69fc8a6c4c2d27d64fc53
   it('renders multiple fenced blocks outside paragraphs', () => {
-    // parity:f9ee342477ee36e5e4b0b861935f9ef07d3c366802a69fc8a6c4c2d27d64fc53
     const markdown = 'First code block:\n\n```javascript\nconst a = 1;\n```\n\nSecond code block:\n\n```python\nx = 2\n```';
     const blocks = render(subject(markdown)).getAllByTestId('code-block');
     expect(blocks).toHaveLength(2);
     expect(blocks.every((block) => !hasAncestor(block, 'paragraph'))).toBe(true);
   });
 
+  // parity:05c78fd7410450ff0e4cf7eb75468e50a6542578703195dbe70fc9fa7e9bf277
   it('keeps block images and fenced code outside paragraphs', () => {
-    // parity:05c78fd7410450ff0e4cf7eb75468e50a6542578703195dbe70fc9fa7e9bf277
     const markdown = 'Some text.\n\n![Image](https://example.com/image.png)\n\n```typescript\nconst x = 1;\n```\n\nMore text.';
     const getSize = jest.spyOn(Image, 'getSize').mockImplementation(() => undefined as never);
     try {

@@ -13,6 +13,7 @@ import {
 } from "../../scripts/parity/inventory";
 import { compareInventories } from "../../scripts/parity/check-drift";
 import { validateParity } from "../../scripts/parity/validate";
+import type { JestResults } from "../../scripts/parity/validate";
 
 const temporary: string[] = [];
 afterEach(() => { for (const path of temporary.splice(0)) rmSync(path, { recursive: true, force: true }); });
@@ -106,6 +107,160 @@ describe("parity manifest validation", () => {
     };
     expect(validateParity(inventory, implemented, { projectRoot: root, verifySource: false }).join("\n"))
       .toContain("target marker must occur exactly once in executable source; found 2");
+  });
+
+  it("requires executable mappings to name a unique proof case", () => {
+    const { root, inventory, manifest } = validFixture();
+    const entry = manifest.entries[0];
+    mkdirSync(join(root, "tests"), { recursive: true });
+    writeFileSync(join(root, "tests", "port.test.ts"), `// ${entry.target.marker}\n`);
+    const target = {
+      ...entry.target,
+      path: "tests/port.test.ts",
+      proof: { testFile: "tests/port.test.ts", fullName: "suite proves behavior" },
+    };
+    const implemented: Manifest = {
+      ...manifest,
+      entries: [
+        { ...entry, status: "implemented", target },
+        { ...entry, upstreamId: "second", status: "implemented", target: { ...target, marker: "parity:second" } },
+      ],
+    };
+    const errors = validateParity(inventory, implemented, { projectRoot: root, verifySource: false }).join("\n");
+    expect(errors).toContain("proof case is already used");
+  });
+
+  it("requires executable proof to run in the mapped target file", () => {
+    const { root, inventory, manifest } = validFixture();
+    const entry = manifest.entries[0];
+    mkdirSync(join(root, "tests"), { recursive: true });
+    writeFileSync(join(root, "tests", "target.test.ts"), `// ${entry.target.marker}\n`);
+    const implemented: Manifest = {
+      ...manifest,
+      entries: [{
+        ...entry,
+        status: "implemented",
+        target: {
+          ...entry.target,
+          path: "tests/target.test.ts",
+          proof: { testFile: "tests/other.test.ts", fullName: "suite proves behavior" },
+        },
+      }],
+    };
+    expect(validateParity(inventory, implemented, { projectRoot: root, verifySource: false }).join("\n"))
+      .toContain("proof test file must match target path");
+  });
+
+  it.each([
+    [undefined, "proof case did not execute"],
+    ["pending", "proof case status is pending"],
+    ["failed", "proof case status is failed"],
+    ["passed", "proof case has no passing observable assertion"],
+  ] as const)("rejects missing or non-passing runtime proof: %s", (status, message) => {
+    const { root, inventory, manifest } = validFixture();
+    const entry = manifest.entries[0];
+    mkdirSync(join(root, "tests"), { recursive: true });
+    writeFileSync(join(root, "tests", "port.test.ts"), `// ${entry.target.marker}\n`);
+    const fullName = "suite proves behavior";
+    const testFile = "tests/port.test.ts";
+    const implemented: Manifest = {
+      ...manifest,
+      entries: [{
+        ...entry,
+        status: "implemented",
+        target: { ...entry.target, path: testFile, proof: { testFile, fullName } },
+      }],
+    };
+    const jestResults: JestResults = { testResults: [{
+      name: join(root, testFile),
+      assertionResults: status ? [{ fullName, status, numPassingAsserts: 0 }] : [],
+    }] };
+    expect(validateParity(inventory, implemented, {
+      jestResults,
+      projectRoot: root,
+      verifySource: false,
+    }).join("\n")).toContain(message);
+  });
+
+  it.each([
+    ["literal tautology", "expect(true).toBe(true)"],
+    ["literal equality tautology", "expect(true).toEqual(true)"],
+    ["identical literal equality", "expect('same').toEqual('same')"],
+    ["identical literal containment", "expect('same').toContain('same')"],
+    ["literal truthiness", "expect(true).toBeTruthy()"],
+    ["marker self-assertion", "const marker = 'parity:fixture'; expect(marker).toContain(marker)"],
+  ])("rejects weak source proof: %s", (_label, assertion) => {
+    const { root, inventory, manifest } = validFixture();
+    const entry = manifest.entries[0];
+    const testFile = "tests/port.test.ts";
+    const fullName = "suite proves behavior";
+    mkdirSync(join(root, "tests"), { recursive: true });
+    writeFileSync(join(root, testFile), `describe("suite", () => { it(/* ${entry.target.marker} */ "proves behavior", () => { ${assertion}; }); });`);
+    const implemented: Manifest = { ...manifest, entries: [{ ...entry, status: "implemented", target: { ...entry.target, path: testFile, proof: { testFile, fullName } } }] };
+    const jestResults: JestResults = { testResults: [{ name: join(root, testFile), assertionResults: [{ fullName, status: "passed", numPassingAsserts: 1 }] }] };
+    expect(validateParity(inventory, implemented, { jestResults, projectRoot: root, verifySource: false }).join("\n")).toContain("weak executable proof");
+  });
+
+  it("rejects a tautological assertion hidden in a parameterized run callback", () => {
+    const { root, inventory, manifest } = validFixture();
+    const entry = manifest.entries[0];
+    const testFile = "tests/port.test.ts";
+    const fullName = "suite proves behavior";
+    mkdirSync(join(root, "tests"), { recursive: true });
+    writeFileSync(join(root, testFile), `describe("suite", () => { it.each([{ title: "proves behavior", marker: "${entry.target.marker}", run: () => expect(true).toBe(true) }])("$title", ({ run }) => run()); });`);
+    const implemented: Manifest = { ...manifest, entries: [{ ...entry, status: "implemented", target: { ...entry.target, path: testFile, proof: { testFile, fullName } } }] };
+    expect(validateParity(inventory, implemented, { projectRoot: root, verifySource: false }).join("\n"))
+      .toContain("weak executable proof");
+  });
+
+  it("rejects a strong sibling referenced by a marker owned by another case", () => {
+    const { root, inventory, manifest } = validFixture();
+    const entry = manifest.entries[0];
+    const testFile = "tests/port.test.ts";
+    const fullName = "suite strong sibling";
+    mkdirSync(join(root, "tests"), { recursive: true });
+    writeFileSync(join(root, testFile), `describe("suite", () => { it("strong sibling", () => { expect("input".toUpperCase()).toBe("INPUT"); });\n// ${entry.target.marker}\nit("marker owner", () => { expect("owner").toBeDefined(); }); });`);
+    const implemented: Manifest = { ...manifest, entries: [{ ...entry, status: "implemented", target: { ...entry.target, path: testFile, proof: { testFile, fullName } } }] };
+    expect(validateParity(inventory, implemented, { projectRoot: root, verifySource: false }).join("\n"))
+      .toContain("marker is not associated with the named proof case");
+  });
+
+  it("accepts a source-attested concrete input/output proof", () => {
+    const { root, inventory, manifest } = validFixture();
+    const entry = manifest.entries[0];
+    const testFile = "tests/port.test.ts";
+    const fullName = "suite proves behavior";
+    mkdirSync(join(root, "tests"), { recursive: true });
+    writeFileSync(join(root, testFile), `describe("suite", () => {\n// ${entry.target.marker}\nit("proves behavior", () => { const input = "unsafe name"; expect(input.replace(/ /g, "-")).toBe("unsafe-name"); }); });`);
+    const implemented: Manifest = {
+      ...manifest,
+      entries: [{
+        ...entry,
+        status: "implemented",
+        target: { ...entry.target, path: testFile, proof: { testFile, fullName } },
+      }],
+    };
+    const jestResults: JestResults = { testResults: [{
+      name: join(root, testFile),
+      assertionResults: [{ fullName, status: "passed", numPassingAsserts: 1 }],
+    }] };
+    expect(validateParity(inventory, implemented, {
+      jestResults,
+      projectRoot: root,
+      verifySource: false,
+    })).toEqual([]);
+  });
+
+  it("rejects an opaque executable assertion that only names the upstream hash", () => {
+    const { root, inventory, manifest } = validFixture();
+    const entry = manifest.entries[0];
+    const testFile = "tests/port.test.ts";
+    const fullName = "suite proves behavior";
+    mkdirSync(join(root, "tests"), { recursive: true });
+    writeFileSync(join(root, testFile), `describe("suite", () => { it(/* ${entry.target.marker} */ "proves behavior", () => { expect("a".toUpperCase()).toBe("A"); }); });`);
+    const implemented: Manifest = { ...manifest, entries: [{ ...entry, status: "implemented", target: { ...entry.target, assertion: `Equivalent for ${entry.upstreamId}`, path: testFile, proof: { testFile, fullName } } }] };
+    expect(validateParity(inventory, implemented, { projectRoot: root, verifySource: false }).join("\n"))
+      .toContain("executable assertion must name pinned case");
   });
 
   it("detects a changed source hash against the pinned inventory", () => {

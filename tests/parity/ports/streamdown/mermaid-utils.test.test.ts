@@ -4,12 +4,17 @@ describe('Mermaid native image export utility', () => {
   const png = new Uint8Array([137, 80, 78, 71]);
   const result: MermaidRenderResult = { kind: 'native', content: null, svg: '<svg></svg>', png };
 
-  // parity:78d9feb5d1e7bf488b359b3cc163a996fcfd99c2f1147f8057ae81c8a6b3ad93
   // parity:18f2ca2005aa1359956b647353a79ea25546f0858043e302868eb2d8f77c7cff
   it('uses adapter-provided PNG bytes instead of a browser canvas and preserves them exactly', () => {
     const request = mermaidFileRequest('graph TD; A-->B', result, 'png');
     expect(request).toEqual({ basename: 'diagram', extension: 'png', mimeType: 'image/png', content: png });
     expect(request.content).toBe(png);
+  });
+  // parity:78d9feb5d1e7bf488b359b3cc163a996fcfd99c2f1147f8057ae81c8a6b3ad93
+  it('converts the native adapter PNG result into an exact PNG file request', () => {
+    expect(mermaidFileRequest('graph TD; A-->B', result, 'png')).toEqual({
+      basename: 'diagram', extension: 'png', mimeType: 'image/png', content: png,
+    });
   });
 
   // parity:85afbc1ce9f230f3060208113374e165d04b9278db4cca0219b80d046b953103

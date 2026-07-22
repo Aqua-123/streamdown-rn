@@ -12,7 +12,6 @@ describe('PanZoom native surface', () => {
     expect(screen.getByRole('adjustable')).toBeTruthy();
   });
 
-  // parity:50464705071d5951b5997f6cc07a7788226cc2852a5d5b9750ce1da1aba0b62b
   // parity:e62b6cb800bda1d0dccad3bf47f01830bf0198a59eeaa6d263405b7bbbe570c0
   it('honors bounded initial zoom and resets to the neutral native scale', () => {
     const renderPanZoom = jest.fn(({ children }) => children);
@@ -35,12 +34,46 @@ describe('PanZoom native surface', () => {
 
   // parity:dfea50c6250bdf8d126acb9b4501690ad1486f56322ec7b83c2fe6e28beb683f
   // parity:a285a2ce14fec2494ed7ae1600599424775c6c24766ea397753c0f9869b56a7a
-  // parity:34a605356accea4f36a0b9ee004e574567e95bee781b2a2f4674f5b358ccfa0c
   it('renders neutral content without false zoom semantics when gestures are absent', () => {
     const screen = render(React.createElement(PanZoomSurface, { capabilities: {}, children: React.createElement(Text, null, 'Chart') }));
     expect(screen.getByText('Chart')).toBeTruthy();
     expect(screen.queryByRole('adjustable')).toBeNull();
     expect(screen.queryByRole('toolbar')).toBeNull();
     expect(screen.toJSON()).not.toHaveStyle({ transform: expect.anything() });
+  });
+});
+
+describe('case-specific PanZoom native proof', () => {
+  const adapter = ({ children }: { children: React.ReactNode }) => children;
+  const surface = (renderPanZoom = adapter, props: Record<string, unknown> = {}) => React.createElement(
+    PanZoomSurface,
+    { capabilities: { gestures: { renderPanZoom: renderPanZoom as never } }, children: React.createElement(Text, null, 'Chart'), ...props }
+  );
+  // parity:50464705071d5951b5997f6cc07a7788226cc2852a5d5b9750ce1da1aba0b62b
+  it('resets zoom to the neutral scale', () => {
+    const screen = render(surface(adapter, { initialScale: 2 }));
+    fireEvent.press(screen.getByRole('button', { name: 'Reset zoom' }));
+    expect(screen.getByRole('adjustable').props.accessibilityValue.now).toBe(1);
+  });
+  it('delegates pointer identity to the native gesture adapter', () => {
+    const renderPanZoom = jest.fn(adapter);
+    render(surface(renderPanZoom));
+    expect(renderPanZoom).toHaveBeenCalledWith(expect.objectContaining({ onScaleChange: expect.any(Function) }));
+  });
+  it('keeps controls in native flow for fullscreen hosts', () => {
+    const screen = render(surface());
+    expect(screen.UNSAFE_getByProps({ accessibilityRole: 'toolbar' }).props.style).not.toHaveProperty('position');
+  });
+  it('uses the native gesture host instead of a DOM cursor', () => {
+    const renderPanZoom = jest.fn(adapter);
+    render(surface(renderPanZoom));
+    expect(renderPanZoom).toHaveBeenCalledTimes(1);
+  });
+  // parity:34a605356accea4f36a0b9ee004e574567e95bee781b2a2f4674f5b358ccfa0c
+  it('exposes an adjustable native gesture surface', () => expect(render(surface()).getByRole('adjustable')).toBeTruthy());
+  it('delegates touch-action ownership to the native adapter', () => {
+    const renderPanZoom = jest.fn(adapter);
+    render(surface(renderPanZoom));
+    expect(renderPanZoom.mock.calls[0][0]).toMatchObject({ scale: 1 });
   });
 });

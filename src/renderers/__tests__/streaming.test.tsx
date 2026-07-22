@@ -207,53 +207,59 @@ describe('streaming lifecycle', () => {
     expect(within(screen.getByTestId('parent')).getByText('nested')).toBeTruthy();
   });
 
-  it('fires streaming transitions exactly once and suppresses them in static mode', () => {
-    // parity:99688298181eb2b46dd99eb19cd98232fd5bb6639c3a3a98b71a014c40c3fbcb
-    // parity:e767efe890f35ce41ef72e37541c6f99fc9e93e77e9d2065bb3929cedd833249
-    // parity:1fde8592108ed192ae56e16220370d827f262370b1f909c8a4fa237ff5461f22
-    // parity:1cdea04f848288fe70736cbeb2198d0862018827301946cafa3ee5d527434de2
+  // parity:99688298181eb2b46dd99eb19cd98232fd5bb6639c3a3a98b71a014c40c3fbcb
+  it('fires onAnimationStart when isAnimating transitions from false to true', () => {
+    const onAnimationStart = jest.fn();
+    const screen = render(<Streamdown isAnimating={false} onAnimationStart={onAnimationStart}>text</Streamdown>);
+    screen.rerender(<Streamdown isAnimating onAnimationStart={onAnimationStart}>text</Streamdown>);
+    expect(onAnimationStart).toHaveBeenCalledTimes(1);
+  });
+
+  // parity:e767efe890f35ce41ef72e37541c6f99fc9e93e77e9d2065bb3929cedd833249
+  it('fires onAnimationEnd when isAnimating transitions from true to false', () => {
+    const onAnimationEnd = jest.fn();
+    const screen = render(<Streamdown isAnimating onAnimationEnd={onAnimationEnd}>text</Streamdown>);
+    screen.rerender(<Streamdown isAnimating={false} onAnimationEnd={onAnimationEnd}>text</Streamdown>);
+    expect(onAnimationEnd).toHaveBeenCalledTimes(1);
+  });
+
+  // parity:1fde8592108ed192ae56e16220370d827f262370b1f909c8a4fa237ff5461f22
+  it('does not fire callbacks while isAnimating is unchanged across rerenders', () => {
     const onAnimationStart = jest.fn();
     const onAnimationEnd = jest.fn();
     const screen = render(<Streamdown isAnimating={false} onAnimationStart={onAnimationStart} onAnimationEnd={onAnimationEnd}>text</Streamdown>);
-    screen.rerender(<Streamdown isAnimating onAnimationStart={onAnimationStart} onAnimationEnd={onAnimationEnd}>text</Streamdown>);
-    screen.rerender(<Streamdown isAnimating onAnimationStart={onAnimationStart} onAnimationEnd={onAnimationEnd}>updated</Streamdown>);
     screen.rerender(<Streamdown isAnimating={false} onAnimationStart={onAnimationStart} onAnimationEnd={onAnimationEnd}>updated</Streamdown>);
-    expect(onAnimationStart).toHaveBeenCalledTimes(1);
-    expect(onAnimationEnd).toHaveBeenCalledTimes(1);
-
-    screen.rerender(<Streamdown mode="static" isAnimating onAnimationStart={onAnimationStart} onAnimationEnd={onAnimationEnd}>updated</Streamdown>);
-    screen.rerender(<Streamdown mode="static" isAnimating={false} onAnimationStart={onAnimationStart} onAnimationEnd={onAnimationEnd}>updated</Streamdown>);
-    expect(onAnimationStart).toHaveBeenCalledTimes(1);
-    expect(onAnimationEnd).toHaveBeenCalledTimes(1);
-
-    screen.rerender(<Streamdown isAnimating={false} onAnimationStart={onAnimationStart} onAnimationEnd={onAnimationEnd}>updated</Streamdown>);
-    expect(onAnimationStart).toHaveBeenCalledTimes(1);
-    expect(onAnimationEnd).toHaveBeenCalledTimes(1);
+    expect(onAnimationStart).not.toHaveBeenCalled();
+    expect(onAnimationEnd).not.toHaveBeenCalled();
   });
 
-  it('fires start once on an animating mount, never end on an idle mount, and uses current callbacks', () => {
-    // parity:f8d5cbb329e4ebbc5fc8c69783d8e708f1b3dd5f73f5722351a8c8de0bbf29fe
-    // parity:be7e35e2e73a2f8835635b99e1db260a7e2877fd62ad1ecdd2792ac0b04636bf
-    const oldStart = jest.fn();
-    const currentStart = jest.fn();
-    const onEnd = jest.fn();
-    const active = render(<Streamdown isAnimating onAnimationStart={oldStart}>text</Streamdown>);
-    active.rerender(<Streamdown isAnimating onAnimationStart={currentStart}>text</Streamdown>);
-    expect(oldStart).toHaveBeenCalledTimes(1);
-    expect(currentStart).not.toHaveBeenCalled();
+  // parity:1cdea04f848288fe70736cbeb2198d0862018827301946cafa3ee5d527434de2
+  it('suppresses animation callbacks in static mode', () => {
+    const onAnimationStart = jest.fn();
+    const onAnimationEnd = jest.fn();
+    const screen = render(<Streamdown mode="static" isAnimating={false} onAnimationStart={onAnimationStart} onAnimationEnd={onAnimationEnd}>text</Streamdown>);
+    screen.rerender(<Streamdown mode="static" isAnimating onAnimationStart={onAnimationStart} onAnimationEnd={onAnimationEnd}>updated</Streamdown>);
+    screen.rerender(<Streamdown mode="static" isAnimating={false} onAnimationStart={onAnimationStart} onAnimationEnd={onAnimationEnd}>updated</Streamdown>);
+    expect(onAnimationStart).not.toHaveBeenCalled();
+    expect(onAnimationEnd).not.toHaveBeenCalled();
+  });
 
-    const idle = render(<Streamdown isAnimating={false} onAnimationEnd={onEnd}>text</Streamdown>);
-    expect(onEnd).not.toHaveBeenCalled();
-    idle.rerender(<Streamdown isAnimating onAnimationStart={currentStart} onAnimationEnd={onEnd}>text</Streamdown>);
-    expect(currentStart).toHaveBeenCalledTimes(1);
-    idle.rerender(<Streamdown isAnimating={false} onAnimationStart={currentStart} onAnimationEnd={onEnd}>text</Streamdown>);
-    expect(onEnd).toHaveBeenCalledTimes(1);
+  // parity:f8d5cbb329e4ebbc5fc8c69783d8e708f1b3dd5f73f5722351a8c8de0bbf29fe
+  it('fires onAnimationStart once on an animating initial mount', () => {
+    const onAnimationStart = jest.fn();
+    const screen = render(<Streamdown isAnimating onAnimationStart={onAnimationStart}>text</Streamdown>);
+    screen.rerender(<Streamdown isAnimating onAnimationStart={onAnimationStart}>updated</Streamdown>);
+    expect(onAnimationStart).toHaveBeenCalledTimes(1);
+  });
+
+  // parity:be7e35e2e73a2f8835635b99e1db260a7e2877fd62ad1ecdd2792ac0b04636bf
+  it('does not fire onAnimationEnd on an idle initial mount', () => {
+    const onAnimationEnd = jest.fn();
+    render(<Streamdown isAnimating={false} onAnimationEnd={onAnimationEnd}>text</Streamdown>);
+    expect(onAnimationEnd).not.toHaveBeenCalled();
   });
 
   it('reacts to caret, completion, and reduced-motion animation inputs', () => {
-    // parity:7d37a5ba3815bdd09ad550d41f9d0737d24564da699eca5b0b9411b3e33329b0
-    // parity:ffcd56eeedc283b8f42e0ccf5928575fac310f158f81a6dd0853613d1487d440
-    // parity:c20c1940c0ffd0d859e00ed5f441ffa2d0d1332d569864401efbb41cc0af70dc
     const screen = render(<Streamdown animated caret="block" isAnimating reducedMotion={false}>AB</Streamdown>);
     expect(screen.getByTestId('streamdown-caret').props.children).toContain('▋');
     expect(screen.getAllByTestId('streamdown-new-content').length).toBeGreaterThan(0);
@@ -265,9 +271,28 @@ describe('streaming lifecycle', () => {
     screen.rerender(<Streamdown animated caret="circle" isAnimating isComplete>ABC</Streamdown>);
     expect(screen.queryByTestId('streamdown-caret')).toBeNull();
   });
+  // parity:c20c1940c0ffd0d859e00ed5f441ffa2d0d1332d569864401efbb41cc0af70dc
+  it('changes the native caret glyph when the caret prop and content change', () => {
+    const screen = render(<Streamdown caret="block" isAnimating>AB</Streamdown>);
+    expect(screen.getByTestId('streamdown-caret').props.children).toContain('▋');
+    screen.rerender(<Streamdown caret="circle" isAnimating>ABC</Streamdown>);
+    expect(screen.getByTestId('streamdown-caret').props.children).toContain('●');
+  });
 
+  // parity:7d37a5ba3815bdd09ad550d41f9d0737d24564da699eca5b0b9411b3e33329b0
+  it('renders a block caret while animation is active', () => {
+    const screen = render(<Streamdown caret="block" isAnimating>AB</Streamdown>);
+    expect(screen.getByTestId('streamdown-caret').props.children).toContain('▋');
+  });
+
+  // parity:ffcd56eeedc283b8f42e0ccf5928575fac310f158f81a6dd0853613d1487d440
+  it('renders a circle caret while animation is active', () => {
+    const screen = render(<Streamdown caret="circle" isAnimating>AB</Streamdown>);
+    expect(screen.getByTestId('streamdown-caret').props.children).toContain('●');
+  });
+
+  // parity:9d37c393b0d6057cc3708f7e10029403ee0fe36c1eef5582ea64fde533b4ba9c
   it('marks only the newly visible suffix for animation', () => {
-    // parity:9d37c393b0d6057cc3708f7e10029403ee0fe36c1eef5582ea64fde533b4ba9c
     const screen = render(<Streamdown animated isAnimating reducedMotion={false}>1. AB</Streamdown>);
     expect(screen.getByTestId('streamdown-new-content').props.children).toBe('AB');
     screen.rerender(<Streamdown animated isAnimating reducedMotion={false}>1. ABCD</Streamdown>);

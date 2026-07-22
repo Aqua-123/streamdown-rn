@@ -110,7 +110,7 @@ describe('streamdown-code companion native adaptations', () => {
     expect(typeof plugin.getSupportedLanguages).toBe('function');
     expect(typeof plugin.getThemes).toBe('function');
   });
-  // parity:5f39069b19f90c0766c629130933f25c7c8367d30688e42d2d710ed4a4de2ebf
+  // parity:8c99f8ddc77b7714024740580002c421cf8aaf4471b6a38f539e5888e67d9d01
   it('preserves custom theme objects', () => {
     const light = { name: 'light', colors: { background: '#fff' } };
     const dark = { name: 'dark', colors: { background: '#000' } };
@@ -121,12 +121,16 @@ describe('streamdown-code companion native adaptations', () => {
     const dark = { name: 'dark' };
     expect(createCodePlugin({ themes: ['github-light', dark] }).getThemes()).toEqual(['github-light', dark]);
   });
-  // parity:fce462d901a24c3d758ab1c065e4fa5a058fad2558845ac0e32752538aa110a1
+  // parity:5f39069b19f90c0766c629130933f25c7c8367d30688e42d2d710ed4a4de2ebf
   it('keys unnamed theme objects without throwing', async () => {
     const unnamed = { colors: { background: '#fff' } };
     await expect(resolveHighlight(createCodePlugin({ provider: provider() }), request('x', 'javascript', [unnamed, 'dark']))).resolves.toEqual(expect.objectContaining({ tokens: expect.any(Array) }));
   });
-  // parity:8c99f8ddc77b7714024740580002c421cf8aaf4471b6a38f539e5888e67d9d01
+  // parity:fce462d901a24c3d758ab1c065e4fa5a058fad2558845ac0e32752538aa110a1
+  it('uses the custom fallback key when a theme object name is undefined', async () => {
+    const unnamed = { colors: { background: '#fff' } };
+    await expect(resolveHighlight(createCodePlugin({ provider: provider() }), request('x', 'javascript', [unnamed, 'dark']))).resolves.toEqual(expect.objectContaining({ tokens: expect.any(Array) }));
+  });
   it('passes custom themes to the token provider', async () => {
     const light = { name: 'custom-light' };
     const dark = { name: 'custom-dark' };

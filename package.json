@@ -86,6 +86,7 @@
     "benchmark:hermes:self-test": "node scripts/benchmarks/verify-hermes.mjs --self-test",
     "parity:refresh": "bun scripts/parity/inventory.ts --source .reference/streamdown",
     "parity:validate": "bun scripts/parity/validate.ts",
+    "parity:proof": "bun scripts/parity/prove.ts",
     "parity:drift": "bun scripts/parity/check-drift.ts",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0",
     "type-check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tools.json --noEmit",
@@ -98,7 +99,7 @@
     "release:verify": "node scripts/release/verify.mjs",
     "release:publish": "bunx changeset publish",
     "changeset:verify": "node scripts/release/changesets.mjs",
-    "ci:hosted": "bun run lint && bun run type-check && bun run test --silent && bun run test:parity --silent && bun run test:device-contract --silent && bun run visual:verify && bun run parity:validate && bun run parity:drift --candidate-root .reference/streamdown && bun run build && bun run docs:verify && bun run licenses:verify && bun run advisories:verify && bun run release:report:verify && bun run changeset:verify && bun run pack:verify && bun run pack:verify-optional-renderers"
+    "ci:hosted": "bun run lint && bun run type-check && bun run parity:proof && bun run test:device-contract --silent && bun run visual:verify && bun run parity:drift --candidate-root .reference/streamdown && bun run build && bun run docs:verify && bun run licenses:verify && bun run advisories:verify && bun run release:report:verify && bun run changeset:verify && bun run pack:verify && bun run pack:verify-optional-renderers"
   },
   "peerDependencies": {
     "react": "^19.0.0",

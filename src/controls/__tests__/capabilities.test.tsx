@@ -7,12 +7,7 @@ import { defaultNativeCapabilities } from '../../platform/defaults';
 
 describe('NativeLink', () => {
   afterEach(() => jest.restoreAllMocks());
-  // parity:839467b2e467d7311febe88560595f2a2fe8f44582d0e3237ba831b85f87ac9b
-  // parity:66746be75f362ef5109f549947b752189916d701e82c2cbbf0441ab327cbf22d
   // parity:288ee932750c67fe1dcc49127fbe62836d51e9c645353984d2933cdf473c852f
-  // parity:5909f6e02f1256031e94fde95019c5af13edcc69ced8edc5c1d48721f72d70eb
-  // parity:e657147a3fb108bddc2891fe3b716c09c1aafc86a199cd5e6f5f37ac57a533e7
-  // parity:beeb7bbfbec9eba65bd3e5d4f4a46da18006e917dedfa2504d7a5bfaa5c07684
   it('approves a safe URL before opening it', async () => {
     const calls: string[] = [];
     const approve = jest.fn(async () => { calls.push('approve'); return { status: 'success' as const }; });
@@ -35,7 +30,38 @@ describe('NativeLink', () => {
     }));
   });
 
-  it.each(['denied', 'cancelled'] as const)('keeps a %s link inert and reports the state', async (status) => {
+  // parity:839467b2e467d7311febe88560595f2a2fe8f44582d0e3237ba831b85f87ac9b
+  it('opens directly after a successful host link check', async () => {
+    const approve = jest.fn(async () => ({ status: 'success' as const }));
+    const open = jest.fn(async () => ({ status: 'success' as const }));
+    const screen = render(<NativeLink url="https://example.com" capabilities={{ links: { approve, open } }}><Text>Example</Text></NativeLink>);
+    fireEvent.press(screen.getByRole('link'));
+    await waitFor(() => expect(open).toHaveBeenCalledWith('https://example.com'));
+  });
+
+  // parity:5909f6e02f1256031e94fde95019c5af13edcc69ced8edc5c1d48721f72d70eb
+  it('waits for an asynchronous host link check before opening', async () => {
+    let resolveApproval!: (value: { status: 'success' }) => void;
+    const approve = jest.fn(() => new Promise<{ status: 'success' }>((resolve) => { resolveApproval = resolve; }));
+    const open = jest.fn(async () => ({ status: 'success' as const }));
+    const screen = render(<NativeLink url="https://example.com" capabilities={{ links: { approve, open } }}><Text>Example</Text></NativeLink>);
+    fireEvent.press(screen.getByRole('link'));
+    expect(screen.getByRole('link').props.accessibilityState).toEqual({ busy: true });
+    expect(open).not.toHaveBeenCalled();
+    resolveApproval({ status: 'success' });
+    await waitFor(() => expect(open).toHaveBeenCalledWith('https://example.com'));
+  });
+
+  it('intercepts a safe link through the native approval capability', async () => {
+    const approve = jest.fn(async () => ({ status: 'cancelled' as const }));
+    const open = jest.fn();
+    const screen = render(<NativeLink url="https://example.com" capabilities={{ links: { approve, open } }}><Text>Example</Text></NativeLink>);
+    fireEvent.press(screen.getByRole('link'));
+    await waitFor(() => expect(approve).toHaveBeenCalled());
+    expect(open).not.toHaveBeenCalled();
+  });
+
+  it.each([/* parity:66746be75f362ef5109f549947b752189916d701e82c2cbbf0441ab327cbf22d */ ['denied', 'denied'], ['cancelled', 'cancelled']] as const)('keeps a %s link inert and reports the state', async (status, expectedStatus) => {
     const open = jest.fn();
     const onResult = jest.fn();
     const screen = render(
@@ -49,7 +75,7 @@ describe('NativeLink', () => {
     );
 
     fireEvent.press(screen.getByRole('link'));
-    await waitFor(() => expect(onResult).toHaveBeenCalledWith(expect.objectContaining({ status })));
+    await waitFor(() => expect(onResult).toHaveBeenCalledWith(expect.objectContaining({ status: expectedStatus })));
     expect(open).not.toHaveBeenCalled();
   });
 
@@ -109,6 +135,7 @@ describe('NativeLink', () => {
     await waitFor(() => expect(openURL).toHaveBeenCalledWith('https://example.com'));
   });
 
+  // parity:beeb7bbfbec9eba65bd3e5d4f4a46da18006e917dedfa2504d7a5bfaa5c07684
   it('passes translated approval labels to the native adapter', async () => {
     const approve = jest.fn().mockResolvedValue({ status: 'cancelled' });
     const screen = render(
@@ -134,5 +161,14 @@ describe('NativeLink', () => {
     await waitFor(() => expect(approve).toHaveBeenCalledWith('https://example.com', expect.objectContaining({
       title: 'Externen Link öffnen?', cancel: 'Schließen', open: 'Link öffnen',
     })));
+  });
+  // parity:e657147a3fb108bddc2891fe3b716c09c1aafc86a199cd5e6f5f37ac57a533e7
+  it('passes default LinkSafetyModal translations to the native approval adapter', async () => {
+    const approve = jest.fn().mockResolvedValue({ status: 'cancelled' });
+    const screen = render(<NativeLink url="https://example.com" capabilities={{ links: { approve, open: jest.fn() } }}><Text>Example</Text></NativeLink>);
+    fireEvent.press(screen.getByRole('link'));
+    await waitFor(() => expect(approve).toHaveBeenCalledWith('https://example.com', {
+      title: 'Open external link?', message: "You're about to visit an external website.", cancel: 'Close', open: 'Open link',
+    }));
   });
 });

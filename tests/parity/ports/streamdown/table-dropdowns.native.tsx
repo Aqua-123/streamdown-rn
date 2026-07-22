@@ -6,10 +6,52 @@ import { tableFileRequest } from '../../../../src/controls/serialization';
 
 describe('table format dropdowns', () => {
   const table = { headers: ['A'], rows: [['B']] };
+  const capabilities = {
+    clipboard: { writeText: jest.fn(() => ({ status: 'success' as const })) },
+    files: { save: jest.fn(() => ({ status: 'success' as const })) },
+  };
+
+  it('closes the download dropdown from the native outside-dismiss surface', () => {
+    const screen = render(<TableControls table={table} capabilities={capabilities} translations={defaultTranslations}><Text>body</Text></TableControls>);
+    fireEvent.press(screen.getByRole('button', { name: 'Download table' }));
+    fireEvent.press(screen.UNSAFE_getByProps({ testID: 'dropdown-dismiss' }));
+    expect(screen.UNSAFE_queryByProps({ accessibilityRole: 'menu' })).toBeNull();
+  });
+  // parity:b901d8eac877500ca9d3c52dd819e5b8929c2d771f705fbb5cbf8313ed34256f
+  it('closes the copy dropdown from the native outside-dismiss surface', () => {
+    const screen = render(<TableControls table={table} capabilities={capabilities} translations={defaultTranslations}><Text>body</Text></TableControls>);
+    fireEvent.press(screen.getByRole('button', { name: 'Copy table' }));
+    fireEvent.press(screen.UNSAFE_getByProps({ testID: 'dropdown-dismiss' }));
+    expect(screen.UNSAFE_queryByProps({ accessibilityRole: 'menu' })).toBeNull();
+  });
+
+  it('reports a failed table download and keeps the selection available', async () => {
+    const screen = render(<TableControls table={table} capabilities={{ files: { save: async () => { throw new Error('download failed'); } } }} translations={defaultTranslations}><Text>body</Text></TableControls>);
+    fireEvent.press(screen.getByRole('button', { name: 'Download table' }));
+    fireEvent.press(screen.getByRole('menuitem', { name: 'Download table as CSV' }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('download failed'));
+    expect(screen.getByRole('menuitem', { name: 'Download table as CSV' })).toBeTruthy();
+  });
+
+  // parity:0311c9ae62eb092651ea608da552aae4a21ad9522e2eafca86eafaf66ca01722
+  it('reports a failed clipboard write and keeps the copy selection available', async () => {
+    const screen = render(<TableControls table={table} capabilities={{ clipboard: { writeText: async () => { throw new Error('copy failed'); } } }} translations={defaultTranslations}><Text>body</Text></TableControls>);
+    fireEvent.press(screen.getByRole('button', { name: 'Copy table' }));
+    fireEvent.press(screen.getByRole('menuitem', { name: 'Copy table as CSV' }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('copy failed'));
+    expect(screen.getByRole('menuitem', { name: 'Copy table as CSV' })).toBeTruthy();
+  });
+
+  // parity:d6903a7fe748d253326f99b5947b424f7c02863761a7e8f821ff9788362c80cd
   it('provides direct CSV/Markdown downloads with CSV as the default file outcome', () => {
     expect(tableFileRequest(table, 'csv')).toMatchObject({ extension: 'csv' });
     expect(tableFileRequest(table, 'markdown')).toMatchObject({ extension: 'md' });
   });
+  // parity:0104e4c89e2a499fe0e2a5af9a377955a9df08248cc9ef60085dda2a772fc302
+  it('downloads Markdown with the native md file extension', () => {
+    expect(tableFileRequest(table, 'markdown')).toMatchObject({ extension: 'md' });
+  });
+  // parity:d1c4498e776ceb036574b022bc40433969607eb80fad6949daed71b16c8644d7
   it('opens one labelled menu, switches formats, and dismisses outside or through the system', () => {
     const screen = render(<TableControls table={table} capabilities={{
       clipboard: { writeText: jest.fn(() => ({ status: 'success' })) },

@@ -2,12 +2,12 @@ import { renderedText } from './native-cluster-helpers';
 
 describe('multiline HTML stays inert and readable', () => {
   it.each([
-    ['<details>\n<summary>Summary</summary>\n\nParagraph inside details.\n</details>', ['Summary', 'Paragraph inside details']],
-    ['<div>\n\nParagraph inside div.\n</div>', ['Paragraph inside div']],
-    ['<details>\n<summary>Summary</summary>\n\nFirst paragraph.\n\nSecond paragraph.\n</details>', ['First paragraph', 'Second paragraph']],
-    ['<div>\n<details>\n<summary>Nested Summary</summary>\n\nContent in nested structure.\n</details>\n</div>', ['Nested Summary', 'Content in nested structure']],
-    ['<p>Before image</p>\n<img src="https://example.com/image.jpg" alt="Test Image">\n<p>After image</p>', ['Before image', 'Test Image', 'After image']],
-  ])('preserves source text without executing HTML', (markdown, expected) => {
+    ['details', '<details>\n<summary>Summary</summary>\n\nParagraph inside details.\n</details>', ['Summary', 'Paragraph inside details']],
+    ['div', '<div>\n\nParagraph inside div.\n</div>', ['Paragraph inside div']],
+    ['multiple paragraphs', '<details>\n<summary>Summary</summary>\n\nFirst paragraph.\n\nSecond paragraph.\n</details>', ['First paragraph', 'Second paragraph']],
+    ['nested structure', '<div>\n<details>\n<summary>Nested Summary</summary>\n\nContent in nested structure.\n</details>\n</div>', ['Nested Summary', 'Content in nested structure']],
+    ['self-closing image', '<p>Before image</p>\n<img src="https://example.com/image.jpg" alt="Test Image">\n<p>After image</p>', ['Before image', 'Test Image', 'After image']],
+  ])('preserves %s source text without executing HTML', (_caseName, markdown, expected) => {
     const text = renderedText(markdown);
     expected.forEach((value) => expect(text).toContain(value));
     expect(text).toContain(markdown.slice(0, markdown.indexOf('>') + 1));

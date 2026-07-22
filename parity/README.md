@@ -9,7 +9,13 @@ bun run parity:refresh
 bun run parity:validate
 ```
 
-`implemented` entries must point to a real target test containing their `parity:<id>` marker. `adapted`, `browser-only`, and `known-upstream-bug` entries require evidence; browser-only exclusions cannot be a bare N/A, and known upstream bugs require both upstream and corrected-regression evidence.
+`implemented` exact and adapted entries must point to a real target test containing their `parity:<id>` marker and a unique Jest proof in that same file. Runtime proof rejects missing, skipped, failed, reused, or assertion-free cases:
+
+```sh
+bun run parity:proof
+```
+
+The pin currently requires 1,383 source-attested executable proofs. The 126 `browser-only` and 2 `known-upstream-bug` entries retain case-specific non-executable evidence; browser-only exclusions cannot be a bare N/A, and known upstream bugs require both upstream and corrected-regression evidence. An adapted proof asserts the documented native behavior rather than claiming DOM implementation equivalence.
 
 Upstream drift is intentionally advisory and never rewrites the pin:
 

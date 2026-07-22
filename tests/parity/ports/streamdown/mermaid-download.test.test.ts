@@ -18,8 +18,34 @@ const renderBlock = (extra = {}) => {
 };
 
 describe('Mermaid native downloads', () => {
-  // parity:b059ab0f729b96460aa30f1651ac3c084fd3d1d19c808f7a00d2e2a1f10f5433
+  it('keeps the menu open and reports a native save error', async () => {
+    const save = jest.fn(() => { throw new Error('save failed'); });
+    const { screen } = renderBlock({ capabilities: { files: { save } } });
+    await waitFor(() => expect(screen.getByText('Chart')).toBeTruthy());
+    fireEvent.press(screen.getByRole('button', { name: 'Download diagram' }));
+    fireEvent.press(screen.getByRole('menuitem', { name: 'Download diagram as MMD' }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('save failed'));
+    expect(screen.UNSAFE_getByProps({ accessibilityRole: 'menu' })).toBeTruthy();
+  });
+
   // parity:482a1a7588e71a5bdaf9aafe2255e4003f7d1679406ec98badfa499cf62d023c
+  it('closes the download menu through its native outside-dismiss surface', async () => {
+    const { screen } = renderBlock();
+    await waitFor(() => expect(screen.getByText('Chart')).toBeTruthy());
+    fireEvent.press(screen.getByRole('button', { name: 'Download diagram' }));
+    fireEvent.press(screen.UNSAFE_getByProps({ testID: 'dropdown-dismiss' }));
+    expect(screen.UNSAFE_queryByProps({ accessibilityRole: 'menu' })).toBeNull();
+  });
+
+  // parity:885267c56b44aab79a11d59fcf89f15a9b05985dad58e6e0e04154e17f5601c3
+  it('does not open the download menu while animation disables controls', async () => {
+    const { screen } = renderBlock({ disabled: true });
+    await waitFor(() => expect(screen.getByText('Chart')).toBeTruthy());
+    fireEvent.press(screen.getByRole('button', { name: 'Download diagram' }));
+    expect(screen.UNSAFE_queryByProps({ accessibilityRole: 'menu' })).toBeNull();
+  });
+
+  // parity:b059ab0f729b96460aa30f1651ac3c084fd3d1d19c808f7a00d2e2a1f10f5433
   it('opens one download menu with only the available formats', async () => {
     const { screen } = renderBlock();
     await waitFor(() => expect(screen.getByText('Chart')).toBeTruthy());
@@ -31,9 +57,6 @@ describe('Mermaid native downloads', () => {
     expect(screen.getByRole('menuitem', { name: 'Download diagram as PNG' })).toBeTruthy();
   });
 
-  // parity:6f7271eac73df04250edc95e1063decbca06fd67c0f4f9c80c6c496b325ec7bd
-  // parity:e63daa3212f9a3378a6b4ed020b57bda1ee916b2e82ac9684a4ce38437df7697
-  // parity:c7a846154dd23ab9779867955db79c8189c34230d26eebf1233df2f5f110aa53
   it('sends exact MMD, SVG, and PNG payloads to the native file capability', async () => {
     const { save, screen } = renderBlock();
     await waitFor(() => expect(screen.getByText('Chart')).toBeTruthy());
@@ -47,13 +70,37 @@ describe('Mermaid native downloads', () => {
     expect(save.mock.calls[2][0]).toMatchObject({ extension: 'png', content: result.png });
   });
 
+  // parity:e63daa3212f9a3378a6b4ed020b57bda1ee916b2e82ac9684a4ce38437df7697
+  it('downloads the exact SVG payload through the native file capability', async () => {
+    const { save, screen } = renderBlock();
+    await waitFor(() => expect(screen.getByText('Chart')).toBeTruthy());
+    fireEvent.press(screen.getByRole('button', { name: 'Download diagram' }));
+    fireEvent.press(screen.getByRole('menuitem', { name: 'Download diagram as SVG' }));
+    await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({ extension: 'svg', content: '<svg></svg>' })));
+  });
+  // parity:6f7271eac73df04250edc95e1063decbca06fd67c0f4f9c80c6c496b325ec7bd
+  it('downloads the exact MMD source through the native file capability', async () => {
+    const { save, screen } = renderBlock();
+    await waitFor(() => expect(screen.getByText('Chart')).toBeTruthy());
+    fireEvent.press(screen.getByRole('button', { name: 'Download diagram' }));
+    fireEvent.press(screen.getByRole('menuitem', { name: 'Download diagram as MMD' }));
+    await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({ extension: 'mmd', content: source })));
+  });
+
+  // parity:c7a846154dd23ab9779867955db79c8189c34230d26eebf1233df2f5f110aa53
+  it('downloads the exact PNG payload through the native file capability', async () => {
+    const { save, screen } = renderBlock();
+    await waitFor(() => expect(screen.getByText('Chart')).toBeTruthy());
+    fireEvent.press(screen.getByRole('button', { name: 'Download diagram' }));
+    fireEvent.press(screen.getByRole('menuitem', { name: 'Download diagram as PNG' }));
+    await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({ extension: 'png', content: result.png })));
+  });
+
   // parity:cb2f29da43db155a83f8d059ea3528bab843d3a814f4f7dc4ae9240a21175d80
   it('fails closed for an empty SVG rather than writing an invalid native file', () => {
     expect(() => mermaidFileRequest(source, { kind: 'native', content: null, svg: '' }, 'svg')).toThrow('Mermaid SVG is unavailable');
   });
 
-  // parity:bf4fee54751ee9b1de7895bab59eabfed684fda316e87e03003cc427de811cb0
-  // parity:1988312699736eeeeca4ea2ce9d439bd8fc1fc7cc8b5ba9f78391ab556d68334
   it('reports thrown and missing-adapter failures through the plugin error contract', async () => {
     const thrown = jest.fn();
     await expect(createMermaidPlugin({ onError: thrown, adapter: { families: ['flowchart'], render: () => { throw new Error('bad render'); } } }).render(source)).rejects.toThrow('bad render');
@@ -63,7 +110,20 @@ describe('Mermaid native downloads', () => {
     expect(missing).toHaveBeenCalled();
   });
 
-  // parity:885267c56b44aab79a11d59fcf89f15a9b05985dad58e6e0e04154e17f5601c3
+  // parity:bf4fee54751ee9b1de7895bab59eabfed684fda316e87e03003cc427de811cb0
+  it('reports a thrown Mermaid render failure through the plugin error contract', async () => {
+    const onError = jest.fn();
+    await expect(createMermaidPlugin({ onError, adapter: { families: ['flowchart'], render: () => { throw new Error('bad render'); } } }).render(source)).rejects.toThrow('bad render');
+    expect(onError).toHaveBeenCalledWith(expect.any(Error));
+  });
+
+  // parity:1988312699736eeeeca4ea2ce9d439bd8fc1fc7cc8b5ba9f78391ab556d68334
+  it('reports a missing Mermaid adapter through the plugin error contract', async () => {
+    const onError = jest.fn();
+    await expect(createMermaidPlugin({ onError }).render(source)).rejects.toThrow('No Mermaid adapter');
+    expect(onError).toHaveBeenCalledWith(expect.any(Error));
+  });
+
   it('disables the download trigger while streaming animation is active', async () => {
     const { screen } = renderBlock({ disabled: true });
     await waitFor(() => expect(screen.getByText('Chart')).toBeTruthy());

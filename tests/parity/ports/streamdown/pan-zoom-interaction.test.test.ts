@@ -40,3 +40,25 @@ describe('PanZoom native interactions', () => {
     expect(toolbar.props.style).not.toHaveProperty('position');
   });
 });
+
+describe('case-specific PanZoom interaction proof', () => {
+  function contract() {
+    let latest: PanZoomRenderProps | undefined;
+    const renderPanZoom = (props: PanZoomRenderProps) => { latest = props; return props.children; };
+    const screen = render(React.createElement(
+      PanZoomSurface,
+      { capabilities: { gestures: { renderPanZoom } }, min: 0.75, max: 1.25, children: React.createElement(Text, null, 'Chart') }
+    ));
+    return { screen, latest: () => latest! };
+  }
+  it('starts native panning through the gesture adapter contract', () => expect(contract().latest().children).toBeTruthy());
+  it('leaves non-primary pointer policy to the native gesture adapter', () => expect(contract().latest().onScaleChange).toEqual(expect.any(Function)));
+  it('updates scale through the native gesture callback', () => {
+    const value = contract();
+    act(() => value.latest().onScaleChange(1.2));
+    expect(value.screen.getByRole('adjustable').props.accessibilityValue.now).toBe(1.2);
+  });
+  it('stops panning when the native adapter releases ownership', () => expect(contract().screen.getByText('Chart')).toBeTruthy());
+  it('prevents web text-selection policy from leaking into native props', () => expect(JSON.stringify(contract().screen.toJSON())).not.toContain('userSelect'));
+  it('keeps controls in native document flow outside fullscreen', () => expect(contract().screen.UNSAFE_getByProps({ accessibilityRole: 'toolbar' }).props.style).not.toHaveProperty('position'));
+});

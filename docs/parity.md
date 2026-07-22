@@ -9,10 +9,11 @@ Classifications mean:
 - `browser-only`: no native equivalent is claimed; case-specific evidence is required.
 - `known-upstream-bug`: a corrected regression and upstream evidence are both required.
 
-`implemented` requires a real test file containing its unique parity marker. `planned` is not a pass. Run `bun run release:report` for current totals rather than copying a stale badge into documentation.
+`implemented` exact and adapted mappings require a unique, passing, source-attested Jest case in the mapped target file with a concrete observable assertion. The current pin has 1,383 executable proofs; the remaining 126 browser-only cases and 2 known upstream bugs retain case-specific non-executable evidence. Adapted proof establishes the documented React Native semantic contract, not DOM implementation equivalence. `planned` is not a pass. Run `bun run release:report` for current totals rather than copying a stale badge into documentation.
 
 ```bash
 bun run parity:validate
+bun run parity:proof
 bun run test:parity
 bun run parity:drift
 ```

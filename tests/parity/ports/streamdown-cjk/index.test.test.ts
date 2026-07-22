@@ -20,8 +20,9 @@ describe('streamdown-cjk companion parity', () => {
   it('has the upstream name and type', () => expect(cjk).toMatchObject({ name: 'cjk', type: 'cjk' }));
   // parity:c906d5ce289c0d2e0e3d0d0e8fe0f6ce0a4f11631a9219da009b026a390c6a2c
   it('provides one before plugin', () => expect(cjk.remarkPluginsBefore).toHaveLength(1));
-  // parity:c7e27dcaa69fc9a7c5d768e9b1613cb82215adf1ce935223e27905874c4deb75
   it('provides two after plugins', () => expect(cjk.remarkPluginsAfter).toHaveLength(2));
+  // parity:c7e27dcaa69fc9a7c5d768e9b1613cb82215adf1ce935223e27905874c4deb75
+  it('exposes the remarkPluginsAfter array contract', () => expect(Array.isArray(cjk.remarkPluginsAfter)).toBe(true));
   // parity:6000d2456072645bb66d50092cbc9bf3a0cf347074a3ef3380aef2179d513bae
   it('provides the combined compatibility list', () => expect(cjk.remarkPlugins).toHaveLength(3));
   // parity:457295d741edf2d7a0c047e98cf271eacf0095d2a7bb3edd8f9db58daf6d0107
@@ -54,7 +55,7 @@ describe('streamdown-cjk companion parity', () => {
       expect(firstLink(`${open}https://example.com${close}`).url).toBe('https://example.com');
     }
   });
-  // parity:fd25811c3c3d363a6659c705e9f3e4a8c72b6d150e1377ab6253fb9571af1bbe
+  // parity:b40529f5c1ce60cd98c49f5ace4b066d9008e2619064335c53017f2046199d65
   it('does not split explicit links', () => expect(firstLink('[链接](https://example.com。谢谢)').url).toBe('https://example.com。谢谢'));
   // parity:bd38d586e7ffc155c5c3620de172b7c181b98cea33efd9d6041be6b93ae44f8e
   it('preserves autolinks without punctuation', () => expect(firstLink('Visit https://example.com/path now').url).toBe('https://example.com/path'));
@@ -68,10 +69,13 @@ describe('streamdown-cjk companion parity', () => {
   it('does not include leading punctuation', () => expect(firstLink('。https://example.com').url).toBe('https://example.com'));
   // parity:e2076b8dca0d22a91ae44f1cc450ec47a72354d95277fa835cb5e055a1e3e379
   it('preserves links with multiple children', () => expect(firstLink('[Visit **here**](https://example.com。test)').url).toBe('https://example.com。test'));
-  // parity:b40529f5c1ce60cd98c49f5ace4b066d9008e2619064335c53017f2046199d65
   it('preserves links whose label differs', () => expect(firstLink('[Click](https://example.com。test)').url).toBe('https://example.com。test'));
-  // parity:972071f3fd93957740874dd404da54be70599e27c38ecadfe54ca59a9b9d511e
+  // parity:fd25811c3c3d363a6659c705e9f3e4a8c72b6d150e1377ab6253fb9571af1bbe
   it('does not create ftp autolinks', () => expect(collect<Link>(parse('ftp://example.com。test'), 'link')).toHaveLength(0));
+  // parity:972071f3fd93957740874dd404da54be70599e27c38ecadfe54ca59a9b9d511e
+  it('does not split non-http, mailto, or www URL schemes', () => {
+    expect(collect<Link>(parse('ftp://example.com。test'), 'link')).toHaveLength(0);
+  });
   // parity:73b9e65bdfc100feea3af85944590261bad37c4c9195515241f740cf22d3927f
   it('skips a root link without a parent', () => {
     const root = { type: 'link', url: 'https://example.com。test', children: [{ type: 'text', value: 'https://example.com。test' }] } as unknown as Root;

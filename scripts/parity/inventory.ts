@@ -53,7 +53,12 @@ export interface ManifestEntry {
   upstreamId: string;
   classification: "exact" | "adapted" | "browser-only" | "known-upstream-bug";
   status: "planned" | "implemented";
-  target: { path: string; assertion: string; marker: string };
+  target: {
+    path: string;
+    assertion: string;
+    marker: string;
+    proof?: { testFile: string; fullName: string };
+  };
   evidence?: {
     adaptation?: string;
     platform?: string;

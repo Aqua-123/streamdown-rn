@@ -33,12 +33,16 @@ describe('native renderer prop-aware memoization', () => {
   });
 
   it('resets when source positions cannot be preserved', () => {
-    // parity:e051d11977a1613be553d60d08b8e67a1a3bcbb281563f7f4c867997444f2791
     expect(classifyStreamUpdate('same prefix old', 'same prefix new').kind).toBe('reset');
   });
+  // parity:e051d11977a1613be553d60d08b8e67a1a3bcbb281563f7f4c867997444f2791
+  it('treats native stream-position compatibility asymmetrically', () => {
+    expect(classifyStreamUpdate('same prefix', 'same prefix appended').kind).toBe('append');
+    expect(classifyStreamUpdate('same prefix appended', 'same prefix').kind).toBe('reset');
+  });
 
+  // parity:c3fe4bdaebc2c362412e7f5cc78aedfda2e7bdbab52483a5c52e9db23d09bc57
   it('renders block code directly without a paragraph wrapper contract', () => {
-    // parity:c3fe4bdaebc2c362412e7f5cc78aedfda2e7bdbab52483a5c52e9db23d09bc57
     expect(render(React.createElement(Streamdown, { mode: 'static' }, '```\ncode\n```')).getByText('code')).toBeTruthy();
   });
 });

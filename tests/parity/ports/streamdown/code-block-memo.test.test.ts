@@ -5,8 +5,8 @@ import { Streamdown } from '../../../../src';
 import { createRendererPlugin } from '../../../../src/plugins/renderers';
 
 describe('native code blocks in streaming mode', () => {
+  // parity:275810975ac3b44cc643d0907a2327fdbba9f775515806334ee3aa40c3fd47a4
   it('does not re-render an unchanged finalized code block on later updates', () => {
-    // parity:275810975ac3b44cc643d0907a2327fdbba9f775515806334ee3aa40c3fd47a4
     let codeBlockRenderCount = 0;
     const CodeBlock = ({ code }: { code: string }) => {
       codeBlockRenderCount += 1;

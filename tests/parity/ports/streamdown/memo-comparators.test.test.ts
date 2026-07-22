@@ -18,24 +18,24 @@ describe('native memo comparator outcomes', () => {
     expect(renders).toBe(before);
   });
 
+  // parity:452699e53de63a2f98bb3fc32e7d6756cc2dcbe3e40e4959f419e9711b82901c
   it('renders the native footnote section', () => {
-    // parity:452699e53de63a2f98bb3fc32e7d6756cc2dcbe3e40e4959f419e9711b82901c
     expect(render(React.createElement(Streamdown, { mode: 'static' }, 'ref[^n]\n\n[^n]: note')).getByLabelText('Footnote n')).toBeTruthy();
   });
 
+  // parity:7dd7b6999d9b430dc9c90f44675e77cc8727e705eefa509dc978f997c3d563ec
   it('does not wrap block code as paragraph text', () => {
-    // parity:7dd7b6999d9b430dc9c90f44675e77cc8727e705eefa509dc978f997c3d563ec
     expect(render(React.createElement(Streamdown, { mode: 'static' }, '```\nblock\n```')).getByText('block')).toBeTruthy();
   });
 
+  // parity:2d811f45fea528bea203f5bda58c6964de94826f291ae70a81e51290eb2caf8d
   it('passes extracted inline-code text to native overrides', () => {
-    // parity:2d811f45fea528bea203f5bda58c6964de94826f291ae70a81e51290eb2caf8d
     const Override = ({ semantic }: { semantic: { value?: string } }) => React.createElement(Text, null, semantic.value);
     expect(render(React.createElement(Streamdown, { components: { inlineCode: Override as never }, mode: 'static' }, '`value`')).getByText('value')).toBeTruthy();
   });
 
+  // parity:c16e0cb5bfe707ecb296aecfdf667baeebdc241a7532023272166ebcd5fd220f
   it('honors nested native Mermaid pan/zoom configuration', () => {
-    // parity:c16e0cb5bfe707ecb296aecfdf667baeebdc241a7532023272166ebcd5fd220f
     expect(controlEnabled({ mermaid: { panZoom: false } }, 'mermaid', 'panZoom')).toBe(false);
     expect(controlEnabled({ mermaid: { panZoom: false } }, 'mermaid', 'copy')).toBe(true);
   });

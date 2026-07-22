@@ -7,8 +7,8 @@ import {
 } from '../../../../src/plugins/code';
 
 describe('native code block loading behavior', () => {
+  // parity:549ee0ddd902c9df90a7104b37994026914eec6900c055b3f0be6dc09de3d31f
   it('keeps plain code readable without a visual spinner while tokens load', () => {
-    // parity:549ee0ddd902c9df90a7104b37994026914eec6900c055b3f0be6dc09de3d31f
     const plugin = createCodePlugin({
       provider: {
         languages: ['javascript'],
@@ -27,8 +27,8 @@ describe('native code block loading behavior', () => {
     expect(screen.getByLabelText('Highlighting code').props.accessibilityState).toEqual({ busy: true });
   });
 
+  // parity:4286ae578d7e522b786c6c3cfd744f3be6ca18a8c4e875e28c2ad84858f4b718
   it('applies provider token styles only after asynchronous resolution', async () => {
-    // parity:4286ae578d7e522b786c6c3cfd744f3be6ca18a8c4e875e28c2ad84858f4b718
     let resolve!: (result: HighlightResult) => void;
     const plugin = createCodePlugin({
       provider: {

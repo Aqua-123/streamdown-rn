@@ -10,8 +10,6 @@ import {
 const table = { headers: ['Name', 'City'], rows: [['Zoë', '東京']] };
 
 describe('native control serialization', () => {
-  // parity:e6e16f2bbf4f3ff60c8c1af998eebbbf11950a2545cf61eae107e84cf86d797d
-  // parity:ab628a12d550497b2720fae5604c3496fcc780d7890b98ef37739ff447c5fa1d
   it('serializes table text in CSV, TSV, and Markdown', () => {
     expect(serializeTable(table, 'csv')).toBe('Name,City\nZoë,東京');
     expect(serializeTable(table, 'tsv')).toBe('Name\tCity\nZoë\t東京');
@@ -41,13 +39,14 @@ describe('native control serialization', () => {
   });
 
   it.each([
-    ['jsx', 'jsx'], ['tsx', 'tsx'], ['c', 'c'], ['cpp', 'cpp'], ['c++', 'cpp'],
+    /* parity:e6e16f2bbf4f3ff60c8c1af998eebbbf11950a2545cf61eae107e84cf86d797d */ ['jsx', 'jsx'], ['tsx', 'tsx'], ['c', 'c'], ['cpp', 'cpp'], ['c++', 'cpp'],
     ['csharp', 'cs'], ['c#', 'cs'], ['go', 'go'], ['java', 'java'], ['rust', 'rs'],
     ['rs', 'rs'], ['shellscript', 'sh'], ['sh', 'sh'],
   ])('maps %s code downloads to .%s', (language, extension) => {
     expect(codeFileRequest('source', language).extension).toBe(extension);
   });
 
+  // parity:ab628a12d550497b2720fae5604c3496fcc780d7890b98ef37739ff447c5fa1d
   it('keeps unknown code downloads on the .txt fallback', () => {
     expect(codeFileRequest('source', 'unknown').extension).toBe('txt');
   });

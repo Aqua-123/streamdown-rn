@@ -11,10 +11,56 @@ const props = (plugin: ReturnType<typeof createMermaidPlugin>) => ({
   source, plugin, theme: lightTheme, capabilities: {}, translations: defaultTranslations,
 });
 
+describe('case-specific Mermaid component proof', () => {
+  // parity:34b6ce9a850ff8d19d7085fe3852d2f6a1daca199cb810ca79b15f43568be646
+  it('renders the native chart after asynchronous loading resolves', async () => {
+    let resolve!: (value: MermaidRenderResult) => void;
+    const adapter: MermaidAdapter = { families: ['flowchart'], render: () => new Promise((done) => { resolve = done; }) };
+    const screen = render(React.createElement(MermaidBlock, props(createMermaidPlugin({ adapter }))));
+    expect(screen.getByLabelText('Rendering Mermaid diagram')).toBeTruthy();
+    resolve({ kind: 'native', content: React.createElement(Text, null, 'Loaded native chart') });
+    await waitFor(() => expect(screen.getByText('Loaded native chart')).toBeTruthy());
+  });
+
+  // parity:22e5eada3b8d1d5fdc6b785aa991196559459cc36b9f1102fa067ea59ca6d223
+  it('uses the thrown non-Error value as a readable fallback message', async () => {
+    const plugin = createMermaidPlugin({ adapter: { families: ['flowchart'], render: () => { throw 'plain failure'; } } });
+    const screen = render(React.createElement(MermaidBlock, props(plugin)));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('plain failure'));
+  });
+
+  // parity:bde189d7f1ae7347e6f7dd52e9047b5107f349c63bb770efacbcb85af2ad7bd0
+  it('removes the loading indicator once a chart result is available', async () => {
+    const plugin = createMermaidPlugin({ adapter: { families: ['flowchart'], render: () => ({ kind: 'native', content: React.createElement(Text, null, 'Ready chart') }) } });
+    const screen = render(React.createElement(MermaidBlock, props(plugin)));
+    await waitFor(() => expect(screen.getByText('Ready chart')).toBeTruthy());
+    expect(screen.queryByLabelText('Rendering Mermaid diagram')).toBeNull();
+  });
+
+  // parity:39a95fa22c7a68442b1a00a87739be207670306f93ce27a533d4f5b031f331ea
+  it('shows an error when no adapter is configured', async () => await expect(createMermaidPlugin().render(source)).rejects.toThrow('No Mermaid adapter'));
+  // parity:0ba34c5f3aab38007213572a2bfa8bf577b578a252c3a3b511a1bfe4efd29325
+  it('keeps readable source after a render error', async () => {
+    const plugin = createMermaidPlugin({ adapter: { families: ['flowchart'], render: () => { throw new Error('render failed'); } } });
+    const screen = render(React.createElement(MermaidBlock, props(plugin))); await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
+    expect(screen.getByText(source)).toBeTruthy();
+  });
+  // parity:2301e4bbb8c7397553133f0e1f96498c5382f16d3db8cf3fae4b6e96c3df1af9
+  it('labels the rendered native chart', async () => {
+    const plugin = createMermaidPlugin({ adapter: { families: ['flowchart'], render: () => ({ kind: 'native', content: React.createElement(Text, null, 'Chart') }) } });
+    const screen = render(React.createElement(MermaidBlock, props(plugin))); await waitFor(() => expect(screen.getByRole('image')).toBeTruthy());
+    expect(screen.getByRole('image').props.accessibilityLabel).toBe(`Mermaid diagram: ${source}`);
+  });
+  // parity:441c3449d1ddb0c91f1b4cc755eee6d586da7757a2e1db7175676f317b4b5dde
+  it('uses native image role for the rendered chart', async () => {
+    const plugin = createMermaidPlugin({ adapter: { families: ['flowchart'], render: () => ({ kind: 'native', content: React.createElement(Text, null, 'Chart') }) } });
+    const screen = render(React.createElement(MermaidBlock, props(plugin)));
+    await waitFor(() => expect(screen.getByRole('image').props.accessibilityRole).toBe('image'));
+  });
+});
+
 describe('Mermaid native component', () => {
   // parity:ff751a5161f9b7107f8b481008fae24e4967d634a915d683db29544fe52fc872
-  // parity:34b6ce9a850ff8d19d7085fe3852d2f6a1daca199cb810ca79b15f43568be646
-  // parity:bde189d7f1ae7347e6f7dd52e9047b5107f349c63bb770efacbcb85af2ad7bd0
   it('announces loading, renders the chart, then removes busy state', async () => {
     let resolve!: (value: MermaidRenderResult) => void;
     const adapter: MermaidAdapter = { families: ['flowchart'], render: () => new Promise((done) => { resolve = done; }) };
@@ -26,8 +72,6 @@ describe('Mermaid native component', () => {
   });
 
   // parity:f47bd4134b3d41c04f61326ea8e7e87ad8d112101a9c9db1ec6f609ef5466c47
-  // parity:2301e4bbb8c7397553133f0e1f96498c5382f16d3db8cf3fae4b6e96c3df1af9
-  // parity:441c3449d1ddb0c91f1b4cc755eee6d586da7757a2e1db7175676f317b4b5dde
   it('uses native theme style plus labelled image semantics instead of DOM className', async () => {
     const adapter: MermaidAdapter = { families: ['flowchart'], render: () => ({ kind: 'native', content: React.createElement(Text, null, 'Chart') }) };
     const screen = render(React.createElement(MermaidBlock, props(createMermaidPlugin({ adapter }))));
@@ -35,10 +79,7 @@ describe('Mermaid native component', () => {
     expect(screen.queryByText(source)).toBeNull();
   });
 
-  // parity:39a95fa22c7a68442b1a00a87739be207670306f93ce27a533d4f5b031f331ea
-  // parity:0ba34c5f3aab38007213572a2bfa8bf577b578a252c3a3b511a1bfe4efd29325
   // parity:f1d4e0657a80ef8f7795161ac606b0d6ea0e9e0cc38bbed6e186e470d61d1976
-  // parity:22e5eada3b8d1d5fdc6b785aa991196559459cc36b9f1102fa067ea59ca6d223
   it('keeps readable source and exposes accessible details for missing, failed, and non-Error adapters', async () => {
     const plugin = createMermaidPlugin({ adapter: { families: ['flowchart'], render: () => { throw 'native failure'; } } });
     const screen = render(React.createElement(MermaidBlock, props(plugin)));
