@@ -1,6 +1,8 @@
 name: Release
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       evidence_run_id:
@@ -52,7 +54,7 @@ jobs:
 
   verify:
     needs: version
-    if: needs.version.outputs.pending == 'false'
+    if: github.event_name == 'workflow_dispatch' && needs.version.outputs.pending == 'false'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
@@ -135,6 +137,9 @@ jobs:
       actions: read
       contents: read
       id-token: write
+    outputs:
+      package_name: ${{ steps.package.outputs.name }}
+      package_version: ${{ steps.package.outputs.version }}
     steps:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
@@ -149,6 +154,18 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name publish-candidate --dir .release-package
+      - id: package
+        name: Read and validate package identity
+        working-directory: .release-package
+        run: |
+          name=$(tar -xOf release.tgz package/package.json | node -e "let input=''; process.stdin.on('data', chunk => input += chunk); process.stdin.on('end', () => console.log(JSON.parse(input).name))")
+          version=$(tar -xOf release.tgz package/package.json | node -e "let input=''; process.stdin.on('data', chunk => input += chunk); process.stdin.on('end', () => console.log(JSON.parse(input).version))")
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "$name@$version is already published" >&2
+            exit 1
+          fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Verify and publish only the gated tarball
         working-directory: .release-package
         env:
@@ -157,3 +174,22 @@ jobs:
         run: |
           sha256sum -c release.tgz.sha256
           npm publish release.tgz --ignore-scripts
+
+  github-release:
+    needs: publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Create GitHub release and tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGE_NAME: ${{ needs.publish.outputs.package_name }}
+          PACKAGE_VERSION: ${{ needs.publish.outputs.package_version }}
+        run: |
+          gh release create "v$PACKAGE_VERSION" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "$PACKAGE_NAME $PACKAGE_VERSION" \
+            --generate-notes

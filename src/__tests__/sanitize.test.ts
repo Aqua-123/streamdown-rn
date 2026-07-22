@@ -382,7 +382,7 @@ describe('Security: Kerem Audit Test Cases', () => {
 
 describe('Security: HTML in Markdown (Safe by Design)', () => {
   /**
-   * IMPORTANT: streamdown-rn does NOT render HTML.
+   * IMPORTANT: streamdown-native does NOT render HTML.
    * 
    * When markdown contains raw HTML like <script>alert(1)</script>,
    * remark parses it as an "html" node. Our ASTRenderer then renders

@@ -22,7 +22,7 @@ const HEX64 = /^[a-f0-9]{64}$/;
 const SAFE_ID = /^[A-Za-z0-9._:-]{1,128}$/;
 const MAX_LOG_BYTES = 16 * 1024 * 1024;
 const CAPTURE_SECONDS = 60;
-const OPTIONAL_BUNDLE_MARKERS = ['streamdown-rn/code', 'streamdown-rn/math', 'streamdown-rn/mermaid', 'streamdown-rn/renderers'];
+const OPTIONAL_BUNDLE_MARKERS = ['streamdown-native/code', 'streamdown-native/math', 'streamdown-native/mermaid', 'streamdown-native/renderers'];
 
 function fail(message) { throw new Error(message); }
 function sha256File(file) {

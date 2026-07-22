@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { assertSingleHostSvg, assertSvgPeerManifest } from './svg-peer-contract.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'streamdown-rn-pack-'));
+const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'streamdown-native-pack-'));
 const keepTemp = process.env.STREAMDOWN_KEEP_PACK_FIXTURE === '1';
 const deviceMatrix = JSON.parse(fs.readFileSync(path.join(root, 'tests/device/matrix.json'), 'utf8'));
 const fixtures = deviceMatrix.hosts.map(({ id, expo, reactNative, fixture }) => ({
@@ -67,12 +67,12 @@ const installCandidateFromNpm = (tarball, packedManifest) => {
       'react-native-svg': pinned('react-native-svg'),
       '@react-native/virtualized-lists': pinned('@react-native/virtualized-lists'),
       ...Object.fromEntries(Object.keys(packedManifest.dependencies ?? {}).map((name) => [name, pinned(name)])),
-      'streamdown-rn': `file:${tarball}`,
+      'streamdown-native': `file:${tarball}`,
     },
   }, null, 2)}\n`);
   run('npm', ['install', '--package-lock-only', '--ignore-scripts', '--strict-peer-deps', '--cache', cache], { cwd: consumer });
   run('npm', ['ci', '--ignore-scripts', '--strict-peer-deps', '--cache', cache], { cwd: consumer });
-  assert(fs.existsSync(path.join(consumer, 'node_modules/streamdown-rn/package.json')), 'npm must install the packed candidate');
+  assert(fs.existsSync(path.join(consumer, 'node_modules/streamdown-native/package.json')), 'npm must install the packed candidate');
 };
 
 const bundleText = (directory) => {
@@ -150,7 +150,7 @@ try {
   run('npm', ['ci', '--ignore-scripts'], { cwd: conflictConsumer });
   const conflictManifestPath = path.join(conflictConsumer, 'package.json');
   const conflictManifest = JSON.parse(fs.readFileSync(conflictManifestPath, 'utf8'));
-  conflictManifest.dependencies['streamdown-rn'] = `file:${tarball}`;
+  conflictManifest.dependencies['streamdown-native'] = `file:${tarball}`;
   conflictManifest.dependencies['react-native-svg'] = `file:${incompatibleSvg}`;
   fs.writeFileSync(conflictManifestPath, `${JSON.stringify(conflictManifest, null, 2)}\n`);
   const conflict = spawnSync('npm', ['install', '--ignore-scripts', '--no-package-lock', '--no-save', '--offline', '--strict-peer-deps'], {
@@ -166,27 +166,27 @@ try {
     const matrixEntry = fs.readFileSync(path.join(consumer, 'App.js'));
     const consumerManifestPath = path.join(consumer, 'package.json');
     const consumerManifest = JSON.parse(fs.readFileSync(consumerManifestPath, 'utf8'));
-    consumerManifest.dependencies['streamdown-rn'] = `file:${tarball}`;
+    consumerManifest.dependencies['streamdown-native'] = `file:${tarball}`;
     fs.writeFileSync(consumerManifestPath, `${JSON.stringify(consumerManifest, null, 2)}\n`);
     assertLockedCandidateDependencies(consumer, packedManifest);
-    const installed = path.join(consumer, 'node_modules/streamdown-rn');
+    const installed = path.join(consumer, 'node_modules/streamdown-native');
     fs.rmSync(installed, { recursive: true, force: true });
     fs.mkdirSync(installed, { recursive: true });
     run('tar', ['-xzf', tarball, '-C', installed, '--strip-components=1']);
     assertSingleHostSvg(consumer, run);
 
-    const resolve = "console.log(import.meta.resolve('streamdown-rn'))";
+    const resolve = "console.log(import.meta.resolve('streamdown-native'))";
     const defaultEntry = run('node', ['--input-type=module', '--eval', resolve], { cwd: consumer });
     const nativeEntry = run('node', ['--conditions=react-native', '--input-type=module', '--eval', resolve], { cwd: consumer });
-    assert.match(defaultEntry, /streamdown-rn\/dist\/esm\/index\.js$/);
-    assert.match(nativeEntry, /streamdown-rn\/dist\/index\.js$/);
-    const resolveUi = "console.log(import.meta.resolve('streamdown-rn/ui'))";
+    assert.match(defaultEntry, /streamdown-native\/dist\/esm\/index\.js$/);
+    assert.match(nativeEntry, /streamdown-native\/dist\/index\.js$/);
+    const resolveUi = "console.log(import.meta.resolve('streamdown-native/ui'))";
     const defaultUiEntry = run('node', ['--input-type=module', '--eval', resolveUi], { cwd: consumer });
     const nativeUiEntry = run('node', ['--conditions=react-native', '--input-type=module', '--eval', resolveUi], { cwd: consumer });
-    assert.match(defaultUiEntry, /streamdown-rn\/dist\/esm\/components\/ui\/index\.js$/);
-    assert.match(nativeUiEntry, /streamdown-rn\/dist\/components\/ui\/index\.js$/);
+    assert.match(defaultUiEntry, /streamdown-native\/dist\/esm\/components\/ui\/index\.js$/);
+    assert.match(nativeUiEntry, /streamdown-native\/dist\/components\/ui\/index\.js$/);
 
-    const installedPackage = path.join(consumer, 'node_modules/streamdown-rn');
+    const installedPackage = path.join(consumer, 'node_modules/streamdown-native');
     const nativeViewConfig = fs.readFileSync(path.join(installedPackage, 'dist/native/StreamdownTextNativeComponent.js'), 'utf8');
     assert.match(nativeViewConfig, /NativeComponentRegistry\.get/);
     assert.match(nativeViewConfig, /uiViewClassName:\s*["']StreamdownText["']/);
@@ -197,7 +197,7 @@ try {
       run('node', ['--check', path.join(installedPackage, importTarget)]);
     }
     for (const subpath of ['./code', './cjk', './renderers', './math', './mermaid/webview']) {
-      const specifier = `streamdown-rn/${subpath.slice(2)}`;
+      const specifier = `streamdown-native/${subpath.slice(2)}`;
       const esmKeys = JSON.parse(run('node', [
         '--input-type=module',
         '--eval',
@@ -242,7 +242,7 @@ try {
   type DropdownRootProps, type DropdownTriggerProps, type FullscreenModalProps,
   type NativeLinkProps, type PanZoomSurfaceProps, type ToolbarButtonProps,
   type ToolbarOrientation, type ToolbarRootProps, type ToolbarState,
-} from 'streamdown-rn/ui';
+} from 'streamdown-native/ui';
 import {
   NATIVE_ELEMENT_NAMES, fetchImageFileRequest,
   type NativeImageDownloadCapability, type NativeImageDownloadResult,
@@ -250,7 +250,7 @@ import {
   type NativeSlotProps,
   type NativeSlots,
   type StreamdownProps,
-} from 'streamdown-rn';
+} from 'streamdown-native';
 const components = [Action, ActionButton, ActionRoot, ActionStatus, ActionTrigger, Button, Dropdown, DropdownItem, DropdownPopup, DropdownRoot, DropdownTrigger, FullscreenModal, NativeLink, PanZoomSurface, Toolbar, ToolbarButton, ToolbarRoot];
 type Contracts = ActionButtonProps | ActionRootProps | ActionStatusProps | ActionTriggerProps | ButtonProps | DropdownItemProps | DropdownPopupProps | DropdownRootProps | DropdownTriggerProps | FullscreenModalProps | NativeLinkProps | PanZoomSurfaceProps | ToolbarButtonProps | ToolbarRootProps;
 const variant: ButtonVariant = 'ghost';
@@ -280,14 +280,14 @@ void element; void streamdownProps; void invalidSlots; void imageResult;
       { cwd: consumer }
     );
     const nodeNextConsumer = path.join(consumer, 'all-subpaths.mts');
-    fs.writeFileSync(nodeNextConsumer, `import Streamdown, { type StreamdownProps } from 'streamdown-rn';
-import { Button, type ButtonProps } from 'streamdown-rn/ui';
-import { createCodePlugin, type CodeHighlighterPlugin } from 'streamdown-rn/code';
-import { cjk, type CjkPlugin } from 'streamdown-rn/cjk';
-import { createRendererPlugin, type RendererPlugin } from 'streamdown-rn/renderers';
-import { createMathPlugin, type MathPlugin } from 'streamdown-rn/math';
-import { createMermaidPlugin, type DiagramPlugin } from 'streamdown-rn/mermaid';
-import { createOfflineWebViewAdapter, type OfflineWebViewAdapterOptions } from 'streamdown-rn/mermaid/webview';
+    fs.writeFileSync(nodeNextConsumer, `import Streamdown, { type StreamdownProps } from 'streamdown-native';
+import { Button, type ButtonProps } from 'streamdown-native/ui';
+import { createCodePlugin, type CodeHighlighterPlugin } from 'streamdown-native/code';
+import { cjk, type CjkPlugin } from 'streamdown-native/cjk';
+import { createRendererPlugin, type RendererPlugin } from 'streamdown-native/renderers';
+import { createMathPlugin, type MathPlugin } from 'streamdown-native/math';
+import { createMermaidPlugin, type DiagramPlugin } from 'streamdown-native/mermaid';
+import { createOfflineWebViewAdapter, type OfflineWebViewAdapterOptions } from 'streamdown-native/mermaid/webview';
 type Contracts = StreamdownProps | ButtonProps | CodeHighlighterPlugin | CjkPlugin | RendererPlugin | MathPlugin | DiagramPlugin | OfflineWebViewAdapterOptions;
 void [Streamdown, Button, createCodePlugin, cjk, createRendererPlugin, createMathPlugin, createMermaidPlugin, createOfflineWebViewAdapter];
 void (null as Contracts | null);
@@ -298,7 +298,7 @@ void (null as Contracts | null);
       { cwd: consumer }
     );
     fs.writeFileSync(path.join(consumer, 'App.js'), `import React from 'react';
-import Streamdown, { Streamdown as NamedStreamdown } from 'streamdown-rn';
+import Streamdown, { Streamdown as NamedStreamdown } from 'streamdown-native';
 if (Streamdown !== NamedStreamdown) throw new Error('default export mismatch');
 export default function App() { return <Streamdown mode="static">{'# packed core fixture'}</Streamdown>; }
 `);
@@ -315,7 +315,7 @@ export default function App() { return <Streamdown mode="static">{'# packed core
 
     fs.writeFileSync(path.join(consumer, 'App.js'), `import React from 'react';
 import { View } from 'react-native';
-import { Action, ActionButton, ActionRoot, ActionStatus, ActionTrigger, Button, Dropdown, DropdownItem, DropdownPopup, DropdownRoot, DropdownTrigger, FullscreenModal, NativeLink, PanZoomSurface, Toolbar, ToolbarButton, ToolbarRoot } from 'streamdown-rn/ui';
+import { Action, ActionButton, ActionRoot, ActionStatus, ActionTrigger, Button, Dropdown, DropdownItem, DropdownPopup, DropdownRoot, DropdownTrigger, FullscreenModal, NativeLink, PanZoomSurface, Toolbar, ToolbarButton, ToolbarRoot } from 'streamdown-native/ui';
 const exports = [Action, ActionButton, ActionRoot, ActionStatus, ActionTrigger, Button, Dropdown, DropdownItem, DropdownPopup, DropdownRoot, DropdownTrigger, FullscreenModal, NativeLink, PanZoomSurface, Toolbar, ToolbarButton, ToolbarRoot];
 export default function App() { return <View accessibilityLabel={'ui-' + exports.length} />; }
 `);
@@ -334,13 +334,13 @@ export default function App() { return <View accessibilityLabel={'ui-' + exports
 
     fs.writeFileSync(path.join(consumer, 'App.js'), `import React from 'react';
 import { Text } from 'react-native';
-import { Streamdown } from 'streamdown-rn';
-import { createCodePlugin } from 'streamdown-rn/code';
-import { cjk } from 'streamdown-rn/cjk';
-import { createRendererPlugin } from 'streamdown-rn/renderers';
-import { createMathPlugin } from 'streamdown-rn/math';
-import { createMermaidPlugin } from 'streamdown-rn/mermaid';
-import { createOfflineWebViewAdapter } from 'streamdown-rn/mermaid/webview';
+import { Streamdown } from 'streamdown-native';
+import { createCodePlugin } from 'streamdown-native/code';
+import { cjk } from 'streamdown-native/cjk';
+import { createRendererPlugin } from 'streamdown-native/renderers';
+import { createMathPlugin } from 'streamdown-native/math';
+import { createMermaidPlugin } from 'streamdown-native/mermaid';
+import { createOfflineWebViewAdapter } from 'streamdown-native/mermaid/webview';
 const webview = createOfflineWebViewAdapter({
   assets: { mermaidJs: 'bundled' },
   transport: { render: async ({ id }) => JSON.stringify({ id, type: 'rendered', surfaceId: id }), release() {}, dispose() {} },

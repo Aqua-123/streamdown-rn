@@ -1,4 +1,4 @@
-# streamdown-rn
+# streamdown-native
 
 Streaming Markdown for React Native, with native semantics, incremental rendering, explicit security boundaries, and opt-in rich-content adapters.
 
@@ -7,7 +7,7 @@ Streaming Markdown for React Native, with native semantics, incremental renderin
 ## Install
 
 ```bash
-npm install streamdown-rn
+npm install streamdown-native
 npx expo install react-native-svg
 ```
 
@@ -26,7 +26,7 @@ The package requires React 19 and React Native `^0.81.0 || ^0.85.0`. The host ow
 
 ```tsx verify
 import React from 'react';
-import { Streamdown } from 'streamdown-rn';
+import { Streamdown } from 'streamdown-native';
 
 export function Message({ markdown, done }: { markdown: string; done: boolean }) {
   return (

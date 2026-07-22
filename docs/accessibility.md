@@ -4,7 +4,7 @@ Native controls expose roles, labels, disabled/busy state, 44-point targets, adj
 
 ```tsx verify
 import React from 'react';
-import { Streamdown, type NativeCapabilities } from 'streamdown-rn';
+import { Streamdown, type NativeCapabilities } from 'streamdown-native';
 
 const capabilities: NativeCapabilities = {
   announcements: { announce: (message) => { void message; } },

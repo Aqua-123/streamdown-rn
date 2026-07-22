@@ -41,13 +41,13 @@ fs.writeFileSync(appPath, source);
 run('npm', ['install', '--ignore-scripts'], app);
 run('npm', ['run', 'build']);
 const packed = JSON.parse(output('npm', ['pack', '--json', '--ignore-scripts', '--pack-destination', sampleRoot]))[0];
-const installed = path.join(app, 'node_modules/streamdown-rn');
+const installed = path.join(app, 'node_modules/streamdown-native');
 fs.rmSync(installed, { recursive: true, force: true });
 fs.mkdirSync(installed, { recursive: true });
 run('tar', ['-xzf', path.join(sampleRoot, packed.filename), '-C', installed, '--strip-components=1']);
 fs.rmSync(path.join(sampleRoot, packed.filename));
 
-console.log(`Prepared the packed streamdown-rn sample at ${app}`);
+console.log(`Prepared the packed streamdown-native sample at ${app}`);
 if (!process.argv.includes('--prepare-only')) {
   const release = platform === 'ios' ? ['--configuration', 'Release'] : ['--variant', 'release'];
   run('npx', ['expo', `run:${platform}`, ...release, '--no-bundler'], app);

@@ -7,13 +7,13 @@ Plugin entry points are separate so the default bundle does not pull in optional
 ```tsx verify
 import React from 'react';
 import { Text } from 'react-native';
-import { Streamdown } from 'streamdown-rn';
-import { createCodePlugin } from 'streamdown-rn/code';
-import { cjk } from 'streamdown-rn/cjk';
-import { createRendererPlugin } from 'streamdown-rn/renderers';
-import { createMathPlugin } from 'streamdown-rn/math';
-import { createBeautifulMermaidAdapter, createMermaidPlugin } from 'streamdown-rn/mermaid';
-import { createOfflineWebViewAdapter } from 'streamdown-rn/mermaid/webview';
+import { Streamdown } from 'streamdown-native';
+import { createCodePlugin } from 'streamdown-native/code';
+import { cjk } from 'streamdown-native/cjk';
+import { createRendererPlugin } from 'streamdown-native/renderers';
+import { createMathPlugin } from 'streamdown-native/math';
+import { createBeautifulMermaidAdapter, createMermaidPlugin } from 'streamdown-native/mermaid';
+import { createOfflineWebViewAdapter } from 'streamdown-native/mermaid/webview';
 
 const code = createCodePlugin({
   highlightTimeoutMs: 15_000,

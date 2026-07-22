@@ -1,7 +1,7 @@
 /**
  * Component Exports
  * 
- * Skeleton primitives for streamdown-rn.
+ * Skeleton primitives for streamdown-native.
  */
 
 // Skeleton primitives

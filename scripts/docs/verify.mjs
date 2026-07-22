@@ -25,7 +25,7 @@ publicDocs.push(...visit(path.join(root, 'docs')));
 const publishedImportErrors = (source) => {
   const errors = [];
   let imports = 0;
-  for (const match of source.matchAll(/\bimport\s+([^;]+?)\s+from\s+['"](streamdown-rn(?:\/[^'"]+)?)['"]/g)) {
+  for (const match of source.matchAll(/\bimport\s+([^;]+?)\s+from\s+['"](streamdown-(?:rn|native)(?:\/[^'"]+)?)['"]/g)) {
     imports += 1;
     const [, clause, module] = match;
     if (module !== published.package) {
@@ -136,7 +136,7 @@ if (!publishedSnippets && sourcePackage.version === published.version) errors.pu
 if (sourcePackage.version !== published.version) {
   if (promotedMode && readmeSource.includes('verify-published')) errors.push('README.md: promoted release examples must use verify rather than verify-published');
 }
-if (!fs.readFileSync(path.join(root, 'README.md'), 'utf8').includes('npm install streamdown-rn')) {
+if (!fs.readFileSync(path.join(root, 'README.md'), 'utf8').includes('npm install streamdown-native')) {
   errors.push('README.md: missing npm install command');
 }
 if (errors.length) { console.error(errors.join('\n')); process.exit(1); }
@@ -165,9 +165,9 @@ try {
     const paths = target === 'published'
       ? { 'streamdown-rn': [path.join(root, 'tests/package/fixtures/published-0.2.1/dist/index.d.ts')] }
       : {
-          'streamdown-rn': [path.join(sourceDeclarationsRoot, 'dist/index.d.ts')],
-          'streamdown-rn/ui': [path.join(sourceDeclarationsRoot, 'dist/components/ui/index.d.ts')],
-          'streamdown-rn/*': [path.join(sourceDeclarationsRoot, 'dist/plugins/*/index.d.ts')],
+          'streamdown-native': [path.join(sourceDeclarationsRoot, 'dist/index.d.ts')],
+          'streamdown-native/ui': [path.join(sourceDeclarationsRoot, 'dist/components/ui/index.d.ts')],
+          'streamdown-native/*': [path.join(sourceDeclarationsRoot, 'dist/plugins/*/index.d.ts')],
         };
     fs.writeFileSync(path.join(directory, 'tsconfig.json'), JSON.stringify({
       compilerOptions: {

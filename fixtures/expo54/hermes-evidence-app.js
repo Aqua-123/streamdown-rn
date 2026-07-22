@@ -1,6 +1,6 @@
 import React, { Profiler, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { SafeAreaView, Text, View } from 'react-native';
-import { Streamdown } from 'streamdown-rn';
+import { Streamdown } from 'streamdown-native';
 import {
   beginHermesAppend, completeHermesEvidence, emitHermesBundleReceipt, emitHermesEvent,
   endHermesAppend, hermesHeapBytes, hermesNowNs, readHermesEvidenceConfig,

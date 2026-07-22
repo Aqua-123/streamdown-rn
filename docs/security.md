@@ -14,7 +14,7 @@ Untrusted input crosses several independent boundaries:
 
 ```tsx verify
 import React from 'react';
-import { Streamdown, sanitizeURL } from 'streamdown-rn';
+import { Streamdown, sanitizeURL } from 'streamdown-native';
 
 const safe = sanitizeURL('https://example.com');
 const blocked = sanitizeURL('javascript:alert(1)');

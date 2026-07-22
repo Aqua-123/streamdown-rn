@@ -1,4 +1,4 @@
-# streamdown-rn
+# streamdown-native
 
 ## 0.1.0
 

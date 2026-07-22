@@ -23,7 +23,7 @@ The active block reparses as text arrives. Completed blocks retain stable identi
 
 - `src/core/` owns parsing, splitting, security, tables, and streaming state.
 - `src/renderers/` maps semantic nodes to React Native and gives a configured custom language renderer precedence.
-- `src/components/ui/` is the public `streamdown-rn/ui` boundary. Button and Dropdown are supported primitives; ActionButton, FullscreenModal, NativeLink, and PanZoomSurface are compatibility compositions re-exported from their existing implementations.
+- `src/components/ui/` is the public `streamdown-native/ui` boundary. Button and Dropdown are supported primitives; ActionButton, FullscreenModal, NativeLink, and PanZoomSurface are compatibility compositions re-exported from their existing implementations.
 - `src/controls/` owns accessible action UI; `src/platform/` owns injectable native capabilities. Renderer assemblies such as CodeControls, TableControls, and SafeImage remain private.
 - `src/plugins/` contains separately exported code, CJK, math, Mermaid, and renderer contracts. Type-only references from core prevent optional runtime dependencies from entering the default bundle.
 

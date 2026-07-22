@@ -14,7 +14,7 @@ import {
   Streamdown,
   createStreamingInstrumentation,
   type StreamdownProps,
-} from 'streamdown-rn';
+} from 'streamdown-native';
 
 const instrumentation = createStreamingInstrumentation();
 const props: StreamdownProps = {
@@ -32,7 +32,7 @@ export function Example() {
 
 ## UI primitives
 
-Import UI building blocks from `streamdown-rn/ui`. `Button`, `Action`, `Toolbar`,
+Import UI building blocks from `streamdown-native/ui`. `Button`, `Action`, `Toolbar`,
 and the Dropdown compound parts are supported primitives. `ActionButton`,
 `FullscreenModal`, `NativeLink`, and `PanZoomSurface` are compatibility
 compositions; their root exports remain aliases of the same components.
@@ -46,7 +46,7 @@ replacement semantics.
 
 ```tsx verify
 import React from 'react';
-import { Button, Dropdown, type ButtonProps, type ButtonState } from 'streamdown-rn/ui';
+import { Button, Dropdown, type ButtonProps, type ButtonState } from 'streamdown-native/ui';
 
 const triggerProps: Omit<ButtonProps, 'children'> = { accessibilityLabel: 'More actions' };
 const pressedStyle = ({ pressed }: ButtonState) => ({ opacity: pressed ? 0.6 : 1 });
@@ -72,8 +72,8 @@ deliberately does not claim a DOM roving-focus or arrow-key contract.
 
 ```tsx verify
 import React from 'react';
-import { type CapabilityResult } from 'streamdown-rn';
-import { Action, Toolbar } from 'streamdown-rn/ui';
+import { type CapabilityResult } from 'streamdown-native';
+import { Action, Toolbar } from 'streamdown-native/ui';
 
 async function save(): Promise<CapabilityResult> {
   return { status: 'success' };
@@ -106,7 +106,7 @@ a URL or capability.
 ```tsx verify
 import React from 'react';
 import { Text, View } from 'react-native';
-import { Streamdown, type NativeSlots } from 'streamdown-rn';
+import { Streamdown, type NativeSlots } from 'streamdown-native';
 
 const slots: NativeSlots = {
   p: ({ children, renderDefault }) => (
@@ -141,7 +141,7 @@ standard element, legacy `components` replacement takes precedence.
 Custom themes keep the existing `colors`, `fonts`, and `spacing` contract. Add only the semantic values you want to override; `getTheme` and `resolveThemePrimitives` fill every missing value from the legacy palette without mutating the supplied theme.
 
 ```tsx verify
-import { lightTheme, resolveThemePrimitives, type ThemeConfig } from 'streamdown-rn';
+import { lightTheme, resolveThemePrimitives, type ThemeConfig } from 'streamdown-native';
 
 const customTheme: ThemeConfig = {
   ...lightTheme,
@@ -171,7 +171,7 @@ import {
   type CapabilityResult,
   type NativeCapabilities,
   type NativeFileRequest,
-} from 'streamdown-rn';
+} from 'streamdown-native';
 
 function failed(error: unknown): CapabilityResult {
   return { status: 'failed', error: error instanceof Error ? error : new Error(String(error)) };

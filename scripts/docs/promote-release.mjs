@@ -57,7 +57,7 @@ export function promotedDocuments(files, version) {
   required(
     'README.md',
     /## Published npm [^\n]+[\s\S]*?## Unreleased \/ next release\n\n/,
-    `## Install\n\n\`\`\`bash\nnpm install streamdown-rn\n\`\`\`\n\n`
+    `## Install\n\n\`\`\`bash\nnpm install streamdown-native\n\`\`\`\n\n`
   );
   required(
     'README.md',
@@ -92,8 +92,8 @@ export function reopenedDocuments(files, version) {
   required('README.md', /> \*\*Current release:\*\*[^\n]*\n/, `> **Published versus next release:** This main branch documents the next release. npm \`${version}\` is the current published package.\n`);
   required(
     'README.md',
-    /## Install\n\n```bash\nnpm install streamdown-rn\n```\n\n/,
-    `## Published npm ${version}\n\n\`\`\`bash\nnpm install streamdown-rn\n\`\`\`\n\n${example.replace(' verify\n', ' verify-published\n')}\n\n## Unreleased / next release\n\n`
+    /## Install\n\n```bash\nnpm install streamdown-native\n```\n\n/,
+    `## Published npm ${version}\n\n\`\`\`bash\nnpm install streamdown-native\n\`\`\`\n\n${example.replace(' verify\n', ' verify-published\n')}\n\n## Unreleased / next release\n\n`
   );
   required('README.md', /The package requires React 19 and React Native `\^0\.81\.0 \|\| \^0\.85\.0`\./, `The source package requires React 19 and React Native \`^0.81.0 || ^0.85.0\`. Its APIs currently match npm \`${version}\`; new Changesets must describe any divergence.`);
   required('README.md', /`StreamdownRN` and the default export are aliases of `Streamdown`\./, '`StreamdownRN` and the default export are aliases of `Streamdown` in the next release.');
@@ -107,13 +107,13 @@ export function reopenedDocuments(files, version) {
 const paths = ['README.md', 'CHANGELOG.md', 'docs/api.md', 'docs/plugins.md'];
 if (process.argv.includes('--self-test')) {
   const fixture = () => new Map([
-    ['README.md', '> **Published versus next release:** old\n\n## Published npm 0.2.1\n\n```bash\nnpm install streamdown-rn\n```\n\n```tsx verify-published\nold\n```\n\n## Unreleased / next release\n\nThe source package requires React 19 and React Native `^0.81.0 || ^0.85.0`. Its `Streamdown`, mode, capabilities, and plugin-subpath APIs are not in npm `0.2.1`.\n\n```tsx verify\nnewApi();\n```\n\n`StreamdownRN` and the default export are aliases of `Streamdown` in the next release.\n\n## Next-release features\n\nThe following pages describe unreleased main-branch source unless they explicitly say otherwise.\n'],
+    ['README.md', '> **Published versus next release:** old\n\n## Published npm 0.2.1\n\n```bash\nnpm install streamdown-native\n```\n\n```tsx verify-published\nold\n```\n\n## Unreleased / next release\n\nThe source package requires React 19 and React Native `^0.81.0 || ^0.85.0`. Its `Streamdown`, mode, capabilities, and plugin-subpath APIs are not in npm `0.2.1`.\n\n```tsx verify\nnewApi();\n```\n\n`StreamdownRN` and the default export are aliases of `Streamdown` in the next release.\n\n## Next-release features\n\nThe following pages describe unreleased main-branch source unless they explicitly say otherwise.\n'],
     ['docs/api.md', '> **Unreleased / next release:** old\n'],
     ['docs/plugins.md', '> **Unreleased / next release:** old\n'],
-    ['CHANGELOG.md', '# streamdown-rn\n\n## Unreleased\n\n### Minor Changes\n\n- New API.\n\n### Release status\n\n- Publishing remains blocked.\n\n## 0.2.1\n\n- Old release.\n'],
+    ['CHANGELOG.md', '# streamdown-native\n\n## Unreleased\n\n### Minor Changes\n\n- New API.\n\n### Release status\n\n- Publishing remains blocked.\n\n## 0.2.1\n\n- Old release.\n'],
   ]);
   const promoted = promotedDocuments(fixture(), '0.3.0');
-  assert.match(promoted.get('README.md'), /npm install streamdown-rn/);
+  assert.match(promoted.get('README.md'), /npm install streamdown-native/);
   assert.doesNotMatch(promoted.get('README.md'), /next release|Next-release|unreleased|verify-published/i);
   assert.match(promoted.get('docs/api.md'), /npm `0\.3\.0`/);
   assert.match(promoted.get('CHANGELOG.md'), /## 0\.3\.0/);

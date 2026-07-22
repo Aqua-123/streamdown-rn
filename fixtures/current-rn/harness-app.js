@@ -14,7 +14,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
-import { Streamdown, darkTheme, lightTheme } from 'streamdown-rn';
+import { Streamdown, darkTheme, lightTheme } from 'streamdown-native';
 import { DEFAULT_SAMPLE, HARNESS_SAMPLES } from './harness-samples';
 import { initialPlaybackState, playbackReducer, progressPercent } from './harness-state';
 

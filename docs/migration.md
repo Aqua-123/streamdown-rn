@@ -9,7 +9,7 @@ Use `Streamdown` as the component name, but replace browser concepts with native
 | DOM elements and CSS classes | `components`, `theme`, React Native styles |
 | `rehypePlugins`/HAST | remark/MDAST plus native semantic overrides |
 | browser clipboard/download/dialog | `capabilities` and native controls |
-| KaTeX CSS | `streamdown-rn/math` host adapter |
+| KaTeX CSS | `streamdown-native/math` host adapter |
 | browser Mermaid DOM | native subset adapter or offline WebView subpath |
 | browser visual snapshots | reviewed iOS and Android baselines |
 
@@ -23,7 +23,7 @@ Existing custom themes remain source-compatible: `ThemeConfig.colors` keeps its 
 
 ```tsx verify
 import React from 'react';
-import { StreamdownRN } from 'streamdown-rn';
+import { StreamdownRN } from 'streamdown-native';
 
 export function Migrated({ content, pending }: { content: string; pending: boolean }) {
   return <StreamdownRN mode="streaming" isAnimating={pending} isComplete={!pending}>{content}</StreamdownRN>;

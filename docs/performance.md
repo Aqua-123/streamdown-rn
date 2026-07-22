@@ -6,7 +6,7 @@ Animated prose is laid out once at its final size by a Fabric leaf view. JavaScr
 
 ```tsx verify
 import React from 'react';
-import { Streamdown, createStreamingInstrumentation } from 'streamdown-rn';
+import { Streamdown, createStreamingInstrumentation } from 'streamdown-native';
 
 const metrics = createStreamingInstrumentation();
 

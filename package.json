@@ -1,5 +1,5 @@
 {
-  "name": "streamdown-rn",
+  "name": "streamdown-native",
   "version": "0.1.0",
   "description": "Streaming Markdown for React Native with native semantics, explicit security policy, and opt-in rich-content adapters",
   "type": "commonjs",
@@ -116,6 +116,8 @@
     "release:report:verify": "node scripts/release/verify-report.mjs",
     "release:evidence:self-test": "node scripts/release/validate-evidence-directory.selftest.mjs",
     "release:verify": "node scripts/release/verify.mjs",
+    "changeset": "changeset",
+    "changeset:status": "changeset status",
     "changeset:verify": "node scripts/release/changesets.mjs",
     "changeset:version": "bunx changeset version && bun run docs:promote-release",
     "package:candidate:self-test": "node tests/package/verify-hosted-candidate.mjs --self-test",

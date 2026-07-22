@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { assertSingleHostSvg, assertSvgPeerManifest } from './svg-peer-contract.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'streamdown-rn-real-renderers-'));
+const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'streamdown-native-real-renderers-'));
 const keepTemp = process.env.STREAMDOWN_KEEP_OPTIONAL_FIXTURE === '1';
 const run = (command, args, options = {}) => {
   const result = spawnSync(command, args, { cwd: root, encoding: 'utf8', ...options });
@@ -52,14 +52,14 @@ try {
   run('npm', ['ci', '--ignore-scripts'], { cwd: consumer });
   const manifestPath = path.join(consumer, 'package.json');
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  manifest.dependencies['streamdown-rn'] = `file:${tarball}`;
+  manifest.dependencies['streamdown-native'] = `file:${tarball}`;
   fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   fs.writeFileSync(path.join(consumer, 'App.js'), `import React, { useEffect, useMemo, useState } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, Text } from 'react-native';
-import { Streamdown } from 'streamdown-rn';
-import { createCodePlugin } from 'streamdown-rn/code';
-import { createMathPlugin } from 'streamdown-rn/math';
-import { createBeautifulMermaidAdapter, createMermaidPlugin } from 'streamdown-rn/mermaid';
+import { Streamdown } from 'streamdown-native';
+import { createCodePlugin } from 'streamdown-native/code';
+import { createMathPlugin } from 'streamdown-native/math';
+import { createBeautifulMermaidAdapter, createMermaidPlugin } from 'streamdown-native/mermaid';
 import { createHighlighterCore } from 'shiki/core';
 import { createJavaScriptRegexEngine } from 'shiki/engine/javascript';
 import typescript from '@shikijs/langs/typescript';
@@ -119,7 +119,7 @@ export default function App() {
     const version = lock.packages?.[`node_modules/${name}`]?.version;
     assert(version && satisfiesPinnedRange(version, range), `${name}@${range} must be satisfied by the checked-in fixture lock`);
   }
-  const installed = path.join(consumer, 'node_modules/streamdown-rn');
+  const installed = path.join(consumer, 'node_modules/streamdown-native');
   fs.mkdirSync(installed, { recursive: true });
   run('tar', ['-xzf', tarball, '-C', installed, '--strip-components=1']);
   assertSingleHostSvg(consumer, run);

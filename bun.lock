@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "streamdown-rn",
+      "name": "streamdown-native",
       "dependencies": {
         "remark": "^15.0.1",
         "remark-gfm": "^4.0.1",
