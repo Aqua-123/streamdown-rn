@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { assertSingleHostSvg, assertSvgPeerManifest } from './svg-peer-contract.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'streamdown-rn-pack-'));
@@ -43,6 +44,24 @@ try {
   assert(!pack.files.some(({ path: file }) => file.startsWith('src/') || file.includes('__tests__')));
 
   const tarball = path.join(temp, pack.filename);
+  const packedManifest = JSON.parse(run('tar', ['-xOf', tarball, 'package/package.json']));
+  assertSvgPeerManifest(packedManifest);
+  const incompatibleSvg = path.join(temp, 'react-native-svg-incompatible');
+  fs.mkdirSync(incompatibleSvg);
+  fs.writeFileSync(path.join(incompatibleSvg, 'package.json'), `${JSON.stringify({ name: 'react-native-svg', version: '15.12.0' })}\n`);
+  const conflictConsumer = path.join(temp, 'peer-conflict');
+  fs.cpSync(path.join(root, 'fixtures/expo54'), conflictConsumer, { recursive: true });
+  const conflictManifestPath = path.join(conflictConsumer, 'package.json');
+  const conflictManifest = JSON.parse(fs.readFileSync(conflictManifestPath, 'utf8'));
+  conflictManifest.dependencies['streamdown-rn'] = `file:${tarball}`;
+  conflictManifest.dependencies['react-native-svg'] = `file:${incompatibleSvg}`;
+  fs.writeFileSync(conflictManifestPath, `${JSON.stringify(conflictManifest, null, 2)}\n`);
+  const conflict = spawnSync('npm', ['install', '--ignore-scripts', '--no-package-lock', '--strict-peer-deps'], {
+    cwd: conflictConsumer,
+    encoding: 'utf8',
+  });
+  assert.notEqual(conflict.status, 0);
+  assert.match(`${conflict.stdout}\n${conflict.stderr}`, /ERESOLVE[\s\S]*react-native-svg/);
   for (const [fixtureIndex, fixture] of fixtures.entries()) {
     const consumer = path.join(temp, `consumer-${fixtureIndex}`);
     fs.cpSync(path.join(root, fixture.directory), consumer, { recursive: true });
@@ -52,6 +71,7 @@ try {
     consumerManifest.dependencies['streamdown-rn'] = `file:${tarball}`;
     fs.writeFileSync(consumerManifestPath, `${JSON.stringify(consumerManifest, null, 2)}\n`);
     run('npm', ['install', '--ignore-scripts', '--no-package-lock', '--omit=peer'], { cwd: consumer });
+    assertSingleHostSvg(consumer, run);
 
     const resolve = "console.log(import.meta.resolve('streamdown-rn'))";
     const defaultEntry = run('node', ['--input-type=module', '--eval', resolve], { cwd: consumer });

@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { assertSingleHostSvg, assertSvgPeerManifest } from './svg-peer-contract.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'streamdown-rn-real-renderers-'));
@@ -21,6 +22,7 @@ const run = (command, args, options = {}) => {
 try {
   run('npm', ['run', 'build']);
   const pack = JSON.parse(run('npm', ['pack', '--json', '--pack-destination', temp]))[0];
+  assertSvgPeerManifest(JSON.parse(run('tar', ['-xOf', path.join(temp, pack.filename), 'package/package.json'])));
   const consumer = path.join(temp, 'consumer');
   fs.cpSync(path.join(root, 'fixtures/current-rn'), consumer, { recursive: true });
   const manifestPath = path.join(consumer, 'package.json');
@@ -97,6 +99,7 @@ export default function App() {
 }
 `);
   run('npm', ['install', '--ignore-scripts', '--no-package-lock'], { cwd: consumer });
+  assertSingleHostSvg(consumer, run);
   for (const platform of ['ios', 'android']) {
     run('npx', ['expo', 'export', '--platform', platform, '--clear', '--output-dir', path.join(consumer, `dist-${platform}`)], { cwd: consumer });
     assert(fs.existsSync(path.join(consumer, `dist-${platform}`, 'metadata.json')));

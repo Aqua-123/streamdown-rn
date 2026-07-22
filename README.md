@@ -27,6 +27,21 @@ export function Message({ markdown }: { markdown: string }) {
 
 The source package requires React 19 and React Native `^0.81.0 || ^0.85.0`. Its `Streamdown`, mode, capabilities, and plugin-subpath APIs are not in npm `0.2.1`.
 
+Expo applications must install the required SVG peer with Expo's compatible version:
+
+```bash
+npx expo install react-native-svg
+```
+
+Bare React Native applications must install `react-native-svg` `>=15.12.1 <16.0.0` and complete its platform setup:
+
+```bash
+npm install react-native-svg@">=15.12.1 <16.0.0"
+cd ios && pod install
+```
+
+The host owns this single native dependency so its version matches the app's Expo or React Native runtime. Core controls and task-list checkmarks use it, so it is required even when optional Mermaid rendering is disabled.
+
 ```tsx verify
 import React from 'react';
 import { Streamdown } from 'streamdown-rn';

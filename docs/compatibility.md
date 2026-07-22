@@ -1,6 +1,6 @@
 # Compatibility
 
-The declared peer range is React Native `^0.81.0 || ^0.85.0` with React 19.
+The declared peer range is React Native `^0.81.0 || ^0.85.0` with React 19. The host must also provide one `react-native-svg` version in the tested `>=15.12.1 <16.0.0` range: Expo SDK 54 uses 15.12.1 and the current Expo fixture uses 15.15.5.
 
 | Host | Evidence | Status |
 | --- | --- | --- |
