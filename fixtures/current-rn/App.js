@@ -138,6 +138,16 @@ const ACTION_PHASE_STATUS = {
 
 function evidenceRenderConfig(scenario, phase) {
   if (scenario === 'streaming-32-character-chunks') return { scenario: 'streaming', checkpoint: phase === 'chunk-32' ? '32' : phase === 'chunk-64' ? '64' : 'complete' };
+  if (scenario.startsWith('streaming-')) {
+    const complete = phase.endsWith('complete');
+    return {
+      scenario: 'streaming', checkpoint: complete ? 'complete' : '64',
+      animated: phase.startsWith('unanimated-') ? false : phase.startsWith('slide-')
+        ? { animation: 'slideUp', duration: 320, easing: 'ease-out', sep: 'word', stagger: 14 }
+        : { animation: 'fadeIn', duration: 280, easing: 'ease-out', sep: phase.startsWith('fade-char') ? 'char' : 'word', stagger: 12 },
+      reducedMotion: phase.startsWith('reduced-motion-'),
+    };
+  }
   const rendered = {
     'image-loading': 'image-loading', 'image-error': 'image-error', 'image-retry': 'image-retry',
     'code-supported': 'code', 'code-unsupported': 'code-unsupported', 'code-incomplete': 'code-incomplete',
@@ -300,7 +310,7 @@ function EvidenceFullscreen({ phase, capabilities, onClose }) {
 }
 
 function AutomatedFixture({ config, metrics, capabilities, pluginsOverride, onEvidenceCommit }) {
-  const { scenario, theme, direction, layout, checkpoint } = config;
+  const { scenario, theme, direction, layout, checkpoint, animated, reducedMotion } = config;
   const streaming = scenario === 'streaming';
   const benchmarking = scenario === 'benchmark';
   const incompleteCode = scenario === 'code-incomplete';
@@ -342,12 +352,13 @@ function AutomatedFixture({ config, metrics, capabilities, pluginsOverride, onEv
             mode={streamMode ? 'streaming' : 'static'}
             theme={selectedTheme}
             dir={direction}
+            animated={animated ?? (streaming || benchmarking)}
+            reducedMotion={reducedMotion}
             isAnimating={(streaming || benchmarking) && !checkpoint}
             isComplete={incompleteCode ? false : ((!streaming && !benchmarking) || length >= source.length)}
             instrumentation={metrics}
             plugins={pluginsOverride ?? scenarioPlugins}
             capabilities={capabilities}
-            reducedMotion={config.reducedMotion}
           >{markdown}</Streamdown>
         </Profiler>
       </ScrollView>

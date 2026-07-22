@@ -1,5 +1,25 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const babel = require('@babel/core');
+
+const nativeComponentSource = path.join('src', 'native', 'StreamdownTextNativeComponent.ts');
+const nativeComponentOutput = path.join('dist', 'native', 'StreamdownTextNativeComponent.js');
+const transformedNativeComponent = babel.transformFileSync(nativeComponentSource, {
+  filename: nativeComponentSource,
+  presets: [require.resolve('@react-native/babel-preset')],
+  sourceMaps: true,
+  sourceFileName: nativeComponentSource,
+});
+if (!transformedNativeComponent?.code) {
+  throw new Error(`${nativeComponentSource}: React Native Babel transform produced no static view config`);
+}
+fs.writeFileSync(nativeComponentOutput, `${transformedNativeComponent.code}\n`);
+if (transformedNativeComponent.map) {
+  fs.writeFileSync(`${nativeComponentOutput}.map`, JSON.stringify(transformedNativeComponent.map));
+}
 
 const manifest = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const entries = Object.values(manifest.exports).map((conditions) => {

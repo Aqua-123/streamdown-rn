@@ -14,6 +14,7 @@ import {
 } from './types';
 import { ComponentBlock } from './registryComponents';
 import type { RenderContext, RenderNode, SemanticNode } from './rendererTypes';
+import { renderNativeText } from './nativeTextRenderer';
 
 export function rootFor(node: Node): Root {
   return node.type === 'root'
@@ -230,7 +231,9 @@ export function renderParagraph(
     }
     const rendered = renderInlineChildren(node, context, renderNode);
     return withOverride(node, context, false, rendered, (overrides) => (
-      <Text key={key} style={composedStyle([styles.paragraph, { writingDirection: context.direction }], textStyle(overrides))}>{defaultChildren(overrides, rendered)}</Text>
+      overrides && 'children' in overrides
+        ? <Text key={key} style={composedStyle([styles.paragraph, { writingDirection: context.direction }], textStyle(overrides))}>{overrides.children}</Text>
+        : renderNativeText(node, context, composedStyle([styles.paragraph, { writingDirection: context.direction }], textStyle(overrides)), rendered, key)
     ), key);
   }
   const rendered = children.map((child, index) => INLINE_NODES.has(child.type)

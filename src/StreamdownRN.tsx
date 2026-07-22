@@ -21,6 +21,7 @@ import {
   getAnimationWindowFrom,
   normalizeAnimationConfig,
   StableRootCache,
+  useFrameCoalescedValue,
   useReducedMotion,
 } from './core/streaming';
 import { resolveCapabilities } from './platform/defaults';
@@ -226,15 +227,25 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
       typeof animated === 'object' ? animated.stagger : undefined,
     ]
   );
+  const presentedChildren = useFrameCoalescedValue(
+    children,
+    process.env.NODE_ENV !== 'test'
+      && mode === 'streaming'
+      && Boolean(animationConfig)
+      && isAnimating
+      && !isComplete
+      && !prefersReducedMotion,
+    streamKey
+  );
   const completeRoot = useMemo(
     () => {
-      if (!(mode === 'static' || isComplete) || !children) return null;
+      if (!(mode === 'static' || isComplete) || !presentedChildren) return null;
       const startedAt = performance.now();
-      const root = parseSemanticDocument(children, parseOptions);
+      const root = parseSemanticDocument(presentedChildren, parseOptions);
       instrumentationRef.current?.recordParserDuration?.(Math.round((performance.now() - startedAt) * 1_000_000));
       return root;
     },
-    [children, isComplete, mode, parseOptions]
+    [presentedChildren, isComplete, mode, parseOptions]
   );
   useEffect(() => {
     if (!completeRoot) return;
@@ -250,7 +261,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
       return {
         registry: INITIAL_REGISTRY,
         generation: currentGeneration + Number(reset),
-        animationFrom: children.length,
+        animationFrom: presentedChildren.length,
         nextContent: '',
         nextStreamKey: streamKey,
         clearCache: reset,
@@ -258,7 +269,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
         event: 'none' as const,
       };
     }
-    if (!children || children.trim().length === 0) {
+    if (!presentedChildren || presentedChildren.trim().length === 0) {
       const reset = Boolean(contentRef.current);
       return {
         registry: INITIAL_REGISTRY,
@@ -274,8 +285,8 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
     const keyChanged = streamKeyRef.current !== streamKey;
     const previous = keyChanged ? '' : contentRef.current;
     const update = keyChanged
-      ? { kind: 'reset' as const, from: 0, added: children }
-      : classifyStreamUpdate(previous, children, appendOnly);
+      ? { kind: 'reset' as const, from: 0, added: presentedChildren }
+      : classifyStreamUpdate(previous, presentedChildren, appendOnly);
     try {
       let baseRegistry = registryRef.current;
       let generation = currentGeneration;
@@ -287,7 +298,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
       }
       let updated = processNewContent(
         baseRegistry,
-        children,
+        presentedChildren,
         update.kind === 'append',
         update.kind === 'append' ? update.added : undefined
       );
@@ -296,7 +307,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
         registry: updated,
         generation,
         animationFrom: update.from,
-        nextContent: children,
+        nextContent: presentedChildren,
         nextStreamKey: streamKey,
         clearCache,
         resetDebugContent: update.kind === 'reset',
@@ -307,7 +318,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
       return {
         registry: registryRef.current,
         generation: currentGeneration,
-        animationFrom: children.length,
+        animationFrom: presentedChildren.length,
         nextContent: contentRef.current,
         nextStreamKey: streamKeyRef.current,
         clearCache: false,
@@ -316,7 +327,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
         error: error instanceof Error ? error : new Error(String(error)),
       };
     }
-  }, [appendOnly, children, isComplete, mode, streamKey]);
+  }, [appendOnly, presentedChildren, isComplete, mode, streamKey]);
   useLayoutEffect(() => {
     if (streamState.error) {
       onErrorRef.current?.(streamState.error);
@@ -334,7 +345,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
   const { registry, generation, animationFrom } = streamState;
   const animationWindow = getAnimationWindowFrom(
     animationFrom,
-    children.length,
+    presentedChildren.length,
     Boolean(animationConfig && isAnimating),
     prefersReducedMotion
   );
@@ -361,7 +372,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
   }, [isAnimating, mode]);
 
   useEffect(() => {
-    if (!onDebug || !children) return;
+    if (!onDebug || !presentedChildren) return;
     const now = performance.now();
     const previousContent = previousContentRef.current;
     const tagState = registry.activeBlock
@@ -369,9 +380,9 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
       : INITIAL_INCOMPLETE_STATE;
     const snapshot: DebugSnapshot = {
       position: registry.cursor,
-      totalLength: children.length,
-      newChars: children.slice(previousContent.length),
-      newCharsCount: Math.max(0, children.length - previousContent.length),
+      totalLength: presentedChildren.length,
+      newChars: presentedChildren.slice(previousContent.length),
+      newCharsCount: Math.max(0, presentedChildren.length - previousContent.length),
       registry: {
         stableBlockCount: registry.blocks.length,
         stableBlocks: registry.blocks.map((block) => ({
@@ -395,8 +406,8 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
     };
     onDebug(snapshot);
     lastUpdateTimeRef.current = now;
-    previousContentRef.current = children;
-  }, [children, onDebug, registry]);
+    previousContentRef.current = presentedChildren;
+  }, [presentedChildren, onDebug, registry]);
 
   if (inputRejected) {
     const preview = rawChildren.slice(-MAX_INPUT_FALLBACK_LENGTH);
@@ -413,7 +424,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
     );
   }
 
-  if (!children || children.trim().length === 0) {
+  if (!presentedChildren || presentedChildren.trim().length === 0) {
     return showCaret ? (
       <View style={style}>
         <Text testID="streamdown-caret">{caret === 'circle' ? ' ●' : ' ▋'}</Text>
@@ -490,7 +501,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
         dir={dir}
         parseIncompleteMarkdown={parseIncompleteMarkdown}
         animation={animationWindow && !deferHeavyContent ? animationConfig : null}
-        animationFrom={Math.max(0, (animationWindow?.from ?? children.length) - (registry.activeBlock?.startPos ?? 0))}
+        animationFrom={Math.max(0, (animationWindow?.from ?? presentedChildren.length) - (registry.activeBlock?.startPos ?? 0))}
         showCaret={false}
         instrumentation={instrumentation}
         capabilities={nativeCapabilities}

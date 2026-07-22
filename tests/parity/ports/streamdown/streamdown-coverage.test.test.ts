@@ -9,12 +9,12 @@ describe('Streamdown coverage native adaptations', () => {
   // parity:0cd71bd31cc33182502a24279c4c544990a23f5d0b1a52dd1939a4baefa852d7
   it('animates only active streamed content and exposes a native caret', () => {
     const screen = render(h(Streamdown, { animated: true, isAnimating: true, caret: 'block' }, 'Hello'));
-    expect(screen.getAllByTestId('streamdown-new-content').length).toBeGreaterThan(0);
+    expect(JSON.parse(screen.getByTestId('streamdown-native-text').props.animationRanges).length).toBeGreaterThan(0);
     expect(screen.getByTestId('streamdown-caret').props.children).toBe(' ▋');
     screen.rerender(h(Streamdown, { animated: { animation: 'slideUp', duration: 300, sep: 'char' }, isAnimating: true }, 'Hello!'));
-    expect(screen.getAllByTestId('streamdown-new-content')).toHaveLength(1);
+    expect(JSON.parse(screen.getByTestId('streamdown-native-text').props.animationRanges)).toHaveLength(1);
     screen.rerender(h(Streamdown, { animated: true, isAnimating: false, caret: 'block' }, 'Hello!'));
-    expect(screen.queryByTestId('streamdown-new-content')).toBeNull();
+    expect(JSON.parse(screen.getByTestId('streamdown-native-text').props.animationRanges)).toHaveLength(0);
     expect(screen.queryByTestId('streamdown-caret')).toBeNull();
     const empty = render(h(Streamdown, { caret: 'block', isAnimating: true }, ''));
     expect(empty.getByTestId('streamdown-caret').props.children).toBe(' ▋');
@@ -84,16 +84,16 @@ describe('case-specific Streamdown lifecycle proof', () => {
   // parity:d482da0e7d06b24987a844e79c5ffc21e931d9a3e4daf1ad801abadb9f7358cd
   it('handles animated true while isAnimating is true', () => {
     const screen = render(h(Streamdown, { animated: true, isAnimating: true }, 'animated text'));
-    expect(screen.getAllByTestId('streamdown-new-content').length).toBeGreaterThan(0);
+    expect(JSON.parse(screen.getByTestId('streamdown-native-text').props.animationRanges).length).toBeGreaterThan(0);
   });
   // parity:e6aaaf5453ed29a2edd5c2c283b52087d56dc11db7a423cc14173fab397450c6
   it('handles animated mode with custom options', () => {
     const screen = render(h(Streamdown, { animated: { animation: 'slideUp', duration: 300, sep: 'char' }, isAnimating: true }, 'custom'));
-    expect(screen.getAllByTestId('streamdown-new-content').length).toBeGreaterThan(0);
+    expect(JSON.parse(screen.getByTestId('streamdown-native-text').props.animationRanges).length).toBeGreaterThan(0);
   });
   // parity:091a2758a1b8bdf3a15456e5214083119cbe766edb1123f087f6b886949dec93
   it('does not include active animation content when isAnimating is false', () => {
-    expect(render(h(Streamdown, { animated: true, isAnimating: false }, 'static')).queryByTestId('streamdown-new-content')).toBeNull();
+    expect(JSON.parse(render(h(Streamdown, { animated: true, isAnimating: false }, 'static')).getByTestId('streamdown-native-text').props.animationRanges)).toHaveLength(0);
   });
 
   // parity:3e12454eb2bebb4c882b994472d1d3d1dab772bace46b8908449c6a3443734d6
@@ -155,7 +155,7 @@ describe('case-specific Streamdown lifecycle proof', () => {
   it('rerenders when animated configuration changes', () => {
     const screen = render(h(Streamdown, { animated: false, isAnimating: true }, 'one two'));
     screen.rerender(h(Streamdown, { animated: true, isAnimating: true }, 'one two'));
-    expect(screen.queryAllByTestId('streamdown-new-content').length).toBeGreaterThan(0);
+    expect(JSON.parse(screen.getByTestId('streamdown-native-text').props.animationRanges).length).toBeGreaterThan(0);
   });
   // parity:011edc9d7dc97a7731ded31574ea5b3d4004397940afb56a247a2ffec64a4272
   it('rerenders Streamdown when linkSafety changes', () => {

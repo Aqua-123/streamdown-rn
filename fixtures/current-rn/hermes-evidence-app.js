@@ -110,7 +110,7 @@ export function HermesEvidenceFixture({ evidenceUrl, metrics, plugins }) {
         emitHermesEvent({ type: 'startup', scope: 'optional', startNs: optionalStart.current, endNs: now });
       }
     }}>
-      <Streamdown mode={scope === 'core' ? 'streaming' : 'static'} isAnimating={scope === 'core'} isComplete={scope === 'optional' || length >= CORPUS.length} instrumentation={metrics} plugins={scope === 'optional' ? plugins : undefined}>{markdown}</Streamdown>
+      <Streamdown mode={scope === 'core' ? 'streaming' : 'static'} animated={scope === 'core'} isAnimating={scope === 'core'} isComplete={scope === 'optional' || length >= CORPUS.length} instrumentation={metrics} plugins={scope === 'optional' ? plugins : undefined}>{markdown}</Streamdown>
     </Profiler>
   </View></SafeAreaView>;
 }

@@ -6,3 +6,8 @@ coverage/
 .DS_Store
 benchmarks/results/
 .sample/
+/android/.cxx/
+/android/build/
+/fixtures/hermes-evidence/android/build/
+/fixtures/expo54/android/
+/fixtures/expo54/ios/

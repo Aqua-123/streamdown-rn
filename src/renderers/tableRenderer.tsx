@@ -13,6 +13,7 @@ import {
   viewStyle,
   withOverride,
 } from './semanticComposition';
+import { renderNativeText } from './nativeTextRenderer';
 
 const TABLE_MIN_COLUMN_WIDTH = 120;
 const TABLE_MAX_COLUMN_WIDTH = 320;
@@ -55,7 +56,10 @@ export function renderTable(
           alignItems,
           borderRightWidth: cellIndex < columnCount - 1 ? 1 : 0,
           borderRightColor: primitives.border,
-        }], viewStyle(overrides))}><Text style={[styles.body, { width: '100%', fontSize: 14, lineHeight: 20, textAlign: alignment }, rowIndex === 0 ? styles.bold : undefined]}>{defaultChildren(overrides, value)}</Text></View>
+        }], viewStyle(overrides))}>{overrides && 'children' in overrides
+          ? <Text style={[styles.body, { width: '100%', fontSize: 14, lineHeight: 20, textAlign: alignment }, rowIndex === 0 ? styles.bold : undefined]}>{overrides.children}</Text>
+          : renderNativeText(cell, context, [styles.body, { width: '100%', fontSize: 14, lineHeight: 20, textAlign: alignment }, rowIndex === 0 ? styles.bold : undefined], value)}
+        </View>
       ), cellIndex, rowIndex === 0 ? 'th' : 'td');
     });
     return withOverride(row, context, false, cells, (overrides) => (

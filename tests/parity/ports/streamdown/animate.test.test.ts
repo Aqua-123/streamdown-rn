@@ -1,5 +1,4 @@
 import React from 'react';
-import { Animated } from 'react-native';
 import { render } from '@testing-library/react-native';
 import { Streamdown, createStreamingInstrumentation } from '../../../../src';
 import { getAnimationWindow, normalizeAnimationConfig } from '../../../../src/core/streaming';
@@ -15,25 +14,27 @@ function renderedCase(options: {
   expectDelay?: boolean;
 }) {
   return () => {
-    const timing = jest.spyOn(Animated, 'timing');
     const screen = render(React.createElement(Streamdown, {
       animated: { sep: options.sep ?? 'word', stagger: options.stagger ?? 40 },
       isAnimating: true,
       reducedMotion: false,
       children: options.markdown,
     }));
-    const animated = screen.queryAllByTestId('streamdown-new-content');
+    const animated = screen.queryAllByTestId('streamdown-native-text').flatMap((node) => {
+      const text = String(node.props.animationText ?? '');
+      const ranges = JSON.parse(String(node.props.animationRanges ?? '[]')) as Array<{ start: number; end: number; delay: number }>;
+      return ranges.map((range) => ({ text: text.slice(range.start, range.end), delay: range.delay }));
+    });
     if (options.expectedAnimated === 'none') expect(animated).toHaveLength(0);
     if (options.expectedAnimated === 'one') expect(animated).toHaveLength(1);
     if (options.expectedAnimated === 'many') expect(animated.length).toBeGreaterThan(1);
     if (options.excludedText)
-      expect(animated.some((node) => node.props.children === options.excludedText)).toBe(false);
+      expect(animated.some((item) => item.text === options.excludedText)).toBe(false);
     if (options.expectDelay !== undefined) {
-      const delays = timing.mock.calls.map((call) => call[1].delay ?? 0);
+      const delays = animated.map((item) => item.delay);
       expect(delays[0]).toBe(0);
       expect(delays.some((delay) => delay > 0)).toBe(options.expectDelay);
     }
-    timing.mockRestore();
   };
 }
 

@@ -1,6 +1,5 @@
 import React, { type ReactNode } from 'react';
 import { Text, View } from 'react-native';
-import { AnimatedRevealText } from '../core/streaming';
 import { sanitizeResourceURL } from '../core/security';
 import { transformResourceURL } from '../core/security/treePolicy';
 import { NativeLink, SafeImage, defaultTranslations } from '../controls';
@@ -22,6 +21,7 @@ import {
 } from './semanticComposition';
 import { renderTable } from './tableRenderer';
 import type { RenderContext, SemanticNode } from './rendererTypes';
+import { renderNativeText } from './nativeTextRenderer';
 
 /** The single auditable semantic-node dispatcher. */
 export function renderNode(
@@ -44,29 +44,15 @@ export function renderNode(
     case 'heading': {
       const style = styles[`heading${node.depth}` as keyof typeof styles];
       const content = renderInlineChildren(node, context, renderNode);
-      return withOverride(node, context, false, content, (overrides) => <Text key={key} accessibilityRole="header" style={composedStyle([style, { writingDirection: context.direction }], textStyle(overrides))}>{defaultChildren(overrides, content)}</Text>, key);
+      return withOverride(node, context, false, content, (overrides) => {
+        const composed = composedStyle([style, { writingDirection: context.direction }], textStyle(overrides));
+        return overrides && 'children' in overrides
+          ? <Text key={key} accessibilityRole="header" style={composed}>{overrides.children}</Text>
+          : renderNativeText(node, context, composed, content, key, 'header');
+      }, key);
     }
-    case 'text': {
-      const value = node.value ?? '';
-      const start = node.position?.start.offset;
-      const from = context.animation?.from;
-      if (start === undefined || from === undefined || start + value.length <= from) return value;
-      const split = Math.max(0, Math.min(value.length, from - start));
-      const suffix = value.slice(split);
-      const parts = context.animation!.sep === 'char'
-        ? Array.from(suffix)
-        : suffix.split(/(\s+)/).filter(Boolean);
-      return <React.Fragment key={key}>{value.slice(0, split)}{parts.map((part, index) => /^\s+$/.test(part)
-        ? part
-        : <AnimatedRevealText
-            key={`${from}:${index}`}
-            animation={context.animation!.animation}
-            delay={index * context.animation!.stagger}
-            duration={context.animation!.duration}
-            easing={context.animation!.easing}
-          >{part}</AnimatedRevealText>
-      )}</React.Fragment>;
-    }
+    case 'text':
+      return node.value ?? '';
     case 'strong':
       return withOverride(node, context, true, children, (overrides) => <Text key={key} style={composedStyle(styles.bold, textStyle(overrides))}>{defaultChildren(overrides, children)}</Text>, key);
     case 'emphasis':
@@ -138,12 +124,13 @@ export function renderNode(
     case 'link': {
       const safe = node.url ? sanitizeResourceURL(node.url, 'link', context.securityPolicy) : null;
       if (!safe) return <Text key={key}>{renderInlineChildren(node, context, renderNode)}</Text>;
+      const linkChildren = renderInlineChildren(node, context, renderNode);
       return withOverride(
         safe === node.url ? node : { ...node, url: safe },
         context,
         true,
-        children,
-        (overrides) => <NativeLink key={key} url={safe} capabilities={context.capabilities ?? resolveCapabilities()} resourcePolicy={context.securityPolicy} translations={context.translations} style={composedStyle(styles.link, textStyle(overrides))}>{defaultChildren(overrides, children)}</NativeLink>,
+        linkChildren,
+        (overrides) => <NativeLink key={key} url={safe} capabilities={context.capabilities ?? resolveCapabilities()} resourcePolicy={context.securityPolicy} translations={context.translations} style={composedStyle(styles.link, textStyle(overrides))}>{defaultChildren(overrides, linkChildren)}</NativeLink>,
         key
       );
     }
@@ -153,12 +140,13 @@ export function renderNode(
         ? transformResourceURL(definition.url, 'link', context.securityPolicy ?? {}, node)
         : null;
       if (!safe) return <Text key={key}>{children}</Text>;
+      const linkChildren = renderInlineChildren(node, context, renderNode);
       return withOverride(
         { ...node, url: safe },
         context,
         true,
-        children,
-        (overrides) => <NativeLink key={key} url={safe} capabilities={context.capabilities ?? resolveCapabilities()} resourcePolicy={context.securityPolicy} translations={context.translations} style={composedStyle(styles.link, textStyle(overrides))}>{defaultChildren(overrides, children)}</NativeLink>,
+        linkChildren,
+        (overrides) => <NativeLink key={key} url={safe} capabilities={context.capabilities ?? resolveCapabilities()} resourcePolicy={context.securityPolicy} translations={context.translations} style={composedStyle(styles.link, textStyle(overrides))}>{defaultChildren(overrides, linkChildren)}</NativeLink>,
         key
       );
     }

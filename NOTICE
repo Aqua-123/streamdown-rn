@@ -13,3 +13,7 @@ layout of Vercel Streamdown (https://github.com/vercel/streamdown), pinned at
 commit e5deed330aa4231751a106445d93d62e4716a22f and licensed under Apache-2.0.
 The corresponding source snapshot is reproducibly identified in
 parity/upstream.json; it is not included in the published package.
+
+The native streaming animation design was informed by the MIT-licensed tail
+animators in Software Mansion's react-native-enriched-markdown
+(https://github.com/software-mansion/react-native-enriched-markdown).

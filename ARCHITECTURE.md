@@ -1,5 +1,11 @@
 # Architecture
 
+## Native streaming text
+
+Eligible prose nodes are serialized into plain text plus UTF-16 semantic style, link, and append-animation ranges. The autolinked `StreamdownText` Fabric leaf view owns synchronous measurement and glyph drawing for the entire lifetime of that prose surface. Android uses a single `SpannableString` and `Choreographer`; iOS uses TextKit and `CADisplayLink`. Only newly appended Unicode word/grapheme ranges enter the native clock, so existing glyphs never restart and final layout does not move during `slideUp`.
+
+Code, math, diagrams, images, and custom inline React children keep their specialized renderers. A prose container with an unsupported override falls back as a whole, preventing mixed text engines and baseline changes. Native link hits are sent back through the same JavaScript sanitization, approval, and capability boundary as ordinary links.
+
 ## Runtime flow
 
 `Streamdown` separates completed blocks from one active streaming block. Append-only updates reuse the registry and a bounded 128-entry stable-root cache. Replacement, truncation, equal-length changes, and mode transitions rebuild the affected state rather than trusting an append invariant.

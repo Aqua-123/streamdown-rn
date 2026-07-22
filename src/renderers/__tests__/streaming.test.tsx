@@ -388,11 +388,11 @@ describe('streaming lifecycle', () => {
   it('reacts to caret, completion, and reduced-motion animation inputs', () => {
     const screen = render(<Streamdown animated caret="block" isAnimating reducedMotion={false}>AB</Streamdown>);
     expect(screen.getByTestId('streamdown-caret').props.children).toContain('▋');
-    expect(screen.getAllByTestId('streamdown-new-content').length).toBeGreaterThan(0);
+    expect(JSON.parse(screen.getByTestId('streamdown-native-text').props.animationRanges).length).toBeGreaterThan(0);
 
     screen.rerender(<Streamdown animated caret="circle" isAnimating reducedMotion>ABC</Streamdown>);
     expect(screen.getByTestId('streamdown-caret').props.children).toContain('●');
-    expect(screen.queryByTestId('streamdown-new-content')).toBeNull();
+    expect(JSON.parse(screen.getByTestId('streamdown-native-text').props.animationRanges)).toHaveLength(0);
 
     screen.rerender(<Streamdown animated caret="circle" isAnimating isComplete>ABC</Streamdown>);
     expect(screen.queryByTestId('streamdown-caret')).toBeNull();
@@ -420,22 +420,30 @@ describe('streaming lifecycle', () => {
   // parity:9d37c393b0d6057cc3708f7e10029403ee0fe36c1eef5582ea64fde533b4ba9c
   it('marks only the newly visible suffix for animation', () => {
     const screen = render(<Streamdown animated isAnimating reducedMotion={false}>1. AB</Streamdown>);
-    expect(screen.getByTestId('streamdown-new-content').props.children).toBe('AB');
+    const animated = screen.getByTestId('streamdown-native-text');
+    const firstRanges = JSON.parse(animated.props.animationRanges);
+    expect(animated.props.animationText.slice(firstRanges[0].start, firstRanges[0].end)).toBe('AB');
     screen.rerender(<Streamdown animated isAnimating reducedMotion={false}>1. ABCD</Streamdown>);
-    expect(screen.getByTestId('streamdown-new-content').props.children).toBe('CD');
+    const updated = screen.getByTestId('streamdown-native-text');
+    const nextRanges = JSON.parse(updated.props.animationRanges);
+    expect(updated.props.animationText.slice(nextRanges[0].start, nextRanges[0].end)).toBe('CD');
   });
 
   it('reacts to value-equivalent animation configuration and separators', () => {
     const config = () => ({ animation: 'slideUp' as const, duration: 200, easing: 'linear' as const, sep: 'char' as const, stagger: 5 });
     const screen = render(<Streamdown animated={config()} isAnimating reducedMotion={false}>AB</Streamdown>);
-    expect(screen.getAllByTestId('streamdown-new-content').map((node) => node.props.children)).toEqual(['A', 'B']);
+    expect(JSON.parse(screen.getByTestId('streamdown-native-text').props.animationRanges)).toEqual([
+      { start: 0, end: 1, delay: 0 }, { start: 1, end: 2, delay: 5 },
+    ]);
     screen.rerender(<Streamdown animated={config()} isAnimating reducedMotion={false}>ABCD</Streamdown>);
-    expect(screen.getAllByTestId('streamdown-new-content').map((node) => node.props.children)).toEqual(['C', 'D']);
+    expect(JSON.parse(screen.getByTestId('streamdown-native-text').props.animationRanges)).toEqual([
+      { start: 2, end: 3, delay: 0 }, { start: 3, end: 4, delay: 5 },
+    ]);
   });
 
   it('defers animation and caret for incomplete heavy constructs', () => {
     const screen = render(<Streamdown animated caret="block" isAnimating>{'```ts\nconst n = 1'}</Streamdown>);
-    expect(screen.queryByTestId('streamdown-new-content')).toBeNull();
+    expect(screen.queryByTestId('streamdown-native-text')).toBeNull();
     expect(screen.queryByTestId('streamdown-caret')).toBeNull();
   });
 

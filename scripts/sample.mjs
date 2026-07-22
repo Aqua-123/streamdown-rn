@@ -53,7 +53,13 @@ if (!process.argv.includes('--prepare-only')) {
   run('npx', ['expo', `run:${platform}`, ...release, '--no-bundler'], app);
   const appId = 'ai.darkresearch.streamdownrn.expo56';
   if (platform === 'ios') {
-    run('xcrun', ['simctl', 'terminate', 'booted', appId], app);
+    // A fresh simulator install has no running process to terminate. simctl
+    // reports that harmless state as exit code 3, so launch must not be skipped.
+    spawnSync('xcrun', ['simctl', 'terminate', 'booted', appId], {
+      cwd: app,
+      stdio: 'ignore',
+      env: process.env,
+    });
     run('xcrun', ['simctl', 'launch', 'booted', appId], app);
   } else {
     run('adb', ['shell', 'am', 'force-stop', appId], app);

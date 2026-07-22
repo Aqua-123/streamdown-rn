@@ -2,6 +2,8 @@
 
 The declared peer range is React Native `^0.81.0 || ^0.85.0` with React 19. The host must also provide one `react-native-svg` version in the tested `>=15.12.1 <16.0.0` range: Expo SDK 54 uses 15.12.1 and the current Expo fixture uses 15.15.5.
 
+The New Architecture is required. The package autolinks a Codegen/Fabric component for prose layout and streaming animation on both platforms. Expo applications therefore need a development build, `expo run:*`, EAS build, or another native build that includes the package; Expo Go cannot load it. After adding or upgrading the package, regenerate native projects as appropriate and run CocoaPods on iOS.
+
 | Host | Evidence | Status |
 | --- | --- | --- |
 | Expo 54 / RN 0.81.5 | packed Metro plus iOS simulator and Android emulator Release launch | passed; Android hierarchy asserted, iOS visual-only |

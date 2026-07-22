@@ -6,6 +6,7 @@
 - [shadcn/ui](https://ui.shadcn.com) informed the open-code primitive patterns and semantic theme vocabulary.
 - [Base UI](https://base-ui.com) informed the headless, composable primitive APIs.
 - [Vercel Streamdown](https://github.com/vercel/streamdown) is the pinned feature and parity baseline described in `parity/upstream.json`.
+- [Software Mansion react-native-enriched-markdown](https://github.com/software-mansion/react-native-enriched-markdown) is MIT licensed. Its native tail fade animator implementations informed the `CADisplayLink`/`Choreographer` architecture; streamdown-rn's implementation is independently integrated with its Fabric text surface and semantic range model.
 
 These are credits, not claims that their browser implementations are bundled into this React Native package.
 

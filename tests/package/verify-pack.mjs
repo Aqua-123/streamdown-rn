@@ -127,7 +127,12 @@ try {
     tarball = path.join(temp, pack.filename);
   }
   assert(!pack.files.some(({ path: file }) => file === 'dist/removed-source-artifact.js'), 'build must remove stale dist artifacts');
-  assert(!pack.files.some(({ path: file }) => file.startsWith('src/') || file.includes('__tests__')));
+  assert(!pack.files.some(({ path: file }) => file.startsWith('android/build/') || file.startsWith('android/.cxx/')), 'native build outputs must not be published');
+  const publishedSources = pack.files
+    .map(({ path: file }) => file)
+    .filter((file) => file.startsWith('src/'));
+  assert.deepEqual(publishedSources, ['src/native/StreamdownTextNativeComponent.ts'], 'only the Codegen specification may ship from src');
+  assert(!pack.files.some(({ path: file }) => file.includes('__tests__')));
 
   const packedManifest = JSON.parse(run('tar', ['-xOf', tarball, 'package/package.json']));
   assertSvgPeerManifest(packedManifest);
@@ -161,6 +166,7 @@ try {
     fs.writeFileSync(consumerManifestPath, `${JSON.stringify(consumerManifest, null, 2)}\n`);
     assertLockedCandidateDependencies(consumer, packedManifest);
     const installed = path.join(consumer, 'node_modules/streamdown-rn');
+    fs.rmSync(installed, { recursive: true, force: true });
     fs.mkdirSync(installed, { recursive: true });
     run('tar', ['-xzf', tarball, '-C', installed, '--strip-components=1']);
     assertSingleHostSvg(consumer, run);
@@ -177,6 +183,10 @@ try {
     assert.match(nativeUiEntry, /streamdown-rn\/dist\/components\/ui\/index\.js$/);
 
     const installedPackage = path.join(consumer, 'node_modules/streamdown-rn');
+    const nativeViewConfig = fs.readFileSync(path.join(installedPackage, 'dist/native/StreamdownTextNativeComponent.js'), 'utf8');
+    assert.match(nativeViewConfig, /NativeComponentRegistry\.get/);
+    assert.match(nativeViewConfig, /uiViewClassName:\s*["']StreamdownText["']/);
+    assert.doesNotMatch(nativeViewConfig, /codegenNativeComponent\)\(['"]StreamdownText/);
     for (const conditions of Object.values(packedManifest.exports)) {
       const importTarget = conditions.import?.default;
       assert.equal(typeof importTarget, 'string');

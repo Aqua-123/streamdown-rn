@@ -156,6 +156,16 @@ export default function App() {
 
 function evidenceRenderConfig(scenario, phase) {
   if (scenario === 'streaming-32-character-chunks') return { scenario: 'streaming', checkpoint: phase === 'chunk-32' ? '32' : phase === 'chunk-64' ? '64' : 'complete' };
+  if (scenario.startsWith('streaming-')) {
+    const complete = phase.endsWith('complete');
+    return {
+      scenario: 'streaming', checkpoint: complete ? 'complete' : '64',
+      animated: phase.startsWith('unanimated-') ? false : phase.startsWith('slide-')
+        ? { animation: 'slideUp', duration: 320, easing: 'ease-out', sep: 'word', stagger: 14 }
+        : { animation: 'fadeIn', duration: 280, easing: 'ease-out', sep: phase.startsWith('fade-char') ? 'char' : 'word', stagger: 12 },
+      reducedMotion: phase.startsWith('reduced-motion-'),
+    };
+  }
   const rendered = {
     'image-loading': 'image-loading', 'image-error': 'image-error', 'image-retry': 'image-retry',
     'code-supported': 'code', 'code-unsupported': 'code-unsupported', 'code-incomplete': 'code-incomplete',
@@ -243,7 +253,7 @@ function EvidenceImage({ phase, onPassed }) {
 }
 
 function AutomatedEvidenceFixture({ config, metrics, capabilities, pluginsOverride, onEvidenceCommit }) {
-  const { scenario, theme = 'light', direction = 'ltr', layout = 'narrow', checkpoint } = config;
+  const { scenario, theme = 'light', direction = 'ltr', layout = 'narrow', checkpoint, animated, reducedMotion } = config;
   const streaming = scenario === 'streaming';
   const incompleteCode = scenario === 'code-incomplete';
   const source = STREAM;
@@ -259,7 +269,7 @@ function AutomatedEvidenceFixture({ config, metrics, capabilities, pluginsOverri
       <ScrollView contentContainerStyle={{ padding: 16, width: layout === 'wide' ? 720 : 360, maxWidth: '100%', alignSelf: 'center' }}>
         <Text style={{ color: foregroundColor }}>Device evidence: {scenario}</Text>
         <Profiler id="streamdown-evidence" onRender={() => onEvidenceCommit({ markdown, scenario, isComplete })}>
-          <Streamdown mode={streaming || incompleteCode ? 'streaming' : 'static'} theme={theme} dir={direction} isAnimating={false} isComplete={isComplete} instrumentation={metrics} plugins={pluginsOverride ?? scenarioPlugins} capabilities={capabilities}>{markdown}</Streamdown>
+          <Streamdown mode={streaming || incompleteCode ? 'streaming' : 'static'} theme={theme} dir={direction} animated={animated} reducedMotion={reducedMotion} isAnimating={Boolean(animated && !isComplete)} isComplete={isComplete} instrumentation={metrics} plugins={pluginsOverride ?? scenarioPlugins} capabilities={capabilities}>{markdown}</Streamdown>
         </Profiler>
       </ScrollView>
     </SafeAreaView>

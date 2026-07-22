@@ -307,7 +307,7 @@ export function HarnessApp({ initialTheme, allPlugins, metrics, capabilities }) 
           <Panel palette={palette} style={{ flex: 1 }}>
             <SectionTitle title="Render state" detail="Control Streamdown props independently." palette={palette} />
             <ToggleRow label="Streaming mode" detail="mode = streaming" value={streamingMode} onValueChange={(value) => { setStreamingMode(value); setIsComplete(!value); if (!value) dispatch({ type: 'pause', total }); }} palette={palette} testID="toggle-streaming" />
-            <ToggleRow label="Animate tokens" detail="isAnimating" value={animate} onValueChange={setAnimate} palette={palette} testID="toggle-animate" />
+            <ToggleRow label="Animate tokens" detail="animated" value={animate} onValueChange={setAnimate} palette={palette} testID="toggle-animate" />
             <ToggleRow label="Mark complete" detail="isComplete" value={isComplete} onValueChange={setIsComplete} palette={palette} testID="toggle-complete" />
           </Panel>
           <Panel palette={palette} style={{ flex: 1 }}>
@@ -355,7 +355,8 @@ export function HarnessApp({ initialTheme, allPlugins, metrics, capabilities }) 
                   mode={streamingMode ? 'streaming' : 'static'}
                   theme={selectedTheme}
                   dir={direction}
-                  isAnimating={animate}
+                  animated={animate}
+                  isAnimating={streamingMode && playback.status === 'running'}
                   isComplete={isComplete}
                   instrumentation={metrics}
                   plugins={enabledPlugins}

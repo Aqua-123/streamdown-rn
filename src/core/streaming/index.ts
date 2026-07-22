@@ -14,4 +14,4 @@ export {
 } from './instrumentation';
 export { StableRootCache } from './stableRootCache';
 export { useReducedMotion } from './useReducedMotion';
-export { AnimatedRevealText } from './AnimatedRevealText';
+export { useFrameCoalescedValue } from './useFrameCoalescedValue';

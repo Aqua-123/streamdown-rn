@@ -22,7 +22,11 @@ describe('native table layout', () => {
     } as unknown as Root;
     const screen = render(<ASTRenderer node={tree} theme={lightTheme} />);
 
-    const styleForCell = (text: string) => StyleSheet.flatten(screen.getByText(text).parent!.parent!.props.style);
+    const styleForCell = (text: string) => {
+      let current = screen.getByText(text).parent;
+      while (current && typeof StyleSheet.flatten(current.props.style)?.width !== 'number') current = current.parent;
+      return StyleSheet.flatten(current!.props.style);
+    };
     const styleForText = (text: string) => StyleSheet.flatten(screen.getByText(text).props.style);
     const headerWidths = ['A', 'Centered title', 'R'].map((text) => styleForCell(text).width);
     const bodyWidths = ['short', '  fourteen   chars  ', 'x'.repeat(50)].map((text) => styleForCell(text).width);

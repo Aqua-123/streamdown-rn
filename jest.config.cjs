@@ -8,6 +8,7 @@ module.exports = {
   modulePathIgnorePatterns: ['<rootDir>/.sample/'],
   moduleNameMapper: {
     '^react-native$': '<rootDir>/node_modules/react-native',
+    '^react-native/(.*)$': '<rootDir>/node_modules/react-native/$1',
     '^react-native-svg$': '<rootDir>/node_modules/react-native-svg',
     '^remend$': '<rootDir>/node_modules/remend/dist/index.js',
   },

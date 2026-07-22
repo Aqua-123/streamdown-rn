@@ -76,6 +76,14 @@ describe('device proof contract', () => {
     expect(harness).toMatch(/paddingBottom: (?:9[89]|[1-9]\d{2,})/);
   });
 
+  it('wires token animation separately from active streaming state', () => {
+    const fixture = fs.readFileSync(path.resolve('fixtures/current-rn/App.js'), 'utf8');
+    const harness = fs.readFileSync(path.resolve('fixtures/current-rn/harness-app.js'), 'utf8');
+    expect(fixture).toMatch(/animated=\{animated \?\? \(streaming \|\| benchmarking\)\}/);
+    expect(harness).toMatch(/animated=\{animate\}/);
+    expect(harness).toMatch(/isAnimating=\{streamingMode && playback\.status === 'running'\}/);
+  });
+
   it('fails the visual readiness self-check when required semantics are unavailable', () => {
     const result = spawnSync(process.execPath, ['tests/visual/capture.mjs', '--self-test'], { encoding: 'utf8' });
     expect(result.status).toBe(0);

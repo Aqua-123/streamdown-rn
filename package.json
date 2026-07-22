@@ -132,6 +132,7 @@
     "unified": "^11.0.5"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.0",
     "@changesets/cli": "^2.29.7",
     "@react-native/babel-preset": "0.81.5",
     "@testing-library/react-native": "13.3.3",
@@ -154,6 +155,12 @@
   },
   "files": [
     "dist/",
+    "src/native/StreamdownTextNativeComponent.ts",
+    "android/build.gradle",
+    "android/src/main/",
+    "ios/",
+    "react-native.config.js",
+    "StreamdownRN.podspec",
     "README.md",
     "ARCHITECTURE.md",
     "CHANGELOG.md",
@@ -179,5 +186,19 @@
   "publishConfig": {
     "access": "public",
     "provenance": true
+  },
+  "nativePackage": true,
+  "codegenConfig": {
+    "name": "StreamdownTextSpec",
+    "type": "components",
+    "jsSrcsDir": "src/native",
+    "android": {
+      "javaPackageName": "ai.darkresearch.streamdown"
+    },
+    "ios": {
+      "componentProvider": {
+        "StreamdownText": "StreamdownTextComponentView"
+      }
+    }
   }
 }
