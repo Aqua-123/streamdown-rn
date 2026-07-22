@@ -33,6 +33,10 @@ export {
   DropdownTrigger,
   DropdownPopup,
   DropdownItem,
+  ActionButton,
+  FullscreenModal,
+  NativeLink,
+  PanZoomSurface,
   type ButtonProps,
   type ButtonVariant,
   type DropdownRootProps,
@@ -40,6 +44,10 @@ export {
   type DropdownPopupProps,
   type DropdownItemProps,
   type DropdownOpenReason,
+  type ActionButtonProps,
+  type FullscreenModalProps,
+  type NativeLinkProps,
+  type PanZoomSurfaceProps,
 } from './components/ui';
 
 // ============================================================================
@@ -102,10 +110,6 @@ export {
 } from './core/streaming';
 
 export {
-  ActionButton,
-  FullscreenModal,
-  NativeLink,
-  PanZoomSurface,
   defaultTranslations,
   defaultIcons,
   resolveTranslations,

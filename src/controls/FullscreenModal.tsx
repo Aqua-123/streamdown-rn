@@ -1,10 +1,10 @@
 import React, { cloneElement, isValidElement, useCallback, useEffect, useRef } from 'react';
 import { InteractionManager, Modal, Platform, SafeAreaView, ScrollView, StatusBar, Text, View } from 'react-native';
-import { Button } from '../components/ui';
+import { Button } from '../components/ui/Button';
 import type { NativeCapabilities } from '../platform/capabilities';
 import { defaultIcons, type IconMap } from './icons';
 
-export function FullscreenModal({ visible, label, closeLabel, children, capabilities, restoreTarget, onClose, icons, color, backgroundColor, contentMode = 'horizontal' }: {
+export interface FullscreenModalProps {
   visible: boolean;
   label: string;
   closeLabel: string;
@@ -16,7 +16,9 @@ export function FullscreenModal({ visible, label, closeLabel, children, capabili
   color?: string;
   backgroundColor?: string;
   contentMode?: 'horizontal' | 'document' | 'canvas';
-}) {
+}
+
+export function FullscreenModal({ visible, label, closeLabel, children, capabilities, restoreTarget, onClose, icons, color, backgroundColor, contentMode = 'horizontal' }: FullscreenModalProps) {
   const closeRequested = useRef(false);
   const restorePending = useRef(false);
   const visibleRef = useRef(visible);

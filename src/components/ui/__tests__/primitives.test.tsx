@@ -3,6 +3,8 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 import { AccessibilityInfo, Dimensions, Modal, StyleSheet, Text, type View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Button, Dropdown } from '..';
+import * as ui from '..';
+import * as root from '../../../index';
 
 function menu(onSelect: () => void | Promise<void>, root: React.ComponentProps<typeof Dropdown.Root> = {}) {
   return <Dropdown.Root {...root}>
@@ -12,6 +14,27 @@ function menu(onSelect: () => void | Promise<void>, root: React.ComponentProps<t
 }
 
 describe('UI primitives', () => {
+  it('exposes the exact supported UI inventory and keeps root aliases identical', () => {
+    expect(Object.keys(ui).sort()).toEqual([
+      'ActionButton',
+      'Button',
+      'Dropdown',
+      'DropdownItem',
+      'DropdownPopup',
+      'DropdownRoot',
+      'DropdownTrigger',
+      'FullscreenModal',
+      'NativeLink',
+      'PanZoomSurface',
+    ]);
+    for (const name of Object.keys(ui) as Array<keyof typeof ui>) {
+      expect(root[name]).toBe(ui[name]);
+    }
+    expect(ui).not.toHaveProperty('CodeControls');
+    expect(ui).not.toHaveProperty('TableControls');
+    expect(ui).not.toHaveProperty('SafeImage');
+  });
+
   it('merges button accessibility state with its disabled prop', () => {
     render(<Button disabled accessibilityState={{ selected: true }}>Save</Button>);
     expect(screen.getByRole('button', { name: 'Save' }).props.accessibilityState).toEqual({ selected: true, disabled: true });

@@ -26,6 +26,32 @@ export function Example() {
 }
 ```
 
+## UI primitives
+
+Import UI building blocks from `streamdown-rn/ui`. `Button` and the Dropdown
+compound parts are supported primitives. `ActionButton`, `FullscreenModal`,
+`NativeLink`, and `PanZoomSurface` are compatibility compositions; their root
+exports remain aliases of the same components. Renderer-owned `CodeControls`,
+`TableControls`, and `SafeImage` are private and are not exported here.
+
+```tsx verify
+import React from 'react';
+import { Button, Dropdown, type ButtonProps } from 'streamdown-rn/ui';
+
+const triggerProps: Omit<ButtonProps, 'children'> = { accessibilityLabel: 'More actions' };
+
+export function Actions() {
+  return (
+    <Dropdown.Root>
+      <Dropdown.Trigger {...triggerProps}>More</Dropdown.Trigger>
+      <Dropdown.Popup accessibilityLabel="More actions">
+        <Dropdown.Item onSelect={() => undefined}>Retry</Dropdown.Item>
+      </Dropdown.Popup>
+    </Dropdown.Root>
+  );
+}
+```
+
 Important streaming properties are `mode`, `isAnimating`, `isComplete`, `parseIncompleteMarkdown`, `animated`, `caret`, and `reducedMotion`. `announceStreaming` is opt-in and coalesced. `components` overrides semantic native elements; `componentRegistry` serves the compact dynamic-component syntax. Consult the emitted `dist/index.d.ts` for the complete contract; `bun run docs:verify` compiles this example against that public declaration.
 
 ## Themes

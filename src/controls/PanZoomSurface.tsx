@@ -4,7 +4,7 @@ import type { NativeCapabilities } from '../platform/capabilities';
 import { ActionButton } from './ActionButton';
 import { defaultIcons, type IconMap } from './icons';
 
-export function PanZoomSurface({ children, capabilities, min = 0.5, max = 3, step = 0.25, initialScale = 1, showControls = true, disabled, icons, color, backgroundColor, borderColor, radius, focusRingColor }: {
+export interface PanZoomSurfaceProps {
   children: React.ReactNode;
   capabilities: NativeCapabilities;
   min?: number;
@@ -19,7 +19,9 @@ export function PanZoomSurface({ children, capabilities, min = 0.5, max = 3, ste
   borderColor?: string;
   radius?: number;
   focusRingColor?: string;
-}) {
+}
+
+export function PanZoomSurface({ children, capabilities, min = 0.5, max = 3, step = 0.25, initialScale = 1, showControls = true, disabled, icons, color, backgroundColor, borderColor, radius, focusRingColor }: PanZoomSurfaceProps) {
   if (!Number.isFinite(min) || !Number.isFinite(max) || min <= 0 || max < min) throw new TypeError('PanZoomSurface requires finite bounds with 0 < min <= max');
   if (!Number.isFinite(step) || step <= 0) throw new TypeError('PanZoomSurface step must be positive and finite');
   if (!Number.isFinite(initialScale)) throw new TypeError('PanZoomSurface initialScale must be finite');

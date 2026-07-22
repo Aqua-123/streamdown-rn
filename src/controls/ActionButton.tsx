@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
-import { Button } from '../components/ui';
+import { Button } from '../components/ui/Button';
 import type { CapabilityResult } from '../platform/capabilities';
 import { failedCapability } from '../platform/capabilities';
 

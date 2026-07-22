@@ -78,6 +78,11 @@ try {
     const nativeEntry = run('node', ['--conditions=react-native', '--input-type=module', '--eval', resolve], { cwd: consumer });
     assert.match(defaultEntry, /streamdown-rn\/dist\/index\.js$/);
     assert.match(nativeEntry, /streamdown-rn\/dist\/index\.js$/);
+    const resolveUi = "console.log(import.meta.resolve('streamdown-rn/ui'))";
+    const defaultUiEntry = run('node', ['--input-type=module', '--eval', resolveUi], { cwd: consumer });
+    const nativeUiEntry = run('node', ['--conditions=react-native', '--input-type=module', '--eval', resolveUi], { cwd: consumer });
+    assert.match(defaultUiEntry, /streamdown-rn\/dist\/components\/ui\/index\.js$/);
+    assert.match(nativeUiEntry, /streamdown-rn\/dist\/components\/ui\/index\.js$/);
 
     const installedPackage = path.join(consumer, 'node_modules/streamdown-rn');
     run(
@@ -93,6 +98,26 @@ try {
       ],
       { env: { ...process.env, PACKED_PACKAGE_PATH: installedPackage } }
     );
+    const uiConsumer = path.join(consumer, 'ui-consumer.ts');
+    fs.writeFileSync(uiConsumer, `import {
+  ActionButton, Button, Dropdown, DropdownItem, DropdownPopup, DropdownRoot, DropdownTrigger,
+  FullscreenModal, NativeLink, PanZoomSurface,
+  type ActionButtonProps, type ButtonProps, type ButtonVariant,
+  type DropdownItemProps, type DropdownOpenReason, type DropdownPopupProps,
+  type DropdownRootProps, type DropdownTriggerProps, type FullscreenModalProps,
+  type NativeLinkProps, type PanZoomSurfaceProps,
+} from 'streamdown-rn/ui';
+const components = [ActionButton, Button, Dropdown, DropdownItem, DropdownPopup, DropdownRoot, DropdownTrigger, FullscreenModal, NativeLink, PanZoomSurface];
+type Contracts = ActionButtonProps | ButtonProps | DropdownItemProps | DropdownPopupProps | DropdownRootProps | DropdownTriggerProps | FullscreenModalProps | NativeLinkProps | PanZoomSurfaceProps;
+const variant: ButtonVariant = 'ghost';
+const reason: DropdownOpenReason = 'trigger';
+void components; void (null as Contracts | null); void variant; void reason;
+`);
+    run(
+      path.join(root, 'node_modules/.bin/tsc'),
+      [uiConsumer, '--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'Node16', '--moduleResolution', 'Node16'],
+      { cwd: consumer }
+    );
     fs.writeFileSync(path.join(consumer, 'App.js'), `import React from 'react';
 import { Streamdown } from 'streamdown-rn';
 export default function App() { return <Streamdown mode="static">{'# packed core fixture'}</Streamdown>; }
@@ -107,6 +132,25 @@ export default function App() { return <Streamdown mode="static">{'# packed core
     assert(!coreText.includes('custom-renderers'));
     assert(!coreText.includes('remark-math'));
     assert(!coreText.includes('Offline WebView adapter'));
+
+    fs.writeFileSync(path.join(consumer, 'App.js'), `import React from 'react';
+import { View } from 'react-native';
+import { ActionButton, Button, Dropdown, DropdownItem, DropdownPopup, DropdownRoot, DropdownTrigger, FullscreenModal, NativeLink, PanZoomSurface } from 'streamdown-rn/ui';
+const exports = [ActionButton, Button, Dropdown, DropdownItem, DropdownPopup, DropdownRoot, DropdownTrigger, FullscreenModal, NativeLink, PanZoomSurface];
+export default function App() { return <View accessibilityLabel={'ui-' + exports.length} />; }
+`);
+    let uiText = '';
+    for (const platform of ['ios', 'android']) {
+      const uiBundle = path.join(consumer, `dist-ui-${platform}`);
+      run('npx', ['expo', 'export', '--platform', platform, '--clear', '--output-dir', uiBundle], { cwd: consumer });
+      uiText += bundleText(uiBundle);
+    }
+    assert(!uiText.includes('maxCacheUnits'));
+    assert(!uiText.includes('custom-renderers'));
+    assert(!uiText.includes('singleDollarTextMath'));
+    assert(!uiText.includes('remark-math'));
+    assert(!uiText.includes('No Mermaid adapter supports'));
+    assert(!uiText.includes('Offline WebView adapter'));
 
     fs.writeFileSync(path.join(consumer, 'App.js'), `import React from 'react';
 import { Text } from 'react-native';

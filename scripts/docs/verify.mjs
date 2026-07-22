@@ -108,7 +108,11 @@ try {
       target: 'ES2020', module: 'CommonJS', moduleResolution: 'Node', jsx: 'react-jsx',
       strict: true, skipLibCheck: true, noEmit: true, esModuleInterop: true,
       baseUrl: root,
-      paths: { 'streamdown-rn': ['dist/index.d.ts'], 'streamdown-rn/*': ['dist/plugins/*/index.d.ts'] },
+      paths: {
+        'streamdown-rn': ['dist/index.d.ts'],
+        'streamdown-rn/ui': ['dist/components/ui/index.d.ts'],
+        'streamdown-rn/*': ['dist/plugins/*/index.d.ts'],
+      },
     }, include: ['./*.ts', './*.tsx'],
   }));
   const result = spawnSync(path.join(root, 'node_modules/.bin/tsc'), ['-p', path.join(temporary, 'tsconfig.json')], {
