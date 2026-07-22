@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "records": [
+    {
+      "package": "streamdown-rn",
+      "version": "0.2.1",
+      "repository": "darkresearch/generative-ui packages/streamdown-rn",
+      "lineageStatus": "npm-owner-confirmation-required",
+      "npmIntegrity": "sha512-KbnVYi85Xl7h9TJxWKsOFrEERF9bI3kcxUjbepayX1IHv9H/SIhQapqYlGmcEzoo/H/dToFXFN1mQsaOnHizvQ==",
+      "packageSha256": "f86c31b995ed7e066a39861f0902c4c5d7f57efae26646a6484fa28683350876",
+      "gitHead": "f0454d0561adcf12450dc2f6baa55e174dea7219"
+    }
+  ]
+}

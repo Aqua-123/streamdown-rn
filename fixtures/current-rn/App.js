@@ -1,10 +1,12 @@
-import React, { Profiler, useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { AccessibilityInfo, Linking, Platform, SafeAreaView, ScrollView, StatusBar, Text } from 'react-native';
+import React, { Profiler, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { AccessibilityInfo, Alert, AppState, Image, Linking, PixelRatio, Platform, SafeAreaView, ScrollView, StatusBar, Text, View } from 'react-native';
 import { FullscreenModal, Streamdown, createStreamingInstrumentation, darkTheme, lightTheme } from 'streamdown-rn';
+import { ActionButton, Button, NativeLink, PanZoomSurface } from 'streamdown-rn/ui';
 import { createCodePlugin } from 'streamdown-rn/code';
 import { cjk } from 'streamdown-rn/cjk';
 import { createMathPlugin } from 'streamdown-rn/math';
 import { createBeautifulMermaidAdapter, createMermaidPlugin } from 'streamdown-rn/mermaid';
+import { createOfflineWebViewAdapter } from 'streamdown-rn/mermaid/webview';
 import { createRendererPlugin } from 'streamdown-rn/renderers';
 import { createHighlighterCore } from 'shiki/core';
 import { createJavaScriptRegexEngine } from 'shiki/engine/javascript';
@@ -22,6 +24,22 @@ import { buildBenchmarkCorpus } from './benchmarkCorpus';
 import { ResponsiveMermaidSvg, VegaLiteRenderer } from './fixture-renderers';
 import { HarnessApp } from './harness-app';
 import { createFixtureCapabilities } from './native-capabilities';
+import { HermesEvidenceFixture } from './hermes-evidence-app';
+import {
+  DEVICE_SCENARIO_PHASES,
+  createDeviceEvidenceCapabilities,
+  createDeviceEvidenceReporter,
+  parseDeviceEvidenceRequest,
+} from './device-evidence';
+
+const DEVICE_HOST = 'expo56';
+const DEVICE_SCENARIOS = [
+  'packed-core-and-all-subpath-launch', 'static-mixed-corpus', 'streaming-32-character-chunks',
+  'link-approved-denied-failed', 'clipboard-share-file-success-cancel-fail', 'image-loading-error-retry',
+  'scroll-fullscreen-focus-restore', 'pan-zoom-reduced-motion', 'code-supported-unsupported-incomplete',
+  'math-native-and-fallback', 'mermaid-native-webview-fallback-retry', 'rtl-cjk-font-scale-theme-layout',
+];
+const ALL_SUBPATHS_RESOLVED = [Streamdown, Button, createCodePlugin, cjk, createMathPlugin, createMermaidPlugin, createOfflineWebViewAdapter, createRendererPlugin].every(Boolean);
 
 const STATIC = `# Streamdown RN\n\n- [x] native semantics\n- [ ] streaming\n\n| Metric | Value |\n|---|---:|\n| parity | 100% |\n\n\`\`\`js\nconst hello = 'world';\n\`\`\`\n\nInline math $x^2$ and block math:\n\n$$\\sum_{i=1}^{n}i$$\n\n中文**强调**，مرحبا بالعالم\n\n\`\`\`mermaid\nflowchart LR\nA-->B\n\`\`\`\n`;
 const STREAM = `${STATIC}\n## Incomplete\n\n[link](https://example.com`;
@@ -63,6 +81,7 @@ const SCENARIO_PLUGINS = {
 const SCENARIOS = {
   controls: '| A | B |\n|---|---|\n| one | two |\n\n```js\nconst controlled = true;\n```',
   fallbacks: '![blocked image](http://example.com/image.png)\n\n```mermaid\ngantt\ntitle Unsupported\n```',
+  links: '[Approved](https://evidence.invalid/approved) [Denied](https://evidence.invalid/denied) [Failed](https://evidence.invalid/failed)',
   code: '```typescript showLineNumbers {2}\nconst one = 1;\nconst two = 2;\n```',
   math: '$$\\begin{matrix}1&2\\\\3&4\\end{matrix}$$',
   mermaid: '```mermaid\nflowchart LR\nA-->B\n```',
@@ -90,7 +109,7 @@ function useConfig() {
   useEffect(() => {
     const apply = (url) => {
       const params = new URL(url).searchParams;
-      setConfig({ scenario: params.get('scenario') || 'harness', theme: params.get('theme') || 'light', direction: params.get('direction') || 'ltr', layout: params.get('layout') || 'narrow', checkpoint: params.get('checkpoint') || '' });
+      setConfig({ scenario: params.get('scenario') || 'harness', theme: params.get('theme') || 'light', direction: params.get('direction') || 'ltr', layout: params.get('layout') || 'narrow', checkpoint: params.get('checkpoint') || '', evidenceUrl: url });
     };
     Linking.getInitialURL().then((url) => url && apply(url));
     const subscription = Linking.addEventListener('url', ({ url }) => apply(url));
@@ -103,11 +122,184 @@ export default function App() {
   const config = useConfig();
   const metrics = useMemo(() => createStreamingInstrumentation(), []);
   const capabilities = useMemo(() => createFixtureCapabilities(), []);
+  const evidenceRequest = useMemo(() => parseDeviceEvidenceRequest(config.evidenceUrl, { host: DEVICE_HOST, platform: Platform.OS, scenarios: DEVICE_SCENARIOS }), [config.evidenceUrl]);
+  if (config.evidenceUrl?.includes('hermesEvidence=')) return <HermesEvidenceFixture evidenceUrl={config.evidenceUrl} metrics={metrics} plugins={PLUGINS} />;
+  if (config.evidenceUrl?.includes('://evidence')) {
+    return evidenceRequest ? <DeviceEvidenceFixture request={evidenceRequest} metrics={metrics} /> : <Text testID="device-evidence-rejected">Invalid device evidence request</Text>;
+  }
   if (config.scenario === 'harness') return <HarnessApp initialTheme={config.theme} allPlugins={PLUGINS} metrics={metrics} capabilities={capabilities} />;
   return <AutomatedFixture config={config} metrics={metrics} capabilities={capabilities} />;
 }
 
-function AutomatedFixture({ config, metrics, capabilities }) {
+const ACTION_PHASE_STATUS = {
+  'link-approved': 'success', 'link-denied': 'denied', 'link-failed': 'failed',
+  'clipboard-success': 'success', 'share-cancelled': 'cancelled', 'file-failed': 'failed',
+};
+
+function evidenceRenderConfig(scenario, phase) {
+  if (scenario === 'streaming-32-character-chunks') return { scenario: 'streaming', checkpoint: phase === 'chunk-32' ? '32' : phase === 'chunk-64' ? '64' : 'complete' };
+  const rendered = {
+    'image-loading': 'image-loading', 'image-error': 'image-error', 'image-retry': 'image-retry',
+    'code-supported': 'code', 'code-unsupported': 'code-unsupported', 'code-incomplete': 'code-incomplete',
+    'math-native': 'math', 'math-fallback': 'math-fallback',
+    'mermaid-native': 'mermaid', 'mermaid-webview-fallback': 'mermaid-webview-fallback', 'mermaid-retry': 'mermaid-retry',
+    'fullscreen-opened': 'fullscreen', 'pan-zoom-rendered': 'mermaid', 'zoom-bounded': 'mermaid', 'reduced-motion-rendered': 'streaming',
+  }[phase] || (scenario.startsWith('link-') ? 'links' : 'static');
+  return {
+    scenario: rendered,
+    checkpoint: '',
+    direction: phase === 'rtl-cjk' ? 'rtl' : 'ltr',
+    theme: phase === 'dark-wide-layout' ? 'dark' : 'light',
+    layout: phase === 'dark-wide-layout' ? 'wide' : 'narrow',
+    reducedMotion: phase === 'reduced-motion-rendered',
+  };
+}
+
+function useObservedEvidencePlugins(phase, onObserved) {
+  return useMemo(() => {
+    const defer = () => Promise.resolve().then(() => onObserved(phase));
+    if (phase.startsWith('code-') && phase !== 'code-incomplete') {
+      return { ...PLUGINS, code: { ...code, highlight(input, callback) {
+        const result = code.highlight(input, (next) => { defer(); callback?.(next); });
+        if (result && (phase === 'code-supported' || !code.supportsLanguage(input.language))) defer();
+        return result;
+      } } };
+    }
+    if (phase.startsWith('math-')) {
+      const base = phase === 'math-native' ? math : mathFallback;
+      return { ...PLUGINS, math: { ...base, render(request) {
+        const result = base.render(request);
+        if ((phase === 'math-native' && result) || (phase === 'math-fallback' && result === null)) defer();
+        return result;
+      } } };
+    }
+    if (phase.startsWith('mermaid-')) {
+      const base = phase === 'mermaid-native' ? mermaid : phase === 'mermaid-webview-fallback' ? mermaidWebViewFallback : mermaidError;
+      let attempts = 0;
+      return { ...PLUGINS, mermaid: { ...base, async render(source, theme) {
+        attempts += 1;
+        try {
+          const result = await base.render(source, theme);
+          if (phase === 'mermaid-native' && result?.content) defer();
+          return result;
+        } catch (error) {
+          if (phase === 'mermaid-webview-fallback' || (phase === 'mermaid-retry' && attempts >= 2)) defer();
+          throw error;
+        }
+      } } };
+    }
+    return undefined;
+  }, [onObserved, phase]);
+}
+
+function DeviceEvidenceFixture(props) {
+  const [foregroundSeen, setForegroundSeen] = useState(AppState.currentState === 'active');
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => { if (state === 'active') setForegroundSeen(true); });
+    return () => subscription.remove();
+  }, []);
+  return foregroundSeen ? <ActiveDeviceEvidenceFixture {...props} /> : <Text>Waiting for foreground Release runtime</Text>;
+}
+
+function ActiveDeviceEvidenceFixture({ request, metrics }) {
+  const phases = DEVICE_SCENARIO_PHASES[request.scenario];
+  const [cursor, setCursor] = useState(0);
+  const [focusRestored, setFocusRestored] = useState(false);
+  const [panScale, setPanScale] = useState(null);
+  const phase = phases[Math.min(cursor, phases.length - 1)];
+  const nativeCapabilities = useMemo(() => createFixtureCapabilities(), []);
+  const negativeCapabilities = useMemo(() => createDeviceEvidenceCapabilities(), []);
+  const capabilities = useMemo(() => ({
+    ...nativeCapabilities,
+    links: phase === 'link-failed' ? negativeCapabilities.links : {
+      approve: () => new Promise((resolve) => Alert.alert('Open evidence link?', 'Exercise the native approval transition.', [
+        { text: 'Deny', style: 'cancel', onPress: () => resolve({ status: 'denied' }) },
+        { text: 'Open', onPress: () => resolve({ status: 'success' }) },
+      ], { cancelable: false })),
+      open: async (url) => {
+        try { await Linking.openURL(url); return { status: 'success' }; } catch (error) { return { status: 'failed', error }; }
+      },
+    },
+    share: negativeCapabilities.share,
+    files: negativeCapabilities.files,
+    focus: { restore: () => setFocusRestored(true) },
+    gestures: { renderPanZoom: ({ children, scale }) => <PanZoomObservation scale={scale} onSeen={setPanScale}>{children}</PanZoomObservation> },
+  }), [nativeCapabilities, negativeCapabilities, phase]);
+  const reporter = useMemo(() => createDeviceEvidenceReporter(request, {
+    release: !__DEV__, hermes: Boolean(globalThis.HermesInternal), appState: 'foreground',
+  }), [request]);
+  const advance = useCallback((observed) => {
+    if (observed !== phase || !reporter.observe(observed)) return;
+    setCursor((value) => Math.min(value + 1, phases.length));
+  }, [phase, phases.length, reporter]);
+
+  useEffect(() => {
+    if (phase === 'focus-restored' && focusRestored) advance(phase);
+    if (phase === 'pan-zoom-rendered' && panScale === 3) advance(phase);
+    if (phase === 'zoom-bounded' && panScale === 3) advance(phase);
+  }, [advance, focusRestored, panScale, phase]);
+
+  const config = evidenceRenderConfig(request.scenario, phase);
+  const observedPlugins = useObservedEvidencePlugins(phase, advance);
+  const onCommit = useCallback(({ markdown, scenario, isComplete }) => {
+    if (ACTION_PHASE_STATUS[phase] || phase.startsWith('image-') || phase === 'fullscreen-opened' || phase === 'focus-restored' || phase === 'pan-zoom-rendered' || phase === 'zoom-bounded') return;
+    if (phase === 'subpaths-resolved') return ALL_SUBPATHS_RESOLVED && advance(phase);
+    if (phase === 'headings-lists-tables') return /^# Streamdown RN/m.test(markdown) && markdown.includes('| Metric | Value |') && advance(phase);
+    if (phase === 'code-math-mermaid') return markdown.includes('```js') && markdown.includes('$$') && markdown.includes('```mermaid') && advance(phase);
+    if (phase === 'cjk-rtl-text') return markdown.includes('中文') && markdown.includes('مرحبا') && advance(phase);
+    if (phase === 'chunk-32') return markdown.length === 32 && advance(phase);
+    if (phase === 'chunk-64') return markdown.length === 64 && advance(phase);
+    if (phase === 'stream-complete') return isComplete && markdown === STREAM && advance(phase);
+    if (phase === 'code-incomplete') return !isComplete && markdown.includes('const incomplete') && advance(phase);
+    if (phase.startsWith('code-') || phase.startsWith('math-') || phase.startsWith('mermaid-')) return;
+    if (phase === 'font-scale' && PixelRatio.getFontScale() < 1.3) return;
+    if (scenario === config.scenario) advance(phase);
+  }, [advance, config.scenario, phase]);
+
+  const action = ACTION_PHASE_STATUS[phase];
+  const content = action ? <EvidenceAction phase={phase} capabilities={capabilities} expected={action} onPassed={() => advance(phase)} />
+    : phase.startsWith('image-') ? <EvidenceImage phase={phase} onPassed={() => advance(phase)} />
+      : phase === 'fullscreen-opened' || phase === 'focus-restored' ? <EvidenceFullscreen phase={phase} capabilities={capabilities} onClose={() => advance('fullscreen-opened')} />
+        : phase === 'pan-zoom-rendered' || phase === 'zoom-bounded' ? <PanZoomSurface capabilities={capabilities} initialScale={99}><Text>Pan and zoom evidence</Text></PanZoomSurface>
+          : null;
+  return <View style={{ flex: 1 }}>
+    <AutomatedFixture config={config} metrics={metrics} capabilities={capabilities} pluginsOverride={observedPlugins} onEvidenceCommit={onCommit} />
+    {content ? <View style={{ position: 'absolute', left: 16, right: 16, bottom: 24, padding: 16, backgroundColor: '#ffffff' }}>{content}</View> : null}
+  </View>;
+}
+
+function PanZoomObservation({ children, scale, onSeen }) {
+  useEffect(() => onSeen(scale), [onSeen, scale]);
+  return children;
+}
+
+function EvidenceAction({ phase, capabilities, expected, onPassed }) {
+  const onResult = (result) => { if (result.status === expected) onPassed(); };
+  if (phase.startsWith('link-')) {
+    const outcome = phase.slice(5);
+    const url = outcome === 'failed' ? 'https://evidence.invalid/failed' : 'https://example.com/';
+    return <NativeLink url={url} capabilities={capabilities} onResult={onResult}><Text>Exercise {phase}</Text></NativeLink>;
+  }
+  const action = phase === 'clipboard-success' ? () => capabilities.clipboard.writeText('streamdown evidence')
+    : phase === 'share-cancelled' ? () => capabilities.share.shareText('streamdown evidence')
+      : () => capabilities.files.save({ basename: 'evidence', extension: 'txt', mimeType: 'text/plain', content: 'evidence' });
+  return <ActionButton label={`Exercise ${phase}`} icon="Run" onAction={action} onResult={onResult} />;
+}
+
+function EvidenceImage({ phase, onPassed }) {
+  const [retryStarted, setRetryStarted] = useState(false);
+  if (phase === 'image-retry' && !retryStarted) {
+    return <ActionButton label="Retry failed image" icon="Retry" onAction={() => { setRetryStarted(true); return { status: 'success' }; }} />;
+  }
+  const uri = phase === 'image-loading' ? 'https://10.255.255.1/streamdown-loading.png' : `https://127.0.0.1:1/${phase}.png`;
+  return <Image accessibilityLabel={phase} source={{ uri }} style={{ width: 80, height: 80 }} onLoadStart={() => { if (phase === 'image-loading' || (phase === 'image-retry' && retryStarted)) onPassed(); }} onError={() => { if (phase === 'image-error') onPassed(); }} />;
+}
+
+function EvidenceFullscreen({ phase, capabilities, onClose }) {
+  return <FullscreenModal visible={phase === 'fullscreen-opened'} label="Device evidence fullscreen" closeLabel="Close and restore focus" capabilities={capabilities} restoreTarget="device-evidence-opener" onClose={onClose}><Text>Close this modal to prove focus restoration.</Text></FullscreenModal>;
+}
+
+function AutomatedFixture({ config, metrics, capabilities, pluginsOverride, onEvidenceCommit }) {
   const { scenario, theme, direction, layout, checkpoint } = config;
   const streaming = scenario === 'streaming';
   const benchmarking = scenario === 'benchmark';
@@ -145,7 +337,7 @@ function AutomatedFixture({ config, metrics, capabilities }) {
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, paddingTop: 24, width: layout === 'wide' ? 720 : 360, maxWidth: '100%', alignSelf: 'center' }}>
         <Text accessibilityRole="header" style={{ color: foregroundColor }}>Fixture: {scenario}</Text>
         <Text style={{ color: foregroundColor }}>Fixture state: {scenario}</Text>
-        <Profiler id="streamdown" onRender={(_id, phase, duration) => console.log('STREAMDOWN_BENCHMARK', JSON.stringify({ type: 'react-commit', phase, durationMs: duration }))}>
+        <Profiler id="streamdown" onRender={(_id, phase, duration) => { console.log('STREAMDOWN_BENCHMARK', JSON.stringify({ type: 'react-commit', phase, durationMs: duration })); onEvidenceCommit?.({ markdown, scenario, isComplete: incompleteCode ? false : ((!streaming && !benchmarking) || length >= source.length) }); }}>
           <Streamdown
             mode={streamMode ? 'streaming' : 'static'}
             theme={selectedTheme}
@@ -153,8 +345,9 @@ function AutomatedFixture({ config, metrics, capabilities }) {
             isAnimating={(streaming || benchmarking) && !checkpoint}
             isComplete={incompleteCode ? false : ((!streaming && !benchmarking) || length >= source.length)}
             instrumentation={metrics}
-            plugins={scenarioPlugins}
+            plugins={pluginsOverride ?? scenarioPlugins}
             capabilities={capabilities}
+            reducedMotion={config.reducedMotion}
           >{markdown}</Streamdown>
         </Profiler>
       </ScrollView>

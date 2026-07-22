@@ -40,6 +40,8 @@ flowchart LR
 The final construct is intentionally incomplete for streaming repair: [reference](https://example.com
 `;
 
+export const BENCHMARK_CORPUS_SHA256 = '1471041a7ddcc9fcab2110089f487beb7f7d6bd2d250e4e49993ff8bc309d30e';
+
 export function buildBenchmarkCorpus(targetBytes = 10_240): string {
   const bytes = (value: string) => {
     let total = 0;

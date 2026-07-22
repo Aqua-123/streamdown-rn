@@ -18,11 +18,29 @@ describe('device proof contract', () => {
       expect.objectContaining({ id: 'expo56', expo: '56.0.16', reactNative: '0.85.3' }),
     ]);
     expect(matrix).toMatchObject({ platforms: ['ios', 'android'], buildType: 'release', engine: 'hermes', architecture: 'new' });
+    for (const host of matrix.hosts as Array<{ fixture: string; expo: string; reactNative: string; react: string }>) {
+      const fixture = read(`${host.fixture}/package.json`);
+      expect(fixture.dependencies).toMatchObject({
+        expo: host.expo,
+        react: host.react,
+        'react-native': host.reactNative,
+      });
+    }
   });
 
   it('covers every required interaction and rich-content family', () => {
+    const declared = new Set(matrix.scenarios as string[]);
+    const covered = new Set((matrix.hosts as Array<{ scenarios: string[] }>).flatMap((host) => host.scenarios));
+    expect(covered).toEqual(declared);
+    for (const host of matrix.hosts as Array<{ id: string; scenarios: string[] }>) {
+      expect(host.scenarios.length).toBeGreaterThan(0);
+      expect(host.scenarios.every((scenario) => declared.has(scenario))).toBe(true);
+    }
+    expect(matrix.hosts.find((host: { id: string }) => host.id === 'expo54').scenarios).not.toEqual(
+      expect.arrayContaining(['link-approved-denied-failed', 'clipboard-share-file-success-cancel-fail'])
+    );
     for (const phrase of ['packed-core', 'streaming', 'link-', 'clipboard-', 'image-', 'fullscreen', 'pan-zoom', 'code-', 'math-', 'mermaid-', 'rtl-cjk']) {
-      expect(matrix.scenarios.some((scenario: string) => scenario.includes(phrase))).toBe(true);
+      expect([...covered].some((scenario) => scenario.includes(phrase))).toBe(true);
     }
   });
 

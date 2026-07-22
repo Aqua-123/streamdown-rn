@@ -2,12 +2,21 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://darkresearch.ai/streamdown-rn/benchmark-result.schema.json",
   "type": "object",
-  "required": ["schemaVersion", "runId", "timestamp", "environment", "corpus", "metrics", "status"],
+  "required": ["schemaVersion", "runId", "timestamp", "source", "environment", "corpus", "metrics", "status", "evidence", "evidenceSha256"],
   "properties": {
     "schemaVersion": { "const": 1 },
     "runId": { "type": "string", "minLength": 1 },
     "timestamp": { "type": "string", "format": "date-time" },
     "status": { "enum": ["characterization", "pass", "fail", "blocked"] },
+    "source": {
+      "type": "object",
+      "required": ["commit", "packageSha256"],
+      "properties": {
+        "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+        "packageSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      },
+      "additionalProperties": false
+    },
     "environment": {
       "type": "object",
       "required": ["platform", "engine", "buildType", "host"],
@@ -31,9 +40,42 @@
       },
       "additionalProperties": false
     },
-    "metrics": { "type": "object", "additionalProperties": { "type": "number" } },
+    "metrics": {
+      "type": "object",
+      "required": [
+        "parserMs", "reactCommits", "stableRerendersPerAppend", "appendToCommitP50Ms",
+        "appendToCommitP95Ms", "jsDroppedFramePercent", "uiDroppedFramePercent",
+        "heapGrowthMiB", "cacheEntries", "firstRenderMs", "coreBundleBytes", "startupMs",
+        "coreBundleOptionalMarkerCount", "optionalBundleBytes", "optionalStartupMs",
+        "optionalHeapGrowthMiB", "optionalLongestCommitMs"
+      ],
+      "properties": {
+        "parserMs": { "type": "number", "minimum": 0 },
+        "reactCommits": { "type": "integer", "minimum": 0 },
+        "stableRerendersPerAppend": { "type": "integer", "minimum": 0 },
+        "appendToCommitP50Ms": { "type": "number", "minimum": 0 },
+        "appendToCommitP95Ms": { "type": "number", "minimum": 0 },
+        "jsDroppedFramePercent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "uiDroppedFramePercent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "heapGrowthMiB": { "type": "number", "minimum": 0 },
+        "cacheEntries": { "type": "integer", "minimum": 0 },
+        "firstRenderMs": { "type": "number", "minimum": 0 },
+        "coreBundleBytes": { "type": "integer", "minimum": 0 },
+        "startupMs": { "type": "number", "minimum": 0 },
+        "coreBundleOptionalMarkerCount": { "type": "integer", "minimum": 0 },
+        "optionalBundleBytes": { "type": "integer", "minimum": 0 },
+        "optionalStartupMs": { "type": "number", "minimum": 0 },
+        "optionalHeapGrowthMiB": { "type": "number", "minimum": 0 },
+        "optionalLongestCommitMs": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
     "budgets": { "type": "object", "additionalProperties": { "type": "number" } },
-    "evidence": { "type": "array", "items": { "type": "string" } },
+    "evidence": { "type": "array", "minItems": 4, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "evidenceSha256": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+    },
     "blockers": { "type": "array", "items": { "type": "string" } }
   },
   "additionalProperties": false

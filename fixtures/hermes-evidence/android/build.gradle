@@ -1,0 +1,18 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+group = 'ai.futurix.streamdownhermesevidence'
+version = '0.0.0'
+
+def expoModulesCorePlugin = new File(project(':expo-modules-core').projectDir.absolutePath, 'ExpoModulesCorePlugin.gradle')
+apply from: expoModulesCorePlugin
+applyKotlinExpoModulesCorePlugin()
+useDefaultAndroidSdkVersions()
+
+android {
+  namespace 'ai.futurix.streamdownhermesevidence'
+}
+
+dependencies {
+  implementation project(':expo-modules-core')
+}

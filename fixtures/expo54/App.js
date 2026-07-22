@@ -1,14 +1,31 @@
-import React, { Profiler, useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { AccessibilityInfo, Linking, SafeAreaView, ScrollView, StatusBar, Text } from 'react-native';
+import React, { Profiler, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { AccessibilityInfo, AppState, Image, Linking, PixelRatio, Platform, SafeAreaView, ScrollView, StatusBar, Text, View } from 'react-native';
 import { FullscreenModal, Streamdown, createStreamingInstrumentation } from 'streamdown-rn';
+import { Button } from 'streamdown-rn/ui';
 import { createCodePlugin } from 'streamdown-rn/code';
 import { cjk } from 'streamdown-rn/cjk';
 import { createMathPlugin } from 'streamdown-rn/math';
 import { createBeautifulMermaidAdapter, createMermaidPlugin } from 'streamdown-rn/mermaid';
+import { createOfflineWebViewAdapter } from 'streamdown-rn/mermaid/webview';
+import { createRendererPlugin } from 'streamdown-rn/renderers';
 import { RaTeXView } from 'ratex-react-native';
 import { renderMermaidSVG } from 'beautiful-mermaid';
 import { SvgXml } from 'react-native-svg';
 import { buildBenchmarkCorpus } from './benchmarkCorpus';
+import { HermesEvidenceFixture } from './hermes-evidence-app';
+import {
+  DEVICE_SCENARIO_PHASES,
+  createDeviceEvidenceReporter,
+  parseDeviceEvidenceRequest,
+} from './device-evidence';
+
+const DEVICE_HOST = 'expo54';
+const DEVICE_SCENARIOS = [
+  'packed-core-and-all-subpath-launch', 'static-mixed-corpus', 'streaming-32-character-chunks',
+  'image-loading-error-retry', 'code-supported-unsupported-incomplete', 'math-native-and-fallback',
+  'rtl-cjk-font-scale-theme-layout',
+];
+const ALL_SUBPATHS_RESOLVED = [Streamdown, Button, createCodePlugin, cjk, createMathPlugin, createMermaidPlugin, createOfflineWebViewAdapter, createRendererPlugin].every(Boolean);
 
 const STATIC = `# Streamdown RN\n\n- [x] native semantics\n- [ ] streaming\n\n| Metric | Value |\n|---|---:|\n| parity | 100% |\n\n\`\`\`js\nconst hello = 'world';\n\`\`\`\n\nInline math $x^2$ and block math:\n\n$$\\sum_{i=1}^{n}i$$\n\n中文**强调**，مرحبا بالعالم\n\n\`\`\`mermaid\nflowchart LR\nA-->B\n\`\`\`\n`;
 const STREAM = `${STATIC}\n## Incomplete\n\n[link](https://example.com`;
@@ -64,7 +81,7 @@ function useConfig() {
   useEffect(() => {
     const apply = (url) => {
       const params = new URL(url).searchParams;
-      setConfig({ scenario: params.get('scenario') || 'static', theme: params.get('theme') || 'light', direction: params.get('direction') || 'ltr', layout: params.get('layout') || 'narrow', checkpoint: params.get('checkpoint') || '' });
+      setConfig({ scenario: params.get('scenario') || 'static', theme: params.get('theme') || 'light', direction: params.get('direction') || 'ltr', layout: params.get('layout') || 'narrow', checkpoint: params.get('checkpoint') || '', evidenceUrl: url });
     };
     Linking.getInitialURL().then((url) => url && apply(url));
     const subscription = Linking.addEventListener('url', ({ url }) => apply(url));
@@ -74,7 +91,8 @@ function useConfig() {
 }
 
 export default function App() {
-  const { scenario, theme, direction, layout, checkpoint } = useConfig();
+  const config = useConfig();
+  const { scenario, theme, direction, layout, checkpoint } = config;
   const streaming = scenario === 'streaming';
   const benchmarking = scenario === 'benchmark';
   const incompleteCode = scenario === 'code-incomplete';
@@ -83,6 +101,7 @@ export default function App() {
   const source = benchmarking ? BENCHMARK : STREAM;
   const [length, setLength] = useState(32);
   const metrics = useMemo(() => createStreamingInstrumentation(), []);
+  const evidenceRequest = useMemo(() => parseDeviceEvidenceRequest(config.evidenceUrl, { host: DEVICE_HOST, platform: Platform.OS, scenarios: DEVICE_SCENARIOS }), [config.evidenceUrl]);
   const started = React.useRef(performance.now());
   useEffect(() => {
     if ((!streaming && !benchmarking) || checkpoint || length >= source.length) return;
@@ -102,6 +121,10 @@ export default function App() {
     AccessibilityInfo.announceForAccessibility(`Streamdown fixture ${scenario} ready`);
     globalThis.__STREAMDOWN_RN_READY__ = { scenario, metrics: metrics.snapshot() };
   }, [metrics, scenario]);
+  if (config.evidenceUrl?.includes('hermesEvidence=')) return <HermesEvidenceFixture evidenceUrl={config.evidenceUrl} metrics={metrics} plugins={PLUGINS} />;
+  if (config.evidenceUrl?.includes('://evidence')) {
+    return evidenceRequest ? <DeviceEvidenceFixture request={evidenceRequest} metrics={metrics} /> : <Text testID="device-evidence-rejected">Invalid device evidence request</Text>;
+  }
   const markdown = streaming || benchmarking ? source.slice(0, length) : SCENARIOS[scenario] || STATIC;
   const scenarioPlugins = SCENARIO_PLUGINS[scenario] || PLUGINS;
   const backgroundColor = theme === 'dark' ? '#111827' : '#ffffff';
@@ -127,6 +150,118 @@ export default function App() {
       <FullscreenModal visible={scenario === 'fullscreen'} label="Fullscreen fixture" closeLabel="Exit fullscreen" capabilities={{}} onClose={() => {}} color={foregroundColor} backgroundColor={backgroundColor}>
         <Text style={{ color: foregroundColor }}>Fullscreen content</Text>
       </FullscreenModal>
+    </SafeAreaView>
+  );
+}
+
+function evidenceRenderConfig(scenario, phase) {
+  if (scenario === 'streaming-32-character-chunks') return { scenario: 'streaming', checkpoint: phase === 'chunk-32' ? '32' : phase === 'chunk-64' ? '64' : 'complete' };
+  const rendered = {
+    'image-loading': 'image-loading', 'image-error': 'image-error', 'image-retry': 'image-retry',
+    'code-supported': 'code', 'code-unsupported': 'code-unsupported', 'code-incomplete': 'code-incomplete',
+    'math-native': 'math', 'math-fallback': 'math-fallback',
+  }[phase] || 'static';
+  return {
+    scenario: rendered, checkpoint: '', direction: phase === 'rtl-cjk' ? 'rtl' : 'ltr',
+    theme: phase === 'dark-wide-layout' ? 'dark' : 'light', layout: phase === 'dark-wide-layout' ? 'wide' : 'narrow',
+  };
+}
+
+function useObservedEvidencePlugins(phase, onObserved) {
+  return useMemo(() => {
+    const defer = () => Promise.resolve().then(() => onObserved(phase));
+    if (phase.startsWith('code-') && phase !== 'code-incomplete') {
+      return { ...PLUGINS, code: { ...code, highlight(input, callback) {
+        const result = code.highlight(input, (next) => { defer(); callback?.(next); });
+        if (result && (phase === 'code-supported' || !code.supportsLanguage(input.language))) defer();
+        return result;
+      } } };
+    }
+    if (phase.startsWith('math-')) {
+      const base = phase === 'math-native' ? math : mathFallback;
+      return { ...PLUGINS, math: { ...base, render(request) {
+        const result = base.render(request);
+        if ((phase === 'math-native' && result) || (phase === 'math-fallback' && result === null)) defer();
+        return result;
+      } } };
+    }
+    return undefined;
+  }, [onObserved, phase]);
+}
+
+function DeviceEvidenceFixture(props) {
+  const [foregroundSeen, setForegroundSeen] = useState(AppState.currentState === 'active');
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => { if (state === 'active') setForegroundSeen(true); });
+    return () => subscription.remove();
+  }, []);
+  return foregroundSeen ? <ActiveDeviceEvidenceFixture {...props} /> : <Text>Waiting for foreground Release runtime</Text>;
+}
+
+function ActiveDeviceEvidenceFixture({ request, metrics }) {
+  const phases = DEVICE_SCENARIO_PHASES[request.scenario];
+  const [cursor, setCursor] = useState(0);
+  const capabilities = useMemo(() => ({}), []);
+  const reporter = useMemo(() => createDeviceEvidenceReporter(request, {
+    release: !__DEV__, hermes: Boolean(globalThis.HermesInternal), appState: 'foreground',
+  }), [request]);
+  const phase = phases[Math.min(cursor, phases.length - 1)];
+  const advance = useCallback((observed) => {
+    if (observed !== phase || !reporter.observe(observed)) return;
+    setCursor((value) => Math.min(value + 1, phases.length));
+  }, [phase, phases.length, reporter]);
+  const evidenceConfig = evidenceRenderConfig(request.scenario, phase);
+  const observedPlugins = useObservedEvidencePlugins(phase, advance);
+  const onCommit = useCallback(({ markdown, scenario: renderedScenario, isComplete }) => {
+    if (phase.startsWith('image-')) return;
+    if (phase === 'subpaths-resolved') return ALL_SUBPATHS_RESOLVED && advance(phase);
+    if (phase === 'headings-lists-tables') return /^# Streamdown RN/m.test(markdown) && markdown.includes('| Metric | Value |') && advance(phase);
+    if (phase === 'code-math-mermaid') return markdown.includes('```js') && markdown.includes('$$') && markdown.includes('```mermaid') && advance(phase);
+    if (phase === 'cjk-rtl-text') return markdown.includes('中文') && markdown.includes('مرحبا') && advance(phase);
+    if (phase === 'chunk-32') return markdown.length === 32 && advance(phase);
+    if (phase === 'chunk-64') return markdown.length === 64 && advance(phase);
+    if (phase === 'stream-complete') return isComplete && markdown === STREAM && advance(phase);
+    if (phase === 'code-incomplete') return !isComplete && markdown.includes('const incomplete') && advance(phase);
+    if (phase.startsWith('code-') || phase.startsWith('math-')) return;
+    if (phase === 'font-scale' && PixelRatio.getFontScale() < 1.3) return;
+    if (renderedScenario === evidenceConfig.scenario) advance(phase);
+  }, [advance, evidenceConfig.scenario, phase]);
+  const image = phase.startsWith('image-') ? <EvidenceImage phase={phase} onPassed={() => advance(phase)} /> : null;
+  return <View style={{ flex: 1 }}>
+    <AutomatedEvidenceFixture config={evidenceConfig} metrics={metrics} capabilities={capabilities} pluginsOverride={observedPlugins} onEvidenceCommit={onCommit} />
+    {image ? <View style={{ position: 'absolute', left: 16, right: 16, bottom: 24, padding: 16, backgroundColor: '#ffffff' }}>{image}</View> : null}
+  </View>;
+}
+
+function EvidenceImage({ phase, onPassed }) {
+  const [retryStarted, setRetryStarted] = useState(false);
+  if (phase === 'image-retry' && !retryStarted) {
+    return <Button accessibilityLabel="Retry failed image" onPress={() => setRetryStarted(true)}>Retry failed image</Button>;
+  }
+  const uri = phase === 'image-loading' ? 'https://10.255.255.1/streamdown-loading.png' : `https://127.0.0.1:1/${phase}.png`;
+  return <Image accessibilityLabel={phase} source={{ uri }} style={{ width: 80, height: 80 }} onLoadStart={() => { if (phase === 'image-loading' || (phase === 'image-retry' && retryStarted)) onPassed(); }} onError={() => { if (phase === 'image-error') onPassed(); }} />;
+}
+
+function AutomatedEvidenceFixture({ config, metrics, capabilities, pluginsOverride, onEvidenceCommit }) {
+  const { scenario, theme = 'light', direction = 'ltr', layout = 'narrow', checkpoint } = config;
+  const streaming = scenario === 'streaming';
+  const incompleteCode = scenario === 'code-incomplete';
+  const source = STREAM;
+  const requested = checkpoint === 'complete' ? source.length : Number.parseInt(checkpoint, 10);
+  const length = Number.isFinite(requested) ? Math.min(Math.max(requested, 0), source.length) : source.length;
+  const markdown = streaming ? source.slice(0, length) : SCENARIOS[scenario] || STATIC;
+  const scenarioPlugins = SCENARIO_PLUGINS[scenario] || PLUGINS;
+  const backgroundColor = theme === 'dark' ? '#111827' : '#ffffff';
+  const foregroundColor = theme === 'dark' ? '#e5e7eb' : '#111827';
+  const isComplete = incompleteCode ? false : (!streaming || length >= source.length);
+  return (
+    <SafeAreaView style={{ flex: 1, paddingTop: StatusBar.currentHeight || 24, backgroundColor }} testID="fixture-root">
+      <ScrollView contentContainerStyle={{ padding: 16, width: layout === 'wide' ? 720 : 360, maxWidth: '100%', alignSelf: 'center' }}>
+        <Text style={{ color: foregroundColor }}>Device evidence: {scenario}</Text>
+        <Profiler id="streamdown-evidence" onRender={() => onEvidenceCommit({ markdown, scenario, isComplete })}>
+          <Streamdown mode={streaming || incompleteCode ? 'streaming' : 'static'} theme={theme} dir={direction} isAnimating={false} isComplete={isComplete} instrumentation={metrics} plugins={pluginsOverride ?? scenarioPlugins} capabilities={capabilities}>{markdown}</Streamdown>
+        </Profiler>
+      </ScrollView>
     </SafeAreaView>
   );
 }

@@ -1,0 +1,10 @@
+{
+  "name": "@streamdown-rn/hermes-evidence",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.js",
+  "peerDependencies": {
+    "expo": "*",
+    "expo-modules-core": "*"
+  }
+}

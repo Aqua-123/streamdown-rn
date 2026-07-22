@@ -1,8 +1,43 @@
 {
   "schemaVersion": 1,
   "hosts": [
-    { "id": "expo54", "expo": "54.0.36", "reactNative": "0.81.5", "react": "19.1.0", "fixture": "fixtures/expo54" },
-    { "id": "expo56", "expo": "56.0.16", "reactNative": "0.85.3", "react": "19.2.7", "fixture": "fixtures/current-rn" }
+    {
+      "id": "expo54",
+      "expo": "54.0.36",
+      "reactNative": "0.81.5",
+      "react": "19.1.0",
+      "fixture": "fixtures/expo54",
+      "scenarios": [
+        "packed-core-and-all-subpath-launch",
+        "static-mixed-corpus",
+        "streaming-32-character-chunks",
+        "image-loading-error-retry",
+        "code-supported-unsupported-incomplete",
+        "math-native-and-fallback",
+        "rtl-cjk-font-scale-theme-layout"
+      ]
+    },
+    {
+      "id": "expo56",
+      "expo": "56.0.16",
+      "reactNative": "0.85.3",
+      "react": "19.2.7",
+      "fixture": "fixtures/current-rn",
+      "scenarios": [
+        "packed-core-and-all-subpath-launch",
+        "static-mixed-corpus",
+        "streaming-32-character-chunks",
+        "link-approved-denied-failed",
+        "clipboard-share-file-success-cancel-fail",
+        "image-loading-error-retry",
+        "scroll-fullscreen-focus-restore",
+        "pan-zoom-reduced-motion",
+        "code-supported-unsupported-incomplete",
+        "math-native-and-fallback",
+        "mermaid-native-webview-fallback-retry",
+        "rtl-cjk-font-scale-theme-layout"
+      ]
+    }
   ],
   "platforms": ["ios", "android"],
   "buildType": "release",

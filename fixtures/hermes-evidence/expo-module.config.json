@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["StreamdownHermesEvidenceModule"]
+  },
+  "android": {
+    "modules": ["ai.futurix.streamdownhermesevidence.StreamdownHermesEvidenceModule"]
+  }
+}

@@ -6,6 +6,7 @@
   "chunkSize": 32,
   "warmups": 5,
   "samples": 30,
+  "maxEvidenceAgeDays": 30,
   "referenceDevices": {
     "android": "Pixel 8 hardware, Android 14, 60 Hz, release Hermes",
     "ios": "iPhone 15 hardware, current supported iOS, 60 Hz, release Hermes"
