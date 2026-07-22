@@ -2,42 +2,158 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      evidence_run_id:
+        description: Successful Release evidence run for this exact main commit
+        required: true
+        type: string
 
-permissions:
-  contents: write
-  pull-requests: write
-  id-token: write
+concurrency:
+  group: streamdown-rn-release
+  cancel-in-progress: false
+
+permissions: {}
 
 jobs:
-  publish:
+  version:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
-    environment: npm
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      pending: ${{ steps.pending.outputs.value }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76
         with:
           bun-version: 1.3.14
-      - name: Install locked dependencies
-        run: bun install --frozen-lockfile
+      - name: Install locked release tooling
+        run: bun install --frozen-lockfile --ignore-scripts
+      - id: pending
+        name: Detect pending Changesets
+        run: |
+          count=$(find .changeset -maxdepth 1 -name '*.md' ! -name README.md | wc -l | tr -d ' ')
+          if [ "$count" -gt 0 ]; then value=true; else value=false; fi
+          echo "value=$value" >> "$GITHUB_OUTPUT"
+      - uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba
+        if: steps.pending.outputs.value == 'true'
+        with:
+          version: bun run changeset:version
+          commit: "chore: release package"
+          title: "chore: release package"
+          commitMode: github-api
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  verify:
+    needs: version
+    if: needs.version.outputs.pending == 'false'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76
+        with:
+          bun-version: 1.3.14
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
+      - name: Install locked dependencies without lifecycle scripts
+        run: |
+          npm install --global npm@11.5.1
+          test "$(npm --version)" = "11.5.1"
+          bun install --frozen-lockfile --ignore-scripts
       - name: Restore the exact parity oracle
         run: |
           git clone https://github.com/vercel/streamdown.git .reference/streamdown
           git -C .reference/streamdown checkout e5deed330aa4231751a106445d93d62e4716a22f
+      - name: Build and identify the exact publish candidate
+        run: |
+          bun run build
+          mkdir -p .release-package
+          npm pack --ignore-scripts --json --pack-destination .release-package > .release-package/pack.json
+          filename=$(node -e "console.log(JSON.parse(require('node:fs').readFileSync('.release-package/pack.json','utf8'))[0].filename)")
+          mv ".release-package/$filename" .release-package/release.tgz
+          echo "STREAMDOWN_RELEASE_COMMIT=${GITHUB_SHA}" >> "$GITHUB_ENV"
+          digest=$(sha256sum .release-package/release.tgz | cut -d' ' -f1)
+          echo "STREAMDOWN_RELEASE_PACKAGE_SHA256=$digest" >> "$GITHUB_ENV"
+          echo "STREAMDOWN_RELEASE_TARBALL=.release-package/release.tgz" >> "$GITHUB_ENV"
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          import { loadApprovedBaseline } from './scripts/benchmarks/hermes-metrics.mjs';
+          const baseline = loadApprovedBaseline();
+          if (baseline.lineageStatus !== 'owner-confirmed') throw new Error('npm baseline lineage must be owner-confirmed before release');
+          fs.appendFileSync(process.env.GITHUB_ENV, `STREAMDOWN_BASELINE_COMMIT=${baseline.gitHead}\nSTREAMDOWN_BASELINE_PACKAGE_SHA256=${baseline.packageSha256}\n`);
+          NODE
+          echo "$digest  release.tgz" > .release-package/release.tgz.sha256
+      - name: Seal the publish candidate before consumer dependency execution
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: publish-candidate
+          path: |
+            .release-package/release.tgz
+            .release-package/release.tgz.sha256
+          if-no-files-found: error
+      - name: Validate and retrieve physical-device evidence
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVIDENCE_RUN_ID: ${{ inputs.evidence_run_id }}
+        run: |
+          test -n "$EVIDENCE_RUN_ID"
+          [[ "$STREAMDOWN_BASELINE_COMMIT" =~ ^[a-f0-9]{40}$ ]]
+          [[ "$STREAMDOWN_BASELINE_PACKAGE_SHA256" =~ ^[a-f0-9]{64}$ ]]
+          gh run view "$EVIDENCE_RUN_ID" --json workflowName,event,headBranch,headSha,conclusion > /tmp/evidence-run.json
+          node -e "const run=require('/tmp/evidence-run.json'); if (run.workflowName !== 'Release evidence' || run.event !== 'workflow_dispatch' || run.headBranch !== 'main' || run.headSha !== process.env.GITHUB_SHA || run.conclusion !== 'success') throw new Error('Evidence run provenance does not match this release')"
+          gh run download "$EVIDENCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name release-evidence --dir .
       - name: Run hosted gates
         run: bun run ci:hosted
+      - name: Confirm the workspace copy still matches the sealed candidate
+        working-directory: .release-package
+        run: sha256sum -c release.tgz.sha256
       - name: Require manual, hardware, visual, performance, and parity evidence
         run: bun run release:verify
-      - uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: npm
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          publish: bun run release:publish
-          version: bunx changeset version
-          commit: "chore: release package"
-          title: "chore: release package"
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
+      - name: Verify trusted-publishing toolchain
+        run: |
+          npm install --global npm@11.5.1
+          test "$(npm --version)" = "11.5.1"
+      - name: Download the verified candidate from this run
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: "true"
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name publish-candidate --dir .release-package
+      - name: Verify and publish only the gated tarball
+        working-directory: .release-package
+        env:
           NPM_CONFIG_ACCESS: public
+          NPM_CONFIG_PROVENANCE: "true"
+        run: |
+          sha256sum -c release.tgz.sha256
+          npm publish release.tgz --ignore-scripts

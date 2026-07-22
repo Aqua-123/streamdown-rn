@@ -4,3 +4,4 @@ coverage/
 .reference/
 *.tgz
 .DS_Store
+benchmarks/results/

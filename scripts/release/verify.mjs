@@ -11,6 +11,7 @@ if (report.benchmarks.releaseEvidence !== 'available') blockers.push(`release-He
 if (report.visuals.integrity !== 'valid') blockers.push(...report.visuals.errors.map((error) => `visual evidence integrity: ${error}`));
 for (const platform of report.visuals.platforms) {
   if (platform.missing.length) blockers.push(`${platform.platform} visual evidence missing: ${platform.missing.join(', ')}`);
+  if (platform.sourceMatched === false) blockers.push(`${platform.platform} visual evidence does not match the publish candidate`);
 }
 const changesets = fs.existsSync(path.join(root, '.changeset'))
   ? fs.readdirSync(path.join(root, '.changeset')).filter((name) => name.endsWith('.md') && name !== 'README.md') : [];
@@ -18,6 +19,7 @@ const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
 const changelog = fs.readFileSync(path.join(root, 'CHANGELOG.md'), 'utf8');
 if (!changesets.length && !changelog.includes(`## ${pkg.version}`)) blockers.push('no pending changeset or changelog entry for the package version exists');
 if (report.compatibility.status !== 'pass' && report.blockers.length === 0) blockers.push('manual/device compatibility evidence has not passed');
+if (report.compatibility.reason) blockers.push(report.compatibility.reason);
 if (blockers.length) {
   console.error(`Publish blocked:\n- ${[...new Set(blockers)].join('\n- ')}`);
   process.exit(1);

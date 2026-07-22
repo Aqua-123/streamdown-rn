@@ -5,38 +5,28 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { comparePng } from './compare.mjs';
-import { assertCompleteBaselineManifest, matrixSha256ForCases } from './verify-integrity.mjs';
+import { assertCompleteBaselineManifest, matrixSha256ForCases, requiredVisualSemantics } from './verify-integrity.mjs';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const scenarioSemantics = {
-  controls: ['one', 'two', 'Copy table'],
-  code: ['typescript', 'const one = 1;', 'Copy Code'],
-  mermaid: ['Mermaid diagram:', 'flowchart LR'],
-  'mermaid-sequence': ['Mermaid diagram:', 'participant Client'],
-  'mermaid-state': ['Mermaid diagram:', 'Idle'],
-  harness: ['Streamdown Lab', 'Open harness controls'],
-};
-
-function requiredSemantics(entry) {
-  if (entry.scenario === 'fullscreen') return ['Fullscreen fixture', 'Exit fullscreen'];
-  if (entry.scenario === 'harness') return scenarioSemantics.harness;
-  return [`Fixture: ${entry.scenario}`, `Fixture state: ${entry.scenario}`, ...(scenarioSemantics[entry.scenario] ?? [])];
-}
-
+const scriptPath = fileURLToPath(import.meta.url);
+const root = path.resolve(path.dirname(scriptPath), '../..');
 function assertSemantics(output, entry) {
-  const missing = requiredSemantics(entry).filter((value) => !output.includes(value));
+  const missing = requiredVisualSemantics(entry).filter((value) => !output.includes(value));
   if (missing.length) throw new Error(`Semantic readiness missing ${missing.join(', ')} for ${entry.id}`);
 }
 
 if (process.argv.includes('--self-test')) {
-  assert.deepEqual(requiredSemantics({ scenario: 'harness' }), ['Streamdown Lab', 'Open harness controls']);
+  assert.deepEqual(requiredVisualSemantics({ scenario: 'harness' }), ['Streamdown Lab', 'Open harness controls']);
   assert.throws(
     () => assertSemantics('Fixture: controls Fixture state: controls one', { id: 'controls-test', scenario: 'controls' }),
     /Semantic readiness missing two, Copy table for controls-test/,
   );
   const matrixBytes = Buffer.from('{\n  "cases": [\n    { "id": "one" },\n    { "id": "two" }\n  ]\n}\n');
   const hash = createHash('sha256').update(matrixBytes).digest('hex');
-  const complete = { matrixSha256: hash, artifacts: { 'ios-one.png': hash, 'ios-two.png': hash } };
+  const complete = {
+    matrixSha256: hash,
+    artifacts: { 'ios-one.png': hash, 'ios-two.png': hash },
+    receipts: { 'ios-one.png': {}, 'ios-two.png': {} },
+  };
   const incomplete = { matrixSha256: hash, artifacts: { 'ios-one.png': hash } };
   let wrote = false;
   assert.throws(() => {
@@ -47,6 +37,24 @@ if (process.argv.includes('--self-test')) {
   assertCompleteBaselineManifest(complete, 'ios', matrixBytes, ['one', 'two']);
   wrote = true;
   assert.equal(wrote, true);
+  const missingPlatform = spawnSync(process.execPath, [scriptPath], { env: process.env, encoding: 'utf8' });
+  assert.notEqual(missingPlatform.status, 0);
+  assert.match(missingPlatform.stderr, /VISUAL_PLATFORM must be ios or android/);
+  const unboundUpdate = spawnSync(process.execPath, [scriptPath], {
+    env: {
+      ...process.env,
+      VISUAL_PLATFORM: 'ios',
+      VISUAL_DEVICE_ID: 'fixture-device',
+      VISUAL_APP_SCHEME: 'fixture',
+      VISUAL_RUNTIME: 'fixture-runtime',
+      REVIEWED_VISUAL_BASELINE_UPDATE: '1',
+      STREAMDOWN_RELEASE_COMMIT: '',
+      STREAMDOWN_RELEASE_PACKAGE_SHA256: '',
+    },
+    encoding: 'utf8',
+  });
+  assert.notEqual(unboundUpdate.status, 0);
+  assert.match(unboundUpdate.stderr, /STREAMDOWN_RELEASE_COMMIT is required for baseline updates/);
   process.stdout.write('semantic readiness self-test passed\n');
   process.exit(0);
 }
@@ -66,8 +74,9 @@ const update = process.env.REVIEWED_VISUAL_BASELINE_UPDATE === '1';
 const requestedCaseId = process.env.VISUAL_CASE_ID;
 const runtime = process.env.VISUAL_RUNTIME;
 if (update) {
-  assert(process.env.BASELINE_REVIEW_ID, 'BASELINE_REVIEW_ID is required for baseline updates');
   assert(runtime, 'VISUAL_RUNTIME is required for baseline updates');
+  assert(/^[a-f0-9]{40}$/.test(process.env.STREAMDOWN_RELEASE_COMMIT ?? ''), 'STREAMDOWN_RELEASE_COMMIT is required for baseline updates');
+  assert(/^[a-f0-9]{64}$/.test(process.env.STREAMDOWN_RELEASE_PACKAGE_SHA256 ?? ''), 'STREAMDOWN_RELEASE_PACKAGE_SHA256 is required for baseline updates');
 }
 const baselineManifestPath = path.join(root, 'tests/visual/baselines', `${platform}.manifest.json`);
 const baselineManifest = fs.existsSync(baselineManifestPath)
@@ -87,6 +96,7 @@ if (requestedCaseId) {
 }
 const selectedCases = requestedCaseId ? config.cases.filter(({ id }) => id === requestedCaseId) : config.cases;
 const artifactHashes = update && requestedCaseId ? { ...baselineManifest.artifacts } : {};
+const artifactReceipts = update && requestedCaseId ? { ...baselineManifest.receipts } : {};
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, { encoding: 'utf8', ...options });
@@ -113,7 +123,7 @@ function androidHierarchy(device, entry) {
 }
 
 function maestroSemantics(device, appId, entry) {
-  for (const expected of requiredSemantics(entry)) {
+  for (const expected of requiredVisualSemantics(entry)) {
     try {
       run('maestro', ['test', '--platform', 'ios', '--udid', device, '--no-reinstall-driver', '-e', `APP_ID=${appId}`, '-e', `EXPECTED=${expected}`, path.join(root, 'tests/device/maestro/semantic.yaml')]);
     } catch (error) {
@@ -160,7 +170,29 @@ for (const entry of selectedCases) {
   if (!update) assert.equal(baselineManifest.matrixSha256, reviewedMatrixSha256, 'Visual matrix changed without a reviewed baseline update');
   if (update) {
     fs.copyFileSync(actual, baseline);
-    artifactHashes[path.basename(baseline)] = createHash('sha256').update(fs.readFileSync(baseline)).digest('hex');
+    const name = path.basename(baseline);
+    const bytes = fs.readFileSync(baseline);
+    const artifactSha256 = createHash('sha256').update(bytes).digest('hex');
+    artifactHashes[name] = artifactSha256;
+    artifactReceipts[name] = {
+      schemaVersion: 1,
+      producer: 'tests/visual/capture.mjs',
+      scenario: entry.id,
+      platform,
+      matrixSha256,
+      source: {
+        commit: process.env.STREAMDOWN_RELEASE_COMMIT,
+        packageSha256: process.env.STREAMDOWN_RELEASE_PACKAGE_SHA256,
+      },
+      artifact: { sha256: artifactSha256, width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) },
+      capture: { tool: platform === 'ios' ? 'simctl-screenshot' : 'adb-screencap', exitCode: 0 },
+      semanticAssertions: requiredVisualSemantics(entry).map((expected, index) => ({
+        id: `semantic-${index + 1}`,
+        expected,
+        probe: platform === 'ios' ? 'maestro' : 'uiautomator',
+        exitCode: 0,
+      })),
+    };
     continue;
   }
   assert(fs.existsSync(baseline), `Missing reviewed baseline ${baseline}`);
@@ -171,13 +203,18 @@ for (const entry of selectedCases) {
 if (update) {
   assert.equal(Object.keys(artifactHashes).length, config.cases.length, 'Reviewed manifest must cover every visual case');
   fs.writeFileSync(baselineManifestPath, `${JSON.stringify({
-    schemaVersion: 1,
-    reviewId: process.env.BASELINE_REVIEW_ID,
+    schemaVersion: 2,
     capturedAt: new Date().toISOString(),
     platform,
     device,
     runtime,
+    source: {
+      commit: process.env.STREAMDOWN_RELEASE_COMMIT,
+      packageSha256: process.env.STREAMDOWN_RELEASE_PACKAGE_SHA256,
+    },
     matrixSha256,
     artifacts: artifactHashes,
+    receipts: artifactReceipts,
   }, null, 2)}\n`);
+  fs.rmSync(path.join(root, 'tests/visual/baselines/release-review-attestation.json'), { force: true });
 }

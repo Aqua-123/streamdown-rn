@@ -1,0 +1,193 @@
+name: Release evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      evidence_directory:
+        description: Absolute directory containing freshly captured physical-device evidence
+        required: true
+        type: string
+
+concurrency:
+  group: streamdown-rn-release-evidence
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, streamdown-rn-evidence]
+    timeout-minutes: 30
+    environment: release-evidence-capture
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+      artifact_digest: ${{ steps.upload.outputs.artifact-digest }}
+      release_package_sha256: ${{ steps.candidate.outputs.package_sha256 }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76
+        with:
+          bun-version: 1.3.14
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
+      - name: Install locked dependencies without lifecycle scripts
+        run: |
+          npm install --global npm@11.5.1
+          test "$(npm --version)" = "11.5.1"
+          bun install --frozen-lockfile --ignore-scripts
+      - name: Reproduce the candidate package identity
+        id: candidate
+        run: |
+          bun run build
+          mkdir -p .release-package
+          npm pack --ignore-scripts --json --pack-destination .release-package > .release-package/pack.json
+          filename=$(node -e "console.log(JSON.parse(require('node:fs').readFileSync('.release-package/pack.json','utf8'))[0].filename)")
+          digest=$(node -e "const fs=require('node:fs'),crypto=require('node:crypto'); console.log(crypto.createHash('sha256').update(fs.readFileSync(process.argv[1])).digest('hex'))" ".release-package/$filename")
+          echo "STREAMDOWN_RELEASE_COMMIT=${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "STREAMDOWN_RELEASE_PACKAGE_SHA256=$digest" >> "$GITHUB_ENV"
+          echo "package_sha256=$digest" >> "$GITHUB_OUTPUT"
+      - name: Import bounded physical-device evidence
+        env:
+          EVIDENCE_DIRECTORY: ${{ inputs.evidence_directory }}
+        run: |
+          validation=$(node scripts/release/validate-evidence-directory.mjs "$EVIDENCE_DIRECTORY" --allowed-prefix /opt/streamdown-rn-evidence)
+          resolved=$(node -e "console.log(JSON.parse(process.argv[1]).resolved)" "$validation")
+          mkdir -p benchmarks/results tests/device/results tests/visual/baselines
+          find benchmarks/results -mindepth 1 -delete
+          find tests/device/results -mindepth 1 -delete
+          find tests/visual/baselines -mindepth 1 -delete
+          cp -R "$resolved/benchmarks/results"/. benchmarks/results/
+          cp "$resolved/tests/device/evidence.json" tests/device/evidence.json
+          cp -R "$resolved/tests/device/results"/. tests/device/results/
+          cp -R "$resolved/tests/visual/baselines"/. tests/visual/baselines/
+      - name: Derive and validate machine evidence
+        run: |
+          bun run benchmark:hermes
+          node tests/visual/capture.mjs --self-test
+          node tests/visual/verify-integrity.mjs
+          node scripts/release/verify-report.mjs
+      - id: upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-evidence-unreviewed
+          path: |
+            benchmarks/results
+            tests/device/evidence.json
+            tests/device/results
+            tests/visual/baselines
+          if-no-files-found: error
+          retention-days: 30
+
+  visual-review:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: release-evidence-review
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76
+        with:
+          bun-version: 1.3.14
+      - name: Install locked dependencies without lifecycle scripts
+        run: bun install --frozen-lockfile --ignore-scripts
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-evidence-unreviewed
+          path: .review-input
+      - name: Rehash the immutable prepared artifact
+        run: |
+          node scripts/release/validate-evidence-directory.mjs .review-input --allowed-prefix "$GITHUB_WORKSPACE"
+          mkdir -p benchmarks/results tests/device/results tests/visual/baselines
+          find benchmarks/results -mindepth 1 -delete
+          find tests/device/results -mindepth 1 -delete
+          find tests/visual/baselines -mindepth 1 -delete
+          cp -R .review-input/benchmarks/results/. benchmarks/results/
+          cp .review-input/tests/device/evidence.json tests/device/evidence.json
+          cp -R .review-input/tests/device/results/. tests/device/results/
+          cp -R .review-input/tests/visual/baselines/. tests/visual/baselines/
+      - name: Record protected review attestations
+        env:
+          STREAMDOWN_RELEASE_COMMIT: ${{ github.sha }}
+          STREAMDOWN_RELEASE_PACKAGE_SHA256: ${{ needs.prepare.outputs.release_package_sha256 }}
+          STREAMDOWN_EVIDENCE_ENVIRONMENT: release-evidence-review
+          STREAMDOWN_EVIDENCE_ARTIFACT_NAME: release-evidence-unreviewed
+          STREAMDOWN_EVIDENCE_ARTIFACT_ID: ${{ needs.prepare.outputs.artifact_id }}
+          STREAMDOWN_EVIDENCE_ARTIFACT_DIGEST: ${{ needs.prepare.outputs.artifact_digest }}
+          STREAMDOWN_EVIDENCE_SOURCE_RUN_ID: ${{ github.run_id }}
+          STREAMDOWN_EVIDENCE_SOURCE_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          node tests/visual/attest.mjs
+          node scripts/release/attest-accessibility.mjs
+      - id: upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-evidence
+          path: |
+            benchmarks/results
+            tests/device/evidence.json
+            tests/device/results
+            tests/visual/baselines
+          if-no-files-found: error
+          retention-days: 30
+
+  validate:
+    needs: [prepare, visual-review]
+    runs-on: [self-hosted, streamdown-rn-evidence]
+    timeout-minutes: 30
+    environment: release-evidence-capture
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76
+        with:
+          bun-version: 1.3.14
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
+      - name: Install locked dependencies without lifecycle scripts
+        run: |
+          npm install --global npm@11.5.1
+          test "$(npm --version)" = "11.5.1"
+          bun install --frozen-lockfile --ignore-scripts
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-evidence
+          path: .reviewed-evidence
+      - name: Validate the exact reviewed artifact
+        run: |
+          node scripts/release/validate-evidence-directory.mjs .reviewed-evidence --allowed-prefix "$GITHUB_WORKSPACE"
+          mkdir -p benchmarks/results tests/device/results tests/visual/baselines
+          find benchmarks/results -mindepth 1 -delete
+          find tests/device/results -mindepth 1 -delete
+          find tests/visual/baselines -mindepth 1 -delete
+          cp -R .reviewed-evidence/benchmarks/results/. benchmarks/results/
+          cp .reviewed-evidence/tests/device/evidence.json tests/device/evidence.json
+          cp -R .reviewed-evidence/tests/device/results/. tests/device/results/
+          cp -R .reviewed-evidence/tests/visual/baselines/. tests/visual/baselines/
+          bun run build
+          mkdir -p .release-package
+          npm pack --ignore-scripts --json --pack-destination .release-package > .release-package/pack.json
+          filename=$(node -e "console.log(JSON.parse(require('node:fs').readFileSync('.release-package/pack.json','utf8'))[0].filename)")
+          digest=$(node -e "const fs=require('node:fs'),crypto=require('node:crypto'); console.log(crypto.createHash('sha256').update(fs.readFileSync(process.argv[1])).digest('hex'))" ".release-package/$filename")
+          test "$digest" = '${{ needs.prepare.outputs.release_package_sha256 }}'
+          echo "STREAMDOWN_RELEASE_COMMIT=${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "STREAMDOWN_RELEASE_PACKAGE_SHA256=$digest" >> "$GITHUB_ENV"
+      - name: Enforce all release stop gates
+        run: |
+          bun run benchmark:hermes
+          bun run release:report:verify
+          bun run release:verify

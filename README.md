@@ -4,7 +4,7 @@ Streaming Markdown for React Native with a native semantic renderer, append-awar
 
 > **Published versus next release:** This main branch documents the next release. npm `0.2.1` does not export `Streamdown` or any plugin subpaths; use the published example below with npm installs.
 
-This repository uses Vercel Streamdown as a pinned parity oracle, not as a claim that browser behavior is automatically native behavior. The current release gate is blocked until the required device, accessibility, visual, and physical-device performance evidence are complete. See [parity status](./docs/parity.md) and [release status](./docs/release.md).
+This repository uses Vercel Streamdown as a pinned parity oracle, not as a claim that browser behavior is automatically native behavior. Publication requires device, accessibility, visual, and physical-device performance evidence for the exact packed candidate. See [parity status](./docs/parity.md) and [release status](./docs/release.md).
 
 ## Published npm 0.2.1
 
@@ -53,10 +53,12 @@ export function Message({ markdown, done }: { markdown: string; done: boolean })
 
 `StreamdownRN` and the default export are aliases of `Streamdown` in the next release. Static content should use `mode="static"`. Code highlighting, native math, native Mermaid SVG, and full-fidelity WebView rendering are optional host integrations; they are not bundled into the core entry.
 
+`maxInputLength` limits both static input and the cumulative value of a stream. It defaults to 2,097,152 JavaScript string code units. Oversized input is not parsed: `onError` receives a `RangeError` and the renderer shows an alert containing only the final 2,048 code units, prefixed by an ellipsis when text was omitted. Rendering resumes normally when the value returns below the limit or a new `streamKey` begins within it.
+
 ## Next-release features
 
 - CommonMark/GFM semantic rendering, incomplete-stream repair, stable block caching, direction detection, footnotes, tables, task lists, links, and images.
-- Capability-backed clipboard, file, share, link approval, focus, announcement, and gesture actions. Unavailable native capabilities fail visibly instead of silently.
+- Capability-backed clipboard, file, share, link approval, focus, announcement, and gesture actions. Controls for unavailable capabilities are hidden; failures from an invoked provider are announced and shown visibly.
 - Typed `slots` compose around safe native semantic defaults. Legacy `components` remains a caller-owned full replacement, and `[{c:"Name",p:{...}}]` keeps its separate component registry.
 - Separate `code`, `cjk`, `renderers`, `math`, `mermaid`, and `mermaid/webview` entry points. Core Metro bundles are tested for optional-renderer isolation.
 
@@ -69,6 +71,7 @@ The following pages describe unreleased main-branch source unless they explicitl
 - [Migration from web Streamdown and older streamdown-rn](./docs/migration.md)
 - [Parity methodology](./docs/parity.md)
 - [Security boundaries](./docs/security.md)
+- [Security reporting policy](./SECURITY.md)
 - [Accessibility](./docs/accessibility.md)
 - [Performance protocol](./docs/performance.md)
 - [Compatibility](./docs/compatibility.md)
@@ -79,12 +82,18 @@ The following pages describe unreleased main-branch source unless they explicitl
 ## Verify
 
 ```bash
-bun install --frozen-lockfile
+bun install --frozen-lockfile --ignore-scripts
+git clone https://github.com/vercel/streamdown.git .reference/streamdown
+git -C .reference/streamdown checkout --detach e5deed330aa4231751a106445d93d62e4716a22f
 bun run ci:hosted
 bun run release:report
 ```
 
 `ci:hosted` proves the source, semantic tests, pinned ledger, documentation examples, direct runtime licenses, packed exports, and core bundle isolation. It does not substitute for the manual/hardware gates. `bun run release:verify` intentionally exits non-zero while those gates remain blocked.
+
+## Stability before 1.0
+
+Before `1.0.0`, minor releases may contain breaking API changes. Such changes are documented in the changelog and Changesets; compatibility aliases receive at least one minor release of deprecation where practical. A security fix may remove an unsafe API without that deprecation period.
 
 ## License and attribution
 
