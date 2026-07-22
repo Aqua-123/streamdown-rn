@@ -58,6 +58,8 @@ bun run sample:ios
 
 The commands launch self-contained Release/Hermes builds, so they do not depend on Metro. Each run recreates the ignored `.sample/expo56` workspace and packs the current library source, preventing stale native or JavaScript bundles from hiding local changes.
 
+See [examples, screenshots, video, and performance graphs](./examples/README.md) for the recorded iOS showcase and reproducible metrics.
+
 ## Features
 
 - CommonMark and GFM rendering with incomplete-stream repair and append-aware block caching.

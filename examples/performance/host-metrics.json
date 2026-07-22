@@ -1,0 +1,107 @@
+{
+  "generatedAt": "2026-07-22T22:35:28.027Z",
+  "scope": "Host Node characterization; not release-Hermes or physical-device evidence.",
+  "testedCeilings": {
+    "wholeBlockBytes": 524288,
+    "incrementalBlockBytes": 524288,
+    "markdownBlocks": 8192
+  },
+  "parser": {
+    "schemaVersion": 1,
+    "runId": "dead53db-d60f-4d4d-b33a-b97f6bdeca68",
+    "timestamp": "2026-07-22T22:35:27.242Z",
+    "status": "characterization",
+    "environment": {
+      "platform": "node",
+      "engine": "node-v24.3.0",
+      "buildType": "host",
+      "host": "FuturixAIs-MacBook-Air.local"
+    },
+    "corpus": {
+      "sha256": "1471041a7ddcc9fcab2110089f487beb7f7d6bd2d250e4e49993ff8bc309d30e",
+      "bytes": 10240,
+      "chunkSize": 32
+    },
+    "metrics": {
+      "parserP50Ms": 5.845708000000002,
+      "parserP95Ms": 7.5,
+      "parserMaxMs": 7.50800000000001
+    },
+    "evidence": [
+      "Host characterization only; does not satisfy release-Hermes gates."
+    ],
+    "blockers": []
+  },
+  "streaming": {
+    "schemaVersion": 1,
+    "runId": "c64a7410-6349-45e6-b52a-7cc4c4754e46",
+    "timestamp": "2026-07-22T22:35:28.023Z",
+    "status": "characterization",
+    "environment": {
+      "platform": "node",
+      "engine": "node-v24.3.0",
+      "buildType": "host",
+      "host": "FuturixAIs-MacBook-Air.local"
+    },
+    "corpus": {
+      "sha256": "1471041a7ddcc9fcab2110089f487beb7f7d6bd2d250e4e49993ff8bc309d30e",
+      "bytes": 10240,
+      "chunkSize": 32
+    },
+    "metrics": {
+      "splitterP50Ms": 0.004042000000026746,
+      "splitterP95Ms": 0.14620800000000145,
+      "splitterMaxMs": 1.0227499999999736,
+      "stableBlocks": 138,
+      "longBlockWholeAppendMs": {
+        "65536": 2.642500000000002,
+        "131072": 2.5635000000000012,
+        "262144": 3.763167000000003,
+        "524288": 4.115625000000001
+      },
+      "longBlockMaxStepRatio": 1.4679801053247516,
+      "incrementalLongBlockMs": {
+        "paragraph": {
+          "65536": 0.9173329999999993,
+          "131072": 1.6907920000000018,
+          "262144": 3.3845420000000033,
+          "524288": 6.309916999999999
+        },
+        "stablePrefix": {
+          "65536": 1.0614589999999993,
+          "131072": 1.7814169999999905,
+          "262144": 3.241374999999991,
+          "524288": 6.255917000000011
+        },
+        "lineDense": {
+          "65536": 1.5814170000000018,
+          "131072": 1.947667000000024,
+          "262144": 3.732666999999992,
+          "524288": 7.864083000000022
+        },
+        "code": {
+          "65536": 1.318415999999985,
+          "131072": 2.3875419999999963,
+          "262144": 4.521416999999985,
+          "524288": 9.189082999999982
+        },
+        "component": {
+          "65536": 1.1885000000000048,
+          "131072": 2.012292000000002,
+          "262144": 4.069375000000008,
+          "524288": 8.368666000000019
+        }
+      },
+      "manyBlockWholeAppendMs": {
+        "1024": 1.328625000000045,
+        "2048": 3.436125000000004,
+        "4096": 5.542750000000012,
+        "8192": 13.794416000000012
+      }
+    },
+    "evidence": [
+      "Host splitter characterization only; React commit/frame/heap metrics require release Hermes."
+    ],
+    "blockers": []
+  }
+}

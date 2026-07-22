@@ -1,0 +1,102 @@
+{
+  "capturedAt": "2026-07-22T22:35:26.817Z",
+  "command": "node examples/capture-ios.mjs --skip-build",
+  "device": {
+    "name": "iPhone 17e",
+    "udid": "4687046A-6063-4FA6-9106-C13818568DA4",
+    "runtime": "com.apple.CoreSimulator.SimRuntime.iOS-26-5"
+  },
+  "app": {
+    "id": "ai.aqua.streamdownrn.expo56",
+    "scheme": "streamdown-rn-expo56",
+    "build": "Expo 56 Release, packed local package"
+  },
+  "screenshots": [
+    {
+      "file": "01-core-markdown-light.png",
+      "config": {
+        "scenario": "static",
+        "theme": "light",
+        "direction": "ltr",
+        "layout": "narrow"
+      }
+    },
+    {
+      "file": "02-code-highlighting.png",
+      "config": {
+        "scenario": "code",
+        "theme": "light",
+        "direction": "ltr",
+        "layout": "narrow"
+      }
+    },
+    {
+      "file": "03-native-math.png",
+      "config": {
+        "scenario": "math",
+        "theme": "light",
+        "direction": "ltr",
+        "layout": "narrow"
+      }
+    },
+    {
+      "file": "04-mermaid-flowchart.png",
+      "config": {
+        "scenario": "mermaid",
+        "theme": "light",
+        "direction": "ltr",
+        "layout": "narrow"
+      }
+    },
+    {
+      "file": "05-mermaid-sequence.png",
+      "config": {
+        "scenario": "mermaid-sequence",
+        "theme": "dark",
+        "direction": "ltr",
+        "layout": "narrow"
+      }
+    },
+    {
+      "file": "06-vega-lite-chart.png",
+      "config": {
+        "scenario": "vega",
+        "theme": "light",
+        "direction": "ltr",
+        "layout": "narrow"
+      }
+    },
+    {
+      "file": "07-streaming-checkpoint.png",
+      "config": {
+        "scenario": "streaming",
+        "theme": "light",
+        "direction": "ltr",
+        "layout": "narrow",
+        "checkpoint": "64"
+      }
+    },
+    {
+      "file": "08-native-fallbacks.png",
+      "config": {
+        "scenario": "fallbacks",
+        "theme": "light",
+        "direction": "ltr",
+        "layout": "narrow"
+      }
+    },
+    {
+      "file": "09-harness.png",
+      "config": {
+        "scenario": "harness",
+        "theme": "light",
+        "direction": "ltr",
+        "layout": "narrow"
+      }
+    }
+  ],
+  "video": {
+    "file": "streamdown-feature-tour.mov",
+    "source": "user-supplied manual iOS screen recording"
+  }
+}
