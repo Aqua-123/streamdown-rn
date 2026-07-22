@@ -153,7 +153,7 @@ try {
   conflictManifest.dependencies['streamdown-native'] = `file:${tarball}`;
   conflictManifest.dependencies['react-native-svg'] = `file:${incompatibleSvg}`;
   fs.writeFileSync(conflictManifestPath, `${JSON.stringify(conflictManifest, null, 2)}\n`);
-  const conflict = spawnSync('npm', ['install', '--ignore-scripts', '--no-package-lock', '--no-save', '--offline', '--strict-peer-deps'], {
+  const conflict = spawnSync('npm', ['install', '--ignore-scripts', '--no-package-lock', '--no-save', '--strict-peer-deps'], {
     cwd: conflictConsumer,
     encoding: 'utf8',
   });
