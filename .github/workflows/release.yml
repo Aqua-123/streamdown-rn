@@ -29,7 +29,7 @@ jobs:
       - name: Run hosted gates
         run: bun run ci:hosted
       - name: Require manual, hardware, visual, performance, and parity evidence
-        run: bun run benchmark:hermes && bun run release:verify
+        run: bun run release:verify
       - uses: changesets/action@e0145edc7d9d8679003495b11f87bd8ef63c0cba
         with:
           publish: bun run release:publish

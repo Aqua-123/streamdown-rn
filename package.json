@@ -70,6 +70,8 @@
     "test:parity": "jest --runInBand --testMatch='<rootDir>/tests/parity/**/*.test.ts?(x)'",
     "test:device-contract": "jest --runInBand --testMatch='<rootDir>/tests/device/**/*.test.ts?(x)'",
     "test:visual": "node tests/visual/capture.mjs",
+    "visual:verify": "node tests/visual/verify-integrity.mjs",
+    "visual:verify:self-test": "node tests/visual/verify-integrity.mjs --self-test",
     "docs:verify": "npm run build && node scripts/docs/verify.mjs",
     "benchmark:parser": "bun benchmarks/parser.bench.ts",
     "benchmark:streaming": "bun benchmarks/streaming.bench.ts",
@@ -90,7 +92,7 @@
     "release:verify": "node scripts/release/verify.mjs",
     "release:publish": "bunx changeset publish",
     "changeset:verify": "node scripts/release/changesets.mjs",
-    "ci:hosted": "bun run lint && bun run type-check && bun run test --silent && bun run test:parity --silent && bun run test:device-contract --silent && bun run parity:validate && bun run parity:drift --candidate-root .reference/streamdown && bun run build && bun run docs:verify && bun run licenses:verify && bun run advisories:verify && bun run release:report:verify && bun run changeset:verify && bun run pack:verify && bun run pack:verify-optional-renderers"
+    "ci:hosted": "bun run lint && bun run type-check && bun run test --silent && bun run test:parity --silent && bun run test:device-contract --silent && bun run visual:verify && bun run parity:validate && bun run parity:drift --candidate-root .reference/streamdown && bun run build && bun run docs:verify && bun run licenses:verify && bun run advisories:verify && bun run release:report:verify && bun run changeset:verify && bun run pack:verify && bun run pack:verify-optional-renderers"
   },
   "peerDependencies": {
     "react": "^19.0.0",

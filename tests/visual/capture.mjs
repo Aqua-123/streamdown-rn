@@ -5,6 +5,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { comparePng } from './compare.mjs';
+import { assertCompleteBaselineManifest, matrixSha256ForCases } from './verify-integrity.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const scenarioSemantics = {
@@ -33,6 +34,19 @@ if (process.argv.includes('--self-test')) {
     () => assertSemantics('Fixture: controls Fixture state: controls one', { id: 'controls-test', scenario: 'controls' }),
     /Semantic readiness missing two, Copy table for controls-test/,
   );
+  const matrixBytes = Buffer.from('{\n  "cases": [\n    { "id": "one" },\n    { "id": "two" }\n  ]\n}\n');
+  const hash = createHash('sha256').update(matrixBytes).digest('hex');
+  const complete = { matrixSha256: hash, artifacts: { 'ios-one.png': hash, 'ios-two.png': hash } };
+  const incomplete = { matrixSha256: hash, artifacts: { 'ios-one.png': hash } };
+  let wrote = false;
+  assert.throws(() => {
+    assertCompleteBaselineManifest(incomplete, 'ios', matrixBytes, ['one', 'two']);
+    wrote = true;
+  }, /complete current visual matrix/);
+  assert.equal(wrote, false);
+  assertCompleteBaselineManifest(complete, 'ios', matrixBytes, ['one', 'two']);
+  wrote = true;
+  assert.equal(wrote, true);
   process.stdout.write('semantic readiness self-test passed\n');
   process.exit(0);
 }
@@ -59,6 +73,8 @@ const baselineManifestPath = path.join(root, 'tests/visual/baselines', `${platfo
 const baselineManifest = fs.existsSync(baselineManifestPath)
   ? JSON.parse(fs.readFileSync(baselineManifestPath, 'utf8'))
   : undefined;
+const reviewedCaseIds = Object.keys(baselineManifest?.artifacts ?? {}).map((name) => name.slice(`${platform}-`.length, -'.png'.length));
+const reviewedMatrixSha256 = matrixSha256ForCases(matrixBytes, reviewedCaseIds);
 if (!update) {
   assert(baselineManifest, `Missing reviewed baseline manifest ${baselineManifestPath}`);
 }
@@ -66,7 +82,7 @@ if (requestedCaseId) {
   assert(config.cases.some(({ id }) => id === requestedCaseId), `Unknown VISUAL_CASE_ID ${requestedCaseId}`);
   if (update) {
     assert(baselineManifest, 'A reviewed manifest is required for a partial baseline update');
-    assert.equal(baselineManifest.matrixSha256, matrixSha256, 'Visual matrix changed; recapture the complete baseline');
+    assertCompleteBaselineManifest(baselineManifest, platform, matrixBytes, config.cases.map(({ id }) => id));
   }
 }
 const selectedCases = requestedCaseId ? config.cases.filter(({ id }) => id === requestedCaseId) : config.cases;
@@ -141,7 +157,7 @@ for (const entry of selectedCases) {
     run('xcrun', ['simctl', 'io', device, 'screenshot', actual]);
   }
   const baseline = path.join(root, 'tests/visual/baselines', `${platform}-${entry.id}.png`);
-  if (!update) assert.equal(baselineManifest.matrixSha256, matrixSha256, 'Visual matrix changed without a reviewed baseline update');
+  if (!update) assert.equal(baselineManifest.matrixSha256, reviewedMatrixSha256, 'Visual matrix changed without a reviewed baseline update');
   if (update) {
     fs.copyFileSync(actual, baseline);
     artifactHashes[path.basename(baseline)] = createHash('sha256').update(fs.readFileSync(baseline)).digest('hex');

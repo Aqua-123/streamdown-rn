@@ -25,7 +25,7 @@ jobs:
         run: |
           git clone https://github.com/vercel/streamdown.git .reference/streamdown
           git -C .reference/streamdown checkout e5deed330aa4231751a106445d93d62e4716a22f
-      - name: Run reproducible hosted gates
+      - name: Run reproducible hosted gates, including visual evidence integrity
         run: bun run ci:hosted
       - name: Generate evidence report
         if: always()

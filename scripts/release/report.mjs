@@ -2,10 +2,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadHermesResults, verifyHermesResults } from '../benchmarks/verify-hermes.mjs';
+import { verifyVisualEvidence } from '../../tests/visual/verify-integrity.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const read = (relative) => JSON.parse(fs.readFileSync(path.join(root, relative), 'utf8'));
 const countBy = (values, key) => Object.fromEntries([...new Set(values.map((value) => value[key]))].sort().map((name) => [name, values.filter((value) => value[key] === name).length]));
+
+export function isReleaseReady(report) {
+  return report.parity.status === 'complete'
+    && report.compatibility.status === 'pass'
+    && report.blockers.length === 0
+    && report.benchmarks.releaseEvidence === 'available'
+    && report.visuals.status === 'available';
+}
 
 export function createReleaseReport() {
   const pkg = read('package.json');
@@ -14,8 +23,7 @@ export function createReleaseReport() {
   const matrix = read('tests/device/matrix.json');
   const evidence = read('tests/device/evidence.json');
   const protocol = read('benchmarks/protocol.json');
-  const visualManifests = ['ios', 'android'].map((platform) => `tests/visual/baselines/${platform}.manifest.json`);
-  const availableVisualManifests = visualManifests.filter((relative) => fs.existsSync(path.join(root, relative)));
+  const visuals = verifyVisualEvidence(root);
   const implemented = manifest.entries.filter((entry) => entry.status === 'implemented').length;
   const nativeAdaptations = manifest.entries.filter((entry) => entry.classification === 'adapted');
   const divergences = manifest.entries.filter((entry) => entry.classification === 'browser-only' || entry.classification === 'known-upstream-bug');
@@ -26,7 +34,7 @@ export function createReleaseReport() {
   let hermes;
   try { hermes = verifyHermesResults(loadHermesResults()); }
   catch (error) { hermes = { status: 'blocked', reason: error.message }; }
-  return {
+  const report = {
     schemaVersion: 1,
     package: { name: pkg.name, version: pkg.version },
     upstream: { repository: inventory.upstream.repository, commit: inventory.upstream.commit, cases: inventory.caseCount },
@@ -37,17 +45,18 @@ export function createReleaseReport() {
       nativeAdaptations: nativeAdaptations.length,
       knownDivergences: countBy(divergences, 'classification'),
     },
-    compatibility: { hosts: matrix.hosts, platforms: matrix.platforms, evidence: evidence.results },
+    compatibility: { status: evidence.status, hosts: matrix.hosts, platforms: matrix.platforms, evidence: evidence.results },
     benchmarks: {
       protocol: { corpusSha256: protocol.corpusSha256, budgets: protocol.budgets },
       characterizations,
       deltas: [hermes],
       releaseEvidence: hermes.status === 'pass' ? 'available' : 'blocked',
     },
-    visuals: { status: availableVisualManifests.length === visualManifests.length ? 'available' : 'blocked', required: visualManifests, available: availableVisualManifests },
+    visuals,
     blockers: evidence.blockers,
-    releaseReady: implemented === manifest.entries.length && evidence.status === 'pass' && evidence.blockers.length === 0 && availableVisualManifests.length === visualManifests.length,
   };
+  report.releaseReady = isReleaseReady(report);
+  return report;
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
