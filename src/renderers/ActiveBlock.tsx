@@ -126,6 +126,7 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
         theme={theme}
         componentRegistry={componentRegistry}
         isStreaming={isAnimating}
+        suppressEmptyFootnotes
         onError={onError}
         components={components}
         securityPolicy={securityPolicy}

@@ -64,4 +64,31 @@ describe('stream source and semantic invariance', () => {
     expect(incomplete.activeBlock?.type).toBe('codeBlock');
     expect(complete.blocks[0]).toMatchObject({ type: 'codeBlock' });
   });
+
+  it.each(['1. ordered', '- item', '- unordered'])('finalizes a completed %s root before the following paragraph', (list) => {
+    const registry = processNewContent(resetRegistry(), `${list}\n\nactive`);
+    expect(registry.blocks[0]).toMatchObject({ type: 'list', content: list });
+    expect(registry.activeBlock?.content).toBe('active');
+  });
+
+  it('keeps a loose-list continuation in one active root', () => {
+    const source = '- first paragraph\n\n  second paragraph';
+    const registry = processNewContent(resetRegistry(), source);
+    expect(registry.blocks).toHaveLength(0);
+    expect(registry.activeBlock?.content).toBe(source);
+  });
+
+  it('retains only open document-wide constructs and finalizes them on closure', () => {
+    const emptyFootnote = processNewContent(resetRegistry(), 'Text[^n]\n\n[^n]:');
+    expect(emptyFootnote.blocks).toHaveLength(0);
+    expect(emptyFootnote.activeBlock?.content).toBe('Text[^n]\n\n[^n]:');
+
+    const completeFootnote = processNewContent(emptyFootnote, 'Text[^n]\n\n[^n]: note\n\nactive');
+    expect(completeFootnote.blocks[0]?.content).toBe('Text[^n]\n\n[^n]: note');
+    expect(completeFootnote.activeBlock?.content).toBe('active');
+
+    const customTag = processNewContent(resetRegistry(), '<box>first\n\nsecond</box>');
+    expect(customTag.blocks[0]?.content).toBe('<box>first\n\nsecond</box>');
+    expect(customTag.activeBlock).toBeNull();
+  });
 });

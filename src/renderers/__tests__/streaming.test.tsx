@@ -6,6 +6,13 @@ import { createStreamingInstrumentation } from '../../core/streaming';
 
 const MIXED = '# Title\n\nFirst [link](https://example.com).\n\n> quote\n\n- [x] one\n- two\n\n| a | b |\n| - | - |\n| 1 | 2 |\n\n```ts\nconst n = 1;\n```\n\nRTL שלום.\n\nFootnote[^n]\n\n[^n]: Note';
 
+const DOCUMENT_SEMANTICS = [
+  ['loose list', '- first paragraph\n\n  second paragraph', {}],
+  ['reference link and image', '[link][target] ![image][target]\n\n[target]: https://example.com/image.png', {}],
+  ['footnote', 'Text[^note].\n\n[^note]: Footnote body.', {}],
+  ['custom tag', '<box>first\n\nsecond</box>', { allowedTags: { box: [] } }],
+] as const;
+
 function chunks(source: string, sizes: number[]): string[] {
   const values: string[] = [];
   let cursor = 0;
@@ -39,6 +46,37 @@ function semanticSignature(json: unknown): unknown[] {
 }
 
 describe('streaming lifecycle', () => {
+  it('suppresses only empty defined footnotes in active streaming roots', () => {
+    const empty = 'Empty[^empty], full[^full], unresolved[^missing].\n\n[^empty]:\n[^full]: Body';
+    const screen = render(<Streamdown mode="streaming">{empty}</Streamdown>);
+    expect(visibleText(screen.toJSON())).not.toContain('[empty]');
+    expect(visibleText(screen.toJSON())).toContain('[full]');
+    expect(visibleText(screen.toJSON())).toContain('[^missing]');
+
+    const arrived = empty.replace('[^empty]:', '[^empty]: Arrived');
+    screen.rerender(<Streamdown mode="streaming">{arrived}</Streamdown>);
+    expect(visibleText(screen.toJSON())).toContain('[empty]');
+    expect(visibleText(screen.toJSON())).toContain('Arrived');
+
+    screen.rerender(<Streamdown mode="static">{'Empty[^empty].\n\n[^empty]:'}</Streamdown>);
+    expect(visibleText(screen.toJSON())).toContain('[empty]');
+  });
+
+  it.each(DOCUMENT_SEMANTICS)('preserves %s semantics for incremental and whole delivery', (_name, source, extraProps) => {
+    const expected = render(<Streamdown mode="static" {...extraProps}>{source}</Streamdown>);
+    for (const sizes of [
+      Array(source.length).fill(1),
+      [4, 6, 3, 8],
+      source.split('\n').map((line) => line.length + 1),
+      [source.length],
+    ]) {
+      const streamed = render(<Streamdown {...extraProps}>{''}</Streamdown>);
+      for (const value of chunks(source, sizes)) streamed.rerender(<Streamdown {...extraProps}>{value}</Streamdown>);
+      expect(visibleText(streamed.toJSON())).toBe(visibleText(expected.toJSON()));
+      expect(semanticSignature(streamed.toJSON())).toEqual(semanticSignature(expected.toJSON()));
+    }
+  });
+
   it.each([
     ['character', Array(MIXED.length).fill(1)],
     ['token', [4, 6, 3, 12, 9, 7, 15]],

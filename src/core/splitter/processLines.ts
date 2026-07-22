@@ -4,6 +4,7 @@ import { detectBlockType, detectPartialBlockType } from './blockPatterns';
 import { finalizeBlock } from './finalizeBlock';
 import { isCodeBlockClosed, isComponentClosed } from './blockClosers';
 import { logDebug } from './logger';
+import { analyzeMarkdownBoundary } from '../blockSemantics';
 
 interface ProcessArgs {
   registry: BlockRegistry;
@@ -153,6 +154,11 @@ function handleParagraphBoundary({
   const lastLine = activeContent.slice(lastNewlineIndex + 1);
   const detectedNext = detectBlockType(lastLine);
   if (!detectedNext || detectedNext.type === 'paragraph') return null;
+  if (detectedNext.type === 'footnote') {
+    const identifier = lastLine.match(/^\[\^([^\]]+)\]:/)?.[1];
+    const prior = activeContent.slice(0, lastNewlineIndex);
+    if (identifier && prior.includes(`[^${identifier}]`)) return null;
+  }
 
   const paragraphContent = activeContent.slice(0, lastNewlineIndex).trimEnd();
   const normalizedRemainder = normalizeBlockContent(
@@ -196,9 +202,18 @@ function handleDoubleNewline({
   activeStartPos,
 }: ProcessArgs): BlockRegistry | null {
   if (!activeContent.includes('\n\n')) return null;
+  const closesAtBoundary = /\n\n+$/.test(activeContent);
+  const inspectsDeferredBoundary = /\n\n+[ \t]*\S$/.test(activeContent);
+  const closesHtml = /<\/\s*[a-z][\w-]*\s*>$/i.test(activeContent);
+  if (!closesAtBoundary && !inspectsDeferredBoundary && !closesHtml) return null;
 
-  const segments = activeContent.split(/\n\n+/);
-  const separators = activeContent.match(/\n\n+/g) ?? [];
+  const candidate = closesAtBoundary ? activeContent.replace(/\n+$/, '') : activeContent;
+  const analysis = analyzeMarkdownBoundary(candidate);
+  if (analysis.retain) return null;
+
+  const stableCount = closesAtBoundary || analysis.closedHtml
+    ? analysis.partitions.length
+    : Math.max(0, analysis.partitions.length - 1);
   let offset = 0;
   let blocks = [...registry.blocks];
   let blockCounter = registry.blockCounter;
@@ -207,12 +222,9 @@ function handleDoubleNewline({
       ? registry.activeBlock.startPos
       : activeStartPos;
 
-  for (let i = 0; i < segments.length - 1; i++) {
-    const segment = segments[i].trimEnd();
-    if (!segment) {
-      offset += segments[i].length + separators[i].length;
-      continue;
-    }
+  for (const partition of analysis.partitions.slice(0, stableCount)) {
+    const segment = partition.trimEnd();
+    if (!segment) continue;
     const detected = detectBlockType(segment.split('\n')[0]);
     const type = detected?.type || 'paragraph';
     blocks = [
@@ -220,10 +232,10 @@ function handleDoubleNewline({
       finalizeBlock(segment, type, blockCounter, baseStart + offset),
     ];
     blockCounter++;
-    offset += segments[i].length + separators[i].length;
+    offset += partition.length;
   }
 
-  const remainder = segments[segments.length - 1];
+  const remainder = analysis.partitions.slice(stableCount).join('');
   const remainderStart = baseStart + offset;
   const normalizedRemainder = normalizeBlockContent(
     remainder,

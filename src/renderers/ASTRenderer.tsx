@@ -98,6 +98,8 @@ export interface ASTRendererProps {
   componentRegistry?: ComponentRegistry;
   components?: NativeComponents;
   isStreaming?: boolean;
+  /** Internal active-root signal; independent of animation-dependent streaming UI. */
+  suppressEmptyFootnotes?: boolean;
   onError?: ComponentErrorHandler;
   securityPolicy?: SecurityPolicyOptions;
   allowedTags?: Readonly<Record<string, readonly string[]>>;
@@ -118,6 +120,7 @@ export interface ASTRendererProps {
 interface RenderContext extends Omit<ASTRendererProps, 'node'> {
   direction?: 'ltr' | 'rtl';
   definitions: ReadonlyMap<string, { url?: string; title?: string | null }>;
+  emptyFootnotes: ReadonlySet<string>;
 }
 
 const ComponentErrorContext = React.createContext<ComponentErrorHandler | undefined>(undefined);
@@ -606,6 +609,7 @@ function renderNode(node: SemanticNode, context: RenderContext, inline = false, 
         );
       }
     case 'footnoteReference':
+      if (context.suppressEmptyFootnotes && node.identifier && context.emptyFootnotes.has(node.identifier)) return null;
       return withOverride(node, context, true, `[${node.identifier}]`, () => <Text key={key}>[{node.identifier}]</Text>, key);
     case 'footnoteDefinition': {
       if (!node.children?.length) return null;
@@ -651,14 +655,18 @@ export const ASTRenderer: React.FC<ASTRendererProps> = ({ node, ...options }) =>
       ? detectTextDirection(textValue(root as unknown as SemanticNode))
       : undefined;
   const definitions = new Map<string, { url?: string; title?: string | null }>();
+  const emptyFootnotes = new Set<string>();
   for (const child of root.children as unknown as SemanticNode[]) {
     if (child.type === 'definition' && child.identifier) {
       definitions.set(child.identifier, { url: child.url, title: (child as { title?: string | null }).title });
     }
+    if (child.type === 'footnoteDefinition' && child.identifier && !textValue(child).trim()) {
+      emptyFootnotes.add(child.identifier);
+    }
   }
   return (
     <ComponentErrorContext.Provider value={options.onError}>
-      {renderNode(root as unknown as SemanticNode, { ...options, direction, definitions })}
+      {renderNode(root as unknown as SemanticNode, { ...options, direction, definitions, emptyFootnotes })}
     </ComponentErrorContext.Provider>
   );
 };
