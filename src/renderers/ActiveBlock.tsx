@@ -22,6 +22,7 @@ import type { ControlsConfig, IconMap, StreamdownTranslations } from '../control
 import type { PluginConfig } from '../plugins/renderers';
 import type { ThemeInput } from '../plugins/code';
 import { hasIncompleteCodeFence } from '../core/blockSemantics';
+import type { NativeSlots } from './types';
 
 interface ActiveBlockProps {
   block: ActiveBlockType | null;
@@ -30,6 +31,7 @@ interface ActiveBlockProps {
   componentRegistry?: ComponentRegistry;
   onError?: (error: Error, componentName?: string) => void;
   components?: NativeComponents;
+  slots?: NativeSlots;
   parseOptions?: SemanticParseOptions;
   securityPolicy?: SecurityPolicyOptions;
   allowedTags?: Readonly<Record<string, readonly string[]>>;
@@ -64,6 +66,7 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
   componentRegistry,
   onError,
   components,
+  slots,
   parseOptions,
   securityPolicy,
   allowedTags,
@@ -129,6 +132,7 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
         suppressEmptyFootnotes
         onError={onError}
         components={components}
+        slots={slots}
         securityPolicy={securityPolicy}
         allowedTags={allowedTags}
         literalTagContent={literalTagContent}

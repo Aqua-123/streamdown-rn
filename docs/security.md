@@ -6,6 +6,7 @@ Untrusted input crosses several independent boundaries:
 - Link and image URLs use scheme allowlists, optional relative resolution, and a `urlTransform` hook. External links require an approval capability before opening.
 - Data images are off by default and, when enabled, remain MIME/size bounded.
 - Dynamic component props and custom-tag attributes are recursively sanitized before trusted host components receive them.
+- Typed semantic `slots` run only after element and URL policy. Their semantic data excludes raw syntax nodes and custom attributes; rejected link and image URLs never invoke a slot. `renderDefault` keeps URL and capability ownership inside NativeLink and SafeImage.
 - CSV and TSV exports are human, spreadsheet-oriented formats. Cells beginning with common formula prefixes (`=`, `+`, `-`, `@`, tab, carriage return, line feed, or their full-width equivalents) receive a leading single quote; CSV also quotes those cells, while TSV escapes delimiter controls. This can change literal exported text and reduces spreadsheet formula interpretation and field breakout, but is not a universal mitigation across every spreadsheet importer. Markdown serialization remains literal and unchanged.
 - Network image rendering remains HTTPS-only (separately bounded data images can be enabled explicitly). Image downloading is fail-closed unless the host supplies `capabilities.imageDownloads`; React Native 0.81.5 and 0.85.3 both use an XHR-backed `whatwg-fetch` without incremental response bodies or manual redirect control, so the default JavaScript downloader cannot truthfully enforce a byte ceiling or inspect redirects before following them.
 - Mermaid SVG is size/structure bounded and rejects scripts, external resources, event/style execution, dangerous entities, animation/filter bombs, extreme geometry, and oversized paths. The beautiful-mermaid adapter removes its browser-only style/import block, resolves known CSS variables to inert native colors, and then passes the result through the same generic sanitizer; only local fragment marker references receive a narrow exception.
@@ -53,5 +54,12 @@ Text nodes have no element filter name and remain readable when their containing
 `allowedLinkSchemes` is additive: built-in `http`, `https`, `mailto`, `tel`, and `sms` links stay enabled, while listed application schemes are added. Use a `urlTransform` such as `httpsOnly` above when links must be HTTPS-only; transformed URLs are validated again before rendering.
 
 Host components, native capabilities, token/math/diagram providers, and the WebView transport are trusted application code. Do not treat the sanitizer as a permission boundary inside trusted adapters. Report vulnerabilities through the repository security channel before public disclosure.
+
+Prefer `slots` for standard-element presentation. The legacy string-keyed
+`components` API is a full, caller-owned replacement and can intentionally omit
+the library's approval, loading, retry, control, and accessibility behavior.
+When both are supplied for an element, `components` wins. Custom and literal
+tags remain available only through that replacement path and never enter the
+standard slot map.
 
 The image-download capability owns the network request. It must call the supplied `validateUrl` before the initial request and before every redirect request, stop reading once `maxBytes` would be exceeded even when `Content-Length` is missing or false, reject MIME types outside `mimeTypes`, and cancel the native request at `timeoutMs`. Streamdown rechecks the returned MIME and byte length before passing the file to `capabilities.files.save`, but that postcondition is not a substitute for bounded native reads. Streamdown supplies no cookies, credentials, or authorization headers; any authentication attached by the host remains the host's security responsibility. `urlTransform` runs once in the renderer, and the capability receives that final transformed URL rather than transforming it again.

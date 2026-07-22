@@ -85,6 +85,16 @@ export type {
   ThemePrimitives,
 } from './core/types';
 
+export type {
+  NativeDefaultOverrides,
+  NativeElementName,
+  NativeSlotProps,
+  NativeSlotSemanticData,
+  NativeSlots,
+} from './renderers/types';
+
+export { NATIVE_ELEMENT_NAMES } from './renderers/types';
+
 export {
   darkTheme,
   darkThemePrimitives,

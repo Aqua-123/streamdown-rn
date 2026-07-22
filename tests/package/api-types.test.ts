@@ -4,6 +4,8 @@ import type {
   StreamdownRNProps,
   NativeCapabilities,
   NativeImageDownloadRequest,
+  NativeSlots,
+  NativeSlotProps,
 } from '../../src';
 import { createCodePlugin, type TokenProvider } from '../../src/plugins/code';
 import { createCjkPlugin } from '../../src/plugins/cjk';
@@ -63,6 +65,22 @@ const nativeProps: StreamdownProps = {
 };
 const aliasProps: StreamdownRNProps = nativeProps;
 void aliasProps;
+
+const slots: NativeSlots = {
+  a: ({ renderDefault }: NativeSlotProps<'a'>) => renderDefault({ children: 'safe', style: { opacity: 0.8 } }),
+  img: ({ renderDefault }: NativeSlotProps<'img'>) => renderDefault({ style: { padding: 4 } }),
+};
+// @ts-expect-error Standard slot names are exact; custom tags use legacy components.
+const invalidSlots: NativeSlots = { paragraf: () => null };
+const imageSlot = (props: NativeSlotProps<'img'>) => {
+  // @ts-expect-error Image defaults cannot replace SafeImage through children.
+  return props.renderDefault({ children: null });
+};
+const customComponents: StreamdownProps = { components: { 'host-widget': () => null } };
+void slots;
+void invalidSlots;
+void imageSlot;
+void customComponents;
 
 // @ts-expect-error DOM class names have no native contract.
 const domClassName: StreamdownProps = { children: 'text', className: 'prose' };

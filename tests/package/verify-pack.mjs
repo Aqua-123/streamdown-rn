@@ -107,13 +107,29 @@ try {
   type DropdownRootProps, type DropdownTriggerProps, type FullscreenModalProps,
   type NativeLinkProps, type PanZoomSurfaceProps,
 } from 'streamdown-rn/ui';
+import {
+  NATIVE_ELEMENT_NAMES,
+  type NativeElementName,
+  type NativeSlotProps,
+  type NativeSlots,
+  type StreamdownProps,
+} from 'streamdown-rn';
 const components = [ActionButton, Button, Dropdown, DropdownItem, DropdownPopup, DropdownRoot, DropdownTrigger, FullscreenModal, NativeLink, PanZoomSurface];
 type Contracts = ActionButtonProps | ButtonProps | DropdownItemProps | DropdownPopupProps | DropdownRootProps | DropdownTriggerProps | FullscreenModalProps | NativeLinkProps | PanZoomSurfaceProps;
 const variant: ButtonVariant = 'ghost';
 const state: ButtonState = { pressed: false, focused: false, hovered: false, disabled: false };
 const callbackButton: ButtonProps = { children: (value: ButtonState) => value.pressed ? 'Pressed' : 'Idle', style: (value: ButtonState) => ({ opacity: value.disabled ? 0.5 : 1 }) };
 const reason: DropdownOpenReason = 'trigger';
+const slots: NativeSlots = {
+  p: ({ renderDefault }: NativeSlotProps<'p'>) => renderDefault({ style: { opacity: 0.8 }, children: 'packed' }),
+  img: ({ renderDefault }: NativeSlotProps<'img'>) => renderDefault({ style: { padding: 2 } }),
+};
+const element: NativeElementName = NATIVE_ELEMENT_NAMES[0];
+const streamdownProps: StreamdownProps = { slots };
+// @ts-expect-error Standard slot names are exact.
+const invalidSlots: NativeSlots = { paragraf: () => null };
 void components; void (null as Contracts | null); void variant; void state; void callbackButton; void reason;
+void element; void streamdownProps; void invalidSlots;
 `);
     run(
       path.join(root, 'node_modules/.bin/tsc'),

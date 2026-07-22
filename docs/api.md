@@ -58,7 +58,47 @@ export function Actions() {
 }
 ```
 
-Important streaming properties are `mode`, `isAnimating`, `isComplete`, `parseIncompleteMarkdown`, `animated`, `caret`, and `reducedMotion`. `announceStreaming` is opt-in and coalesced. `components` overrides semantic native elements; `componentRegistry` serves the compact dynamic-component syntax. Consult the emitted `dist/index.d.ts` for the complete contract; `bun run docs:verify` compiles this example against that public declaration.
+Important streaming properties are `mode`, `isAnimating`, `isComplete`, `parseIncompleteMarkdown`, `animated`, `caret`, and `reducedMotion`. `announceStreaming` is opt-in and coalesced. `componentRegistry` serves the compact dynamic-component syntax. Consult the emitted `dist/index.d.ts` for the complete contract; `bun run docs:verify` compiles this example against that public declaration.
+
+## Semantic slots
+
+Prefer `slots` when styling or wrapping standard Markdown elements. A slot sees
+rendered safe children and post-policy semantic values, then calls
+`renderDefault` to retain native accessibility, link approval, image loading and
+retry, downloads, and controls. `renderDefault` accepts only presentation
+`style` and, except for images, trusted replacement `children`; it cannot replace
+a URL or capability.
+
+```tsx verify
+import React from 'react';
+import { Text, View } from 'react-native';
+import { Streamdown, type NativeSlots } from 'streamdown-rn';
+
+const slots: NativeSlots = {
+  p: ({ children, renderDefault }) => (
+    <View accessibilityLabel="markdown-paragraph">
+      {renderDefault({ style: { opacity: 0.9 }, children })}
+    </View>
+  ),
+  a: ({ children, semantic, renderDefault }) => (
+    <Text accessibilityHint={`Opens ${semantic.url}`}>
+      {renderDefault({ style: { fontWeight: '700' }, children })}
+    </Text>
+  ),
+  img: ({ renderDefault }) => renderDefault({ style: { marginVertical: 8 } }),
+};
+
+export function ComposedMessage() {
+  return <Streamdown mode="static" slots={slots}>{'[Safe link](https://example.com)'}</Streamdown>;
+}
+```
+
+`NativeElementName` is the exact standard slot vocabulary. Custom or literal
+tag names are intentionally absent; use the existing string-keyed `components`
+API for those trusted host replacements. `components` replaces the library
+renderer completely, so the caller owns URL handling, accessibility,
+interaction, loading, retry, and controls. When both APIs target the same
+standard element, legacy `components` replacement takes precedence.
 
 ## Themes
 

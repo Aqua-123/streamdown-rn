@@ -57,7 +57,7 @@ export function Message({ markdown, done }: { markdown: string; done: boolean })
 
 - CommonMark/GFM semantic rendering, incomplete-stream repair, stable block caching, direction detection, footnotes, tables, task lists, links, and images.
 - Capability-backed clipboard, file, share, link approval, focus, announcement, and gesture actions. Unavailable native capabilities fail visibly instead of silently.
-- Custom native semantic components and the existing `[{c:"Name",p:{...}}]` component registry syntax.
+- Typed `slots` compose around safe native semantic defaults. Legacy `components` remains a caller-owned full replacement, and `[{c:"Name",p:{...}}]` keeps its separate component registry.
 - Separate `code`, `cjk`, `renderers`, `math`, `mermaid`, and `mermaid/webview` entry points. Core Metro bundles are tested for optional-renderer isolation.
 
 ## Documentation

@@ -15,6 +15,7 @@ import type { NativeCapabilities } from '../platform/capabilities';
 import type { ControlsConfig, IconMap, StreamdownTranslations } from '../controls';
 import type { PluginConfig } from '../plugins/renderers';
 import type { ThemeInput } from '../plugins/code';
+import type { NativeSlots } from './types';
 
 interface StableBlockProps {
   block: StableBlockType;
@@ -22,6 +23,7 @@ interface StableBlockProps {
   componentRegistry?: ComponentRegistry;
   onError?: (error: Error, componentName?: string) => void;
   components?: NativeComponents;
+  slots?: NativeSlots;
   securityPolicy?: SecurityPolicyOptions;
   allowedTags?: Readonly<Record<string, readonly string[]>>;
   literalTagContent?: readonly string[];
@@ -44,7 +46,7 @@ interface StableBlockProps {
  * U6 owns memoization after all renderer-bearing inputs are instrumented.
  */
 const StableBlockRenderer: React.FC<StableBlockProps> =
-  ({ block, theme, componentRegistry, onError, components, securityPolicy, allowedTags, literalTagContent, dir, parseOptions, rootCache, instrumentation, capabilities, controls, translations, icons, controlsDisabled, plugins, shikiTheme, lineNumbers }) => {
+  ({ block, theme, componentRegistry, onError, components, slots, securityPolicy, allowedTags, literalTagContent, dir, parseOptions, rootCache, instrumentation, capabilities, controls, translations, icons, controlsDisabled, plugins, shikiTheme, lineNumbers }) => {
     instrumentation?.recordStableRender();
     // Component blocks don't have AST (custom syntax, not markdown)
     if (block.type === 'component') {
@@ -69,6 +71,7 @@ const StableBlockRenderer: React.FC<StableBlockProps> =
           componentRegistry={componentRegistry}
           onError={onError}
           components={components}
+          slots={slots}
           securityPolicy={securityPolicy}
           allowedTags={allowedTags}
           literalTagContent={literalTagContent}
@@ -96,6 +99,7 @@ export const StableBlock = React.memo(StableBlockRenderer, (previous, next) =>
   previous.componentRegistry === next.componentRegistry &&
   previous.onError === next.onError &&
   previous.components === next.components &&
+  previous.slots === next.slots &&
   previous.securityPolicy === next.securityPolicy &&
   previous.allowedTags === next.allowedTags &&
   previous.literalTagContent === next.literalTagContent &&

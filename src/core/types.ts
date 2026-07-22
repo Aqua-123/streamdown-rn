@@ -15,6 +15,7 @@ import type { ControlsConfig, IconMap, StreamdownTranslations } from '../control
 import type { NativeCapabilities } from '../platform/capabilities';
 import type { PluginConfig } from '../plugins/renderers';
 import type { ThemeInput } from '../plugins/code';
+import type { NativeSlots } from '../renderers/types';
 
 // ============================================================================
 // Block Types
@@ -377,6 +378,8 @@ export interface StreamdownProps extends SecurityPolicyOptions {
   style?: StyleProp<ViewStyle>;
   /** Native semantic component overrides (never DOM intrinsic strings). */
   components?: NativeComponents;
+  /** Typed wrappers around library-owned, post-policy semantic fallbacks. */
+  slots?: NativeSlots;
   /** Additional remark plugins, applied after the built-in GFM parser. */
   remarkPlugins?: PluggableList;
   /** Optional code, CJK, and custom-renderer plugins. */

@@ -41,6 +41,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
     children: value,
     componentRegistry,
     components,
+    slots,
     theme = 'dark',
     style,
     onError,
@@ -278,6 +279,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
           theme={themeConfig}
           componentRegistry={componentRegistry}
           components={components}
+          slots={slots}
           onError={onError}
           securityPolicy={securityPolicy}
           allowedTags={allowedTags}
@@ -303,6 +305,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
           theme={themeConfig}
           componentRegistry={componentRegistry}
           components={components}
+          slots={slots}
           onError={onError}
           securityPolicy={securityPolicy}
           allowedTags={allowedTags}
@@ -330,6 +333,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
           theme={themeConfig}
           componentRegistry={componentRegistry}
           components={components}
+          slots={slots}
           onError={onError}
           securityPolicy={securityPolicy}
           allowedTags={allowedTags}
@@ -355,6 +359,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
         theme={themeConfig}
         componentRegistry={componentRegistry}
         components={components}
+        slots={slots}
         onError={onError}
         parseOptions={parseOptions}
         securityPolicy={securityPolicy}

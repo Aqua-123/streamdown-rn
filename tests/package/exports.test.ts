@@ -43,6 +43,7 @@ describe('packed package', () => {
       'defaultIcons',
       'defaultTranslations',
       'defaultNativeCapabilities',
+      'NATIVE_ELEMENT_NAMES',
     ]) {
       expect(api[exportName]).toBeDefined();
     }
