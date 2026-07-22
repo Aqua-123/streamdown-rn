@@ -193,7 +193,7 @@
     "type": "components",
     "jsSrcsDir": "src/native",
     "android": {
-      "javaPackageName": "ai.darkresearch.streamdown"
+      "javaPackageName": "ai.aqua.streamdown"
     },
     "ios": {
       "componentProvider": {

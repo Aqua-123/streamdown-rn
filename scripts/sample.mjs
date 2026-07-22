@@ -51,7 +51,7 @@ console.log(`Prepared the packed streamdown-rn sample at ${app}`);
 if (!process.argv.includes('--prepare-only')) {
   const release = platform === 'ios' ? ['--configuration', 'Release'] : ['--variant', 'release'];
   run('npx', ['expo', `run:${platform}`, ...release, '--no-bundler'], app);
-  const appId = 'ai.darkresearch.streamdownrn.expo56';
+  const appId = 'ai.aqua.streamdownrn.expo56';
   if (platform === 'ios') {
     // A fresh simulator install has no running process to terminate. simctl
     // reports that harmless state as exit code 3, so launch must not be skipped.

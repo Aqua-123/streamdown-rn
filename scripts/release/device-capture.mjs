@@ -18,7 +18,7 @@ if (!Number.isSafeInteger(interactionTimeoutMs) || interactionTimeoutMs < 1_000 
 const source = { commit: options.commit, packageSha256: options['package-sha256'] };
 const identity = { coverageId: options['coverage-id'], host: options.host, platform: options.platform, scenario: options.scenario, buildType: 'release', engine: 'hermes', source, captureId: crypto.randomUUID() };
 const url = deviceEvidenceUrl(identity);
-const appId = options.host === 'expo54' ? 'ai.darkresearch.streamdownrn.expo54' : 'ai.darkresearch.streamdownrn.expo56';
+const appId = options.host === 'expo54' ? 'ai.aqua.streamdownrn.expo54' : 'ai.aqua.streamdownrn.expo56';
 const launch = options.platform === 'android'
   ? ['adb', 'shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', url, `${appId}/.MainActivity`]
   : ['xcrun', 'simctl', 'openurl', 'booted', url];

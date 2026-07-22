@@ -1,4 +1,4 @@
-package ai.darkresearch.streamdown
+package ai.aqua.streamdown
 
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.WritableMap

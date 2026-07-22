@@ -14,8 +14,8 @@ const PREFIXES = {
   event: 'STREAMDOWN_HERMES_EVENT ', bundle: 'STREAMDOWN_HERMES_BUNDLE ', complete: 'STREAMDOWN_HERMES_COMPLETE ',
 };
 const FIXTURES = {
-  'current-rn': { androidPackage: 'ai.darkresearch.streamdownrn.expo56', iosBundle: 'ai.darkresearch.streamdownrn.expo56', host: 'packed Expo 56 fixture' },
-  expo54: { androidPackage: 'ai.darkresearch.streamdownrn.expo54', iosBundle: 'ai.darkresearch.streamdownrn.expo54', host: 'packed Expo 54 fixture' },
+  'current-rn': { androidPackage: 'ai.aqua.streamdownrn.expo56', iosBundle: 'ai.aqua.streamdownrn.expo56', host: 'packed Expo 56 fixture' },
+  expo54: { androidPackage: 'ai.aqua.streamdownrn.expo54', iosBundle: 'ai.aqua.streamdownrn.expo54', host: 'packed Expo 54 fixture' },
 };
 const HEX40 = /^[a-f0-9]{40}$/;
 const HEX64 = /^[a-f0-9]{64}$/;

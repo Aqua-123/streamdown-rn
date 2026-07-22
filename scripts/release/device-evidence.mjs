@@ -13,8 +13,8 @@ const SCENARIO_SIGNALS = {
   'rtl-cjk-font-scale-theme-layout': 'international-layout-observed',
 };
 const HOST_APPS = {
-  expo54: { scheme: 'streamdown-rn-expo54', appId: 'ai.darkresearch.streamdownrn.expo54', process: 'streamdown-rn-expo54-fixture' },
-  expo56: { scheme: 'streamdown-rn-expo56', appId: 'ai.darkresearch.streamdownrn.expo56', process: 'streamdown-rn-expo56-fixture' },
+  expo54: { scheme: 'streamdown-rn-expo54', appId: 'ai.aqua.streamdownrn.expo54', process: 'streamdown-rn-expo54-fixture' },
+  expo56: { scheme: 'streamdown-rn-expo56', appId: 'ai.aqua.streamdownrn.expo56', process: 'streamdown-rn-expo56-fixture' },
 };
 const CAPTURE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 

@@ -75,7 +75,7 @@ try {
           receipt: {
             schemaVersion: 1, producer: 'streamdown-device-capture/v1', matrixSha256: compatibilityMatrixSha256(matrixFixture), coverageId: id, source,
             captureId,
-            launch: { argv: ['adb', 'shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', deviceEvidenceUrl({ host, platform, scenario, coverageId: id, source, captureId }), 'ai.darkresearch.streamdownrn.expo54/.MainActivity'], exitCode: 0 },
+            launch: { argv: ['adb', 'shell', 'am', 'start', '-W', '-a', 'android.intent.action.VIEW', '-d', deviceEvidenceUrl({ host, platform, scenario, coverageId: id, source, captureId }), 'ai.aqua.streamdownrn.expo54/.MainActivity'], exitCode: 0 },
             command: { argv: ['adb', 'logcat', '-d', '-v', 'raw', '-s', 'ReactNativeJS:I'], exitCode: 0 },
             startedAt: '2026-01-01T00:00:00.000Z', completedAt: '2026-01-01T00:01:00.000Z', rawArtifactSha256: [rawHash],
           },

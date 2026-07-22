@@ -1,4 +1,4 @@
-package ai.darkresearch.streamdown
+package ai.aqua.streamdown
 
 import android.text.TextPaint
 import android.text.style.CharacterStyle

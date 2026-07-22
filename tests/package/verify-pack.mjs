@@ -136,6 +136,10 @@ try {
 
   const packedManifest = JSON.parse(run('tar', ['-xOf', tarball, 'package/package.json']));
   assertSvgPeerManifest(packedManifest);
+  assert.equal(packedManifest.codegenConfig.android.javaPackageName, 'ai.aqua.streamdown');
+  assert(pack.files.some(({ path: file }) => file === 'android/src/main/java/ai/aqua/streamdown/StreamdownTextPackage.kt'));
+  assert(!pack.files.some(({ path: file }) => file.includes('/darkresearch/')));
+  assert.match(run('tar', ['-xOf', tarball, 'package/react-native.config.js']), /ai\.aqua\.streamdown\.StreamdownTextPackage/);
   installCandidateFromNpm(tarball, packedManifest);
   const incompatibleSvg = path.join(temp, 'react-native-svg-incompatible');
   fs.mkdirSync(incompatibleSvg);

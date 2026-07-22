@@ -13,7 +13,7 @@ apply plugin: "kotlin-android"
 apply plugin: "com.facebook.react"
 
 android {
-  namespace "ai.darkresearch.streamdown"
+  namespace "ai.aqua.streamdown"
   compileSdkVersion getExtOrDefault("compileSdkVersion")
   defaultConfig {
     minSdkVersion getExtOrDefault("minSdkVersion")
@@ -33,5 +33,5 @@ dependencies { implementation "com.facebook.react:react-android" }
 react {
   jsRootDir = file("../src/native")
   libraryName = "StreamdownTextSpec"
-  codegenJavaPackageName = "ai.darkresearch.streamdown"
+  codegenJavaPackageName = "ai.aqua.streamdown"
 }

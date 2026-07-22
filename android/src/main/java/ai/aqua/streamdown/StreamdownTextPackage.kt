@@ -1,4 +1,4 @@
-package ai.darkresearch.streamdown
+package ai.aqua.streamdown
 
 import com.facebook.react.BaseReactPackage
 import com.facebook.react.bridge.NativeModule

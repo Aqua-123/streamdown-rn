@@ -1,4 +1,4 @@
-package ai.darkresearch.streamdown
+package ai.aqua.streamdown
 
 import android.animation.ValueAnimator
 import android.content.Context

@@ -5,7 +5,7 @@
     "scheme": "streamdown-rn-expo56",
     "version": "0.1.0",
     "newArchEnabled": true,
-    "ios": { "bundleIdentifier": "ai.darkresearch.streamdownrn.expo56" },
-    "android": { "package": "ai.darkresearch.streamdownrn.expo56" }
+    "ios": { "bundleIdentifier": "ai.aqua.streamdownrn.expo56" },
+    "android": { "package": "ai.aqua.streamdownrn.expo56" }
   }
 }
