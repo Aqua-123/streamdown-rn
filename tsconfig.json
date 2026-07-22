@@ -10,12 +10,19 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "declaration": true,
-    "declarationMap": true,
+    "declarationMap": false,
     "sourceMap": true,
+    "inlineSources": true,
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/__tests__/**", "**/*.test.ts", "**/*.test.tsx"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
 }

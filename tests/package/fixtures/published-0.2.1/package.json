@@ -1,0 +1,16 @@
+{
+  "name": "streamdown-rn",
+  "version": "0.2.1",
+  "types": "dist/index.d.ts",
+  "npmIntegrity": "sha512-KbnVYi85Xl7h9TJxWKsOFrEERF9bI3kcxUjbepayX1IHv9H/SIhQapqYlGmcEzoo/H/dToFXFN1mQsaOnHizvQ==",
+  "tarballSha256": "f86c31b995ed7e066a39861f0902c4c5d7f57efae26646a6484fa28683350876",
+  "gitHead": "f0454d0561adcf12450dc2f6baa55e174dea7219",
+  "declarationSha256": {
+    "dist/index.d.ts": "110bd4b4c80ad14b1495449560e940b8d201fba26c050ace1b3b9e2e05b4b41c",
+    "dist/StreamdownRN.d.ts": "85869a16c9fc73a1597ef7cb45f3f571bda3c952a407e7a77577325b53fdea1d",
+    "dist/components/index.d.ts": "f4695dc5de4ae9bdc8ef09f8f2c89afd0f71a38f836234793d46217ad7df65e9",
+    "dist/components/Skeleton.d.ts": "a2697147ccbdfef8b9d1d179aa6de07d45d3d01c17884a3f3b1c918427de91ff",
+    "dist/core/sanitize.d.ts": "d85afaf6d589eb3f443c7b99230da924a67d82f0b57d47bfd5558d183745bf56",
+    "dist/core/types.d.ts": "b8ea283d693c9c32dbfad62a22aa875f20b6925cae0fb0a9c3bfb15961f26315"
+  }
+}

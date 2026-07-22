@@ -11,15 +11,15 @@ describe('packed package', () => {
     );
     const rootExport = manifest.exports['.'];
 
-    expect(rootExport.types).toBe('./dist/index.d.ts');
-    expect(rootExport['react-native']).toBe('./dist/index.js');
+    expect(rootExport['react-native']).toEqual({ types: './dist/index.d.ts', default: './dist/index.js' });
+    expect(rootExport.import).toEqual({ types: './dist/index.d.mts', default: './dist/esm/index.js' });
     expect(rootExport.default).toBe('./dist/index.js');
 
-    for (const target of Object.values(rootExport) as string[]) {
+    for (const target of ['./dist/index.d.ts', './dist/index.d.mts', './dist/index.js', './dist/esm/index.js']) {
       expect(fs.existsSync(path.join(packageRoot as string, target))).toBe(true);
     }
 
-    const api = require(path.join(packageRoot as string, rootExport.default));
+    const api = require(path.join(packageRoot as string, rootExport.require.default));
     expect(api.default).toBe(api.Streamdown);
     expect(api.StreamdownRN).toBe(api.Streamdown);
     for (const exportName of [
@@ -60,11 +60,11 @@ describe('packed package', () => {
     expect(typeof api.resolveCapabilities).toBe('function');
 
     const uiExport = manifest.exports['./ui'];
-    expect(uiExport.types).toBe('./dist/components/ui/index.d.ts');
-    expect(uiExport['react-native']).toBe('./dist/components/ui/index.js');
-    expect(uiExport.require).toBe('./dist/components/ui/index.js');
+    expect(uiExport['react-native']).toEqual({ types: './dist/components/ui/index.d.ts', default: './dist/components/ui/index.js' });
+    expect(uiExport.import).toEqual({ types: './dist/components/ui/index.d.mts', default: './dist/esm/components/ui/index.js' });
+    expect(uiExport.require).toEqual({ types: './dist/components/ui/index.d.ts', default: './dist/components/ui/index.js' });
     expect(uiExport.default).toBe('./dist/components/ui/index.js');
-    for (const target of Object.values(uiExport) as string[]) {
+    for (const target of ['./dist/components/ui/index.d.ts', './dist/components/ui/index.d.mts', './dist/components/ui/index.js', './dist/esm/components/ui/index.js']) {
       expect(fs.existsSync(path.join(packageRoot as string, target))).toBe(true);
     }
     const ui = require(path.join(packageRoot as string, uiExport.default));
@@ -101,7 +101,8 @@ describe('packed package', () => {
       ['./mermaid/webview', 'createOfflineWebViewAdapter'],
     ] as const) {
       const entry = manifest.exports[subpath];
-      expect(entry.types).toBe(`./dist/plugins/${subpath.slice(2)}/index.d.ts`);
+      expect(entry.require.types).toBe(`./dist/plugins/${subpath.slice(2)}/index.d.ts`);
+      expect(entry.import.types).toBe(`./dist/plugins/${subpath.slice(2)}/index.d.mts`);
       expect(fs.existsSync(path.join(packageRoot as string, entry.default))).toBe(true);
       expect(require(path.join(packageRoot as string, entry.default))[expected]).toBeDefined();
     }

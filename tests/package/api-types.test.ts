@@ -4,9 +4,11 @@ import type {
   StreamdownRNProps,
   NativeCapabilities,
   NativeImageDownloadRequest,
+  NativeImageDownloadCapability,
   NativeSlots,
   NativeSlotProps,
 } from '../../src';
+import { fetchImageFileRequest } from '../../src';
 import { createCodePlugin, type TokenProvider } from '../../src/plugins/code';
 import { createCjkPlugin } from '../../src/plugins/cjk';
 import { createRendererPlugin } from '../../src/plugins/renderers';
@@ -81,6 +83,16 @@ void slots;
 void invalidSlots;
 void imageSlot;
 void customComponents;
+
+if (false) {
+  // @ts-expect-error Image downloads require an explicit bounded native capability.
+  void fetchImageFileRequest('https://example.com/image.png');
+}
+const invalidImageDownloadCapability: NativeImageDownloadCapability = {
+  // @ts-expect-error Image download adapters must return binary bytes.
+  download: () => ({ basename: 'image', extension: 'png', mimeType: 'image/png', content: 'not-bytes' }),
+};
+void invalidImageDownloadCapability;
 
 // @ts-expect-error DOM class names have no native contract.
 const domClassName: StreamdownProps = { children: 'text', className: 'prose' };

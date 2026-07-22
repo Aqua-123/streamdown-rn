@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -9,10 +10,12 @@ import { assertSingleHostSvg, assertSvgPeerManifest } from './svg-peer-contract.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'streamdown-rn-pack-'));
 const keepTemp = process.env.STREAMDOWN_KEEP_PACK_FIXTURE === '1';
-const fixtures = [
-  { id: 'expo54', name: 'Expo 54 / RN 0.81', directory: 'fixtures/expo54' },
-  { id: 'expo56', name: 'Expo 56 / RN 0.85', directory: 'fixtures/current-rn' },
-].filter(({ id }) => !process.env.PACK_FIXTURE || process.env.PACK_FIXTURE === id);
+const deviceMatrix = JSON.parse(fs.readFileSync(path.join(root, 'tests/device/matrix.json'), 'utf8'));
+const fixtures = deviceMatrix.hosts.map(({ id, expo, reactNative, fixture }) => ({
+  id,
+  name: `Expo ${expo} / RN ${reactNative}`,
+  directory: fixture,
+})).filter(({ id }) => !process.env.PACK_FIXTURE || process.env.PACK_FIXTURE === id);
 assert(fixtures.length, `Unknown PACK_FIXTURE ${process.env.PACK_FIXTURE}`);
 
 const run = (command, args, options = {}) => {
@@ -23,6 +26,53 @@ const run = (command, args, options = {}) => {
     throw new Error(`${command} exited with ${result.status ?? 1}`);
   }
   return result.stdout.trim();
+};
+
+const satisfiesPinnedRange = (version, range) => {
+  if (range === version) return true;
+  const actual = version.split('.').map(Number);
+  const minimum = range.startsWith('^') ? range.slice(1).split('.').map(Number) : [];
+  if (actual.length !== 3 || minimum.length !== 3 || [...actual, ...minimum].some(Number.isNaN)) return false;
+  if (actual[0] !== minimum[0]) return false;
+  if (minimum[0] === 0 && actual[1] !== minimum[1]) return false;
+  return actual[0] > minimum[0] || actual[1] > minimum[1] || (actual[1] === minimum[1] && actual[2] >= minimum[2]);
+};
+
+const assertLockedCandidateDependencies = (consumer, packedManifest) => {
+  const lock = JSON.parse(fs.readFileSync(path.join(consumer, 'package-lock.json'), 'utf8'));
+  for (const [name, range] of Object.entries(packedManifest.dependencies ?? {})) {
+    const version = lock.packages?.[`node_modules/${name}`]?.version;
+    assert(version && satisfiesPinnedRange(version, range), `${name}@${range} must be satisfied by the checked-in fixture lock`);
+  }
+};
+
+const installCandidateFromNpm = (tarball, packedManifest) => {
+  const consumer = path.join(temp, 'npm-install');
+  const cache = path.join(temp, 'fresh-npm-cache');
+  const fixtureLock = JSON.parse(fs.readFileSync(path.join(root, 'fixtures/expo54/package-lock.json'), 'utf8'));
+  const pinned = (name) => {
+    const version = fixtureLock.packages[`node_modules/${name}`]?.version
+      ?? Object.entries(fixtureLock.packages).find(([key]) => key.endsWith(`/node_modules/${name}`))?.[1]?.version;
+    assert(version, `Missing ${name} from the checked-in fixture lock`);
+    return version;
+  };
+  fs.mkdirSync(consumer);
+  fs.mkdirSync(cache);
+  assert.deepEqual(fs.readdirSync(cache), [], 'positive npm install must start with an empty cache');
+  fs.writeFileSync(path.join(consumer, 'package.json'), `${JSON.stringify({
+    private: true,
+    dependencies: {
+      react: pinned('react'),
+      'react-native': pinned('react-native'),
+      'react-native-svg': pinned('react-native-svg'),
+      '@react-native/virtualized-lists': pinned('@react-native/virtualized-lists'),
+      ...Object.fromEntries(Object.keys(packedManifest.dependencies ?? {}).map((name) => [name, pinned(name)])),
+      'streamdown-rn': `file:${tarball}`,
+    },
+  }, null, 2)}\n`);
+  run('npm', ['install', '--package-lock-only', '--ignore-scripts', '--strict-peer-deps', '--cache', cache], { cwd: consumer });
+  run('npm', ['ci', '--ignore-scripts', '--strict-peer-deps', '--cache', cache], { cwd: consumer });
+  assert(fs.existsSync(path.join(consumer, 'node_modules/streamdown-rn/package.json')), 'npm must install the packed candidate');
 };
 
 const bundleText = (directory) => {
@@ -38,25 +88,63 @@ const bundleText = (directory) => {
   return chunks.join('\n');
 };
 
+const assertEsmWrapperRuntime = (consumer, installed, packedManifest, subpath) => {
+  const entry = packedManifest.exports[subpath];
+  const cjsPath = path.join(installed, entry.require.default);
+  const wrapperPath = path.join(installed, entry.import.default);
+  const cjs = fs.readFileSync(cjsPath, 'utf8');
+  const names = [...new Set([
+    ...[...cjs.matchAll(/exports\.([A-Za-z_$][\w$]*)\s*=/g)].map((match) => match[1]),
+    ...[...cjs.matchAll(/Object\.defineProperty\(exports,\s*["']([A-Za-z_$][\w$]*)["']/g)].map((match) => match[1]),
+  ].filter((name) => !['default', '__esModule'].includes(name)))].sort();
+  const hasDefault = /exports\.default\s*=|Object\.defineProperty\(exports,\s*["']default["']/.test(cjs);
+  const directory = path.join(consumer, `esm-wrapper-${subpath === '.' ? 'root' : subpath.slice(2).replaceAll('/', '-')}`);
+  fs.mkdirSync(directory);
+  fs.writeFileSync(path.join(directory, 'stub.mjs'), `${names.map((name) => `export const ${name} = Symbol.for(${JSON.stringify(name)});`).join('\n')}\n${hasDefault ? 'export default {};' : ''}\n`);
+  const wrapper = fs.readFileSync(wrapperPath, 'utf8').replaceAll(/(['"])(?:\.\.\/)+[^'"]+\.js\1/g, "'./stub.mjs'");
+  fs.writeFileSync(path.join(directory, 'wrapper.mjs'), wrapper);
+  const actual = JSON.parse(run('node', ['--input-type=module', '--eval', `console.log(JSON.stringify(Object.keys(await import(${JSON.stringify(path.join(directory, 'wrapper.mjs'))})).sort()))`], { cwd: consumer }));
+  assert.deepEqual(actual, [...names, ...(hasDefault ? ['default'] : [])].sort(), `${subpath} ESM wrapper exports must match CommonJS`);
+};
+
 try {
-  run('npm', ['run', 'build']);
-  const pack = JSON.parse(run('npm', ['pack', '--json', '--pack-destination', temp]))[0];
+  const suppliedTarball = process.env.STREAMDOWN_RELEASE_TARBALL;
+  let tarball;
+  let pack;
+  if (suppliedTarball) {
+    tarball = path.resolve(root, suppliedTarball);
+    assert(fs.existsSync(tarball), `Missing release tarball ${tarball}`);
+    const digest = crypto.createHash('sha256').update(fs.readFileSync(tarball)).digest('hex');
+    assert.equal(digest, process.env.STREAMDOWN_RELEASE_PACKAGE_SHA256, 'Release tarball SHA-256 mismatch');
+    const files = run('tar', ['-tf', tarball]).split('\n').filter(Boolean).map((file) => ({ path: file.replace(/^package\//, '') }));
+    pack = { filename: path.basename(tarball), files };
+  } else {
+    const staleArtifact = path.join(root, 'dist', 'removed-source-artifact.js');
+    fs.mkdirSync(path.dirname(staleArtifact), { recursive: true });
+    fs.writeFileSync(staleArtifact, 'throw new Error("stale build output");\n');
+    run('npm', ['run', 'build']);
+    pack = JSON.parse(run('npm', ['pack', '--json', '--ignore-scripts', '--pack-destination', temp]))[0];
+    tarball = path.join(temp, pack.filename);
+  }
+  assert(!pack.files.some(({ path: file }) => file === 'dist/removed-source-artifact.js'), 'build must remove stale dist artifacts');
   assert(!pack.files.some(({ path: file }) => file.startsWith('src/') || file.includes('__tests__')));
 
-  const tarball = path.join(temp, pack.filename);
   const packedManifest = JSON.parse(run('tar', ['-xOf', tarball, 'package/package.json']));
   assertSvgPeerManifest(packedManifest);
+  installCandidateFromNpm(tarball, packedManifest);
   const incompatibleSvg = path.join(temp, 'react-native-svg-incompatible');
   fs.mkdirSync(incompatibleSvg);
   fs.writeFileSync(path.join(incompatibleSvg, 'package.json'), `${JSON.stringify({ name: 'react-native-svg', version: '15.12.0' })}\n`);
+  fs.cpSync(path.join(root, 'fixtures/hermes-evidence'), path.join(temp, 'hermes-evidence'), { recursive: true });
   const conflictConsumer = path.join(temp, 'peer-conflict');
   fs.cpSync(path.join(root, 'fixtures/expo54'), conflictConsumer, { recursive: true });
+  run('npm', ['ci', '--ignore-scripts'], { cwd: conflictConsumer });
   const conflictManifestPath = path.join(conflictConsumer, 'package.json');
   const conflictManifest = JSON.parse(fs.readFileSync(conflictManifestPath, 'utf8'));
   conflictManifest.dependencies['streamdown-rn'] = `file:${tarball}`;
   conflictManifest.dependencies['react-native-svg'] = `file:${incompatibleSvg}`;
   fs.writeFileSync(conflictManifestPath, `${JSON.stringify(conflictManifest, null, 2)}\n`);
-  const conflict = spawnSync('npm', ['install', '--ignore-scripts', '--no-package-lock', '--strict-peer-deps'], {
+  const conflict = spawnSync('npm', ['install', '--ignore-scripts', '--no-package-lock', '--no-save', '--offline', '--strict-peer-deps'], {
     cwd: conflictConsumer,
     encoding: 'utf8',
   });
@@ -65,26 +153,57 @@ try {
   for (const [fixtureIndex, fixture] of fixtures.entries()) {
     const consumer = path.join(temp, `consumer-${fixtureIndex}`);
     fs.cpSync(path.join(root, fixture.directory), consumer, { recursive: true });
+    run('npm', ['ci', '--ignore-scripts'], { cwd: consumer });
     const matrixEntry = fs.readFileSync(path.join(consumer, 'App.js'));
     const consumerManifestPath = path.join(consumer, 'package.json');
     const consumerManifest = JSON.parse(fs.readFileSync(consumerManifestPath, 'utf8'));
     consumerManifest.dependencies['streamdown-rn'] = `file:${tarball}`;
     fs.writeFileSync(consumerManifestPath, `${JSON.stringify(consumerManifest, null, 2)}\n`);
-    run('npm', ['install', '--ignore-scripts', '--no-package-lock', '--omit=peer'], { cwd: consumer });
+    assertLockedCandidateDependencies(consumer, packedManifest);
+    const installed = path.join(consumer, 'node_modules/streamdown-rn');
+    fs.mkdirSync(installed, { recursive: true });
+    run('tar', ['-xzf', tarball, '-C', installed, '--strip-components=1']);
     assertSingleHostSvg(consumer, run);
 
     const resolve = "console.log(import.meta.resolve('streamdown-rn'))";
     const defaultEntry = run('node', ['--input-type=module', '--eval', resolve], { cwd: consumer });
     const nativeEntry = run('node', ['--conditions=react-native', '--input-type=module', '--eval', resolve], { cwd: consumer });
-    assert.match(defaultEntry, /streamdown-rn\/dist\/index\.js$/);
+    assert.match(defaultEntry, /streamdown-rn\/dist\/esm\/index\.js$/);
     assert.match(nativeEntry, /streamdown-rn\/dist\/index\.js$/);
     const resolveUi = "console.log(import.meta.resolve('streamdown-rn/ui'))";
     const defaultUiEntry = run('node', ['--input-type=module', '--eval', resolveUi], { cwd: consumer });
     const nativeUiEntry = run('node', ['--conditions=react-native', '--input-type=module', '--eval', resolveUi], { cwd: consumer });
-    assert.match(defaultUiEntry, /streamdown-rn\/dist\/components\/ui\/index\.js$/);
+    assert.match(defaultUiEntry, /streamdown-rn\/dist\/esm\/components\/ui\/index\.js$/);
     assert.match(nativeUiEntry, /streamdown-rn\/dist\/components\/ui\/index\.js$/);
 
     const installedPackage = path.join(consumer, 'node_modules/streamdown-rn');
+    for (const conditions of Object.values(packedManifest.exports)) {
+      const importTarget = conditions.import?.default;
+      assert.equal(typeof importTarget, 'string');
+      run('node', ['--check', path.join(installedPackage, importTarget)]);
+    }
+    for (const subpath of ['./code', './cjk', './renderers', './math', './mermaid/webview']) {
+      const specifier = `streamdown-rn/${subpath.slice(2)}`;
+      const esmKeys = JSON.parse(run('node', [
+        '--input-type=module',
+        '--eval',
+        `console.log(JSON.stringify(Object.keys(await import(${JSON.stringify(specifier)})).sort()))`,
+      ], { cwd: consumer }));
+      const cjsTarget = path.join(installedPackage, packedManifest.exports[subpath].require.default);
+      const cjsKeys = JSON.parse(run('node', [
+        '--eval',
+        `console.log(JSON.stringify(Object.keys(require(${JSON.stringify(cjsTarget)})).sort()))`,
+      ], { cwd: consumer }));
+      assert.deepEqual(esmKeys, cjsKeys, `${specifier} ESM exports must match CommonJS`);
+    }
+    for (const subpath of ['.', './ui', './mermaid']) {
+      assertEsmWrapperRuntime(consumer, installedPackage, packedManifest, subpath);
+    }
+    for (const mapName of ['dist/index.js.map']) {
+      const map = JSON.parse(fs.readFileSync(path.join(installedPackage, mapName), 'utf8'));
+      assert(map.sourcesContent?.some((source) => typeof source === 'string' && source.length > 0), `${mapName} must embed its source`);
+    }
+    assert(!fs.existsSync(path.join(installedPackage, 'dist/index.d.ts.map')), 'unusable declaration maps must not be published');
     run(
       path.join(root, 'node_modules/.bin/jest'),
       [
@@ -111,7 +230,8 @@ try {
   type ToolbarOrientation, type ToolbarRootProps, type ToolbarState,
 } from 'streamdown-rn/ui';
 import {
-  NATIVE_ELEMENT_NAMES,
+  NATIVE_ELEMENT_NAMES, fetchImageFileRequest,
+  type NativeImageDownloadCapability, type NativeImageDownloadResult,
   type NativeElementName,
   type NativeSlotProps,
   type NativeSlots,
@@ -132,18 +252,40 @@ const slots: NativeSlots = {
 };
 const element: NativeElementName = NATIVE_ELEMENT_NAMES[0];
 const streamdownProps: StreamdownProps = { slots };
+declare const imageDownloads: NativeImageDownloadCapability;
+const imageResult: NativeImageDownloadResult | null = null;
+if (false) void fetchImageFileRequest(imageDownloads, 'https://example.com/image.png');
 // @ts-expect-error Standard slot names are exact.
 const invalidSlots: NativeSlots = { paragraf: () => null };
 void components; void (null as Contracts | null); void variant; void state; void actionState; void toolbarState; void orientation; void callbackButton; void reason;
-void element; void streamdownProps; void invalidSlots;
+void element; void streamdownProps; void invalidSlots; void imageResult;
 `);
     run(
       path.join(root, 'node_modules/.bin/tsc'),
       [uiConsumer, '--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'Node16', '--moduleResolution', 'Node16'],
       { cwd: consumer }
     );
+    const nodeNextConsumer = path.join(consumer, 'all-subpaths.mts');
+    fs.writeFileSync(nodeNextConsumer, `import Streamdown, { type StreamdownProps } from 'streamdown-rn';
+import { Button, type ButtonProps } from 'streamdown-rn/ui';
+import { createCodePlugin, type CodeHighlighterPlugin } from 'streamdown-rn/code';
+import { cjk, type CjkPlugin } from 'streamdown-rn/cjk';
+import { createRendererPlugin, type RendererPlugin } from 'streamdown-rn/renderers';
+import { createMathPlugin, type MathPlugin } from 'streamdown-rn/math';
+import { createMermaidPlugin, type DiagramPlugin } from 'streamdown-rn/mermaid';
+import { createOfflineWebViewAdapter, type OfflineWebViewAdapterOptions } from 'streamdown-rn/mermaid/webview';
+type Contracts = StreamdownProps | ButtonProps | CodeHighlighterPlugin | CjkPlugin | RendererPlugin | MathPlugin | DiagramPlugin | OfflineWebViewAdapterOptions;
+void [Streamdown, Button, createCodePlugin, cjk, createRendererPlugin, createMathPlugin, createMermaidPlugin, createOfflineWebViewAdapter];
+void (null as Contracts | null);
+`);
+    run(
+      path.join(root, 'node_modules/.bin/tsc'),
+      [nodeNextConsumer, '--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'NodeNext', '--moduleResolution', 'NodeNext'],
+      { cwd: consumer }
+    );
     fs.writeFileSync(path.join(consumer, 'App.js'), `import React from 'react';
-import { Streamdown } from 'streamdown-rn';
+import Streamdown, { Streamdown as NamedStreamdown } from 'streamdown-rn';
+if (Streamdown !== NamedStreamdown) throw new Error('default export mismatch');
 export default function App() { return <Streamdown mode="static">{'# packed core fixture'}</Streamdown>; }
 `);
     let coreText = '';

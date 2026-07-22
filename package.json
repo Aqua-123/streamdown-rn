@@ -1,56 +1,57 @@
 {
   "name": "streamdown-rn",
   "version": "0.2.1",
-  "description": "High-performance streaming markdown renderer for React Native with dynamic component injection",
+  "description": "Streaming Markdown for React Native with native semantics, explicit security policy, and opt-in rich-content adapters",
+  "type": "commonjs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "react-native": "./dist/index.js",
-      "require": "./dist/index.js",
+      "react-native": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+      "import": { "types": "./dist/index.d.mts", "default": "./dist/esm/index.js" },
+      "require": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
       "default": "./dist/index.js"
     },
     "./ui": {
-      "types": "./dist/components/ui/index.d.ts",
-      "react-native": "./dist/components/ui/index.js",
-      "require": "./dist/components/ui/index.js",
+      "react-native": { "types": "./dist/components/ui/index.d.ts", "default": "./dist/components/ui/index.js" },
+      "import": { "types": "./dist/components/ui/index.d.mts", "default": "./dist/esm/components/ui/index.js" },
+      "require": { "types": "./dist/components/ui/index.d.ts", "default": "./dist/components/ui/index.js" },
       "default": "./dist/components/ui/index.js"
     },
     "./code": {
-      "types": "./dist/plugins/code/index.d.ts",
-      "react-native": "./dist/plugins/code/index.js",
-      "require": "./dist/plugins/code/index.js",
+      "react-native": { "types": "./dist/plugins/code/index.d.ts", "default": "./dist/plugins/code/index.js" },
+      "import": { "types": "./dist/plugins/code/index.d.mts", "default": "./dist/esm/plugins/code/index.js" },
+      "require": { "types": "./dist/plugins/code/index.d.ts", "default": "./dist/plugins/code/index.js" },
       "default": "./dist/plugins/code/index.js"
     },
     "./cjk": {
-      "types": "./dist/plugins/cjk/index.d.ts",
-      "react-native": "./dist/plugins/cjk/index.js",
-      "require": "./dist/plugins/cjk/index.js",
+      "react-native": { "types": "./dist/plugins/cjk/index.d.ts", "default": "./dist/plugins/cjk/index.js" },
+      "import": { "types": "./dist/plugins/cjk/index.d.mts", "default": "./dist/esm/plugins/cjk/index.js" },
+      "require": { "types": "./dist/plugins/cjk/index.d.ts", "default": "./dist/plugins/cjk/index.js" },
       "default": "./dist/plugins/cjk/index.js"
     },
     "./renderers": {
-      "types": "./dist/plugins/renderers/index.d.ts",
-      "react-native": "./dist/plugins/renderers/index.js",
-      "require": "./dist/plugins/renderers/index.js",
+      "react-native": { "types": "./dist/plugins/renderers/index.d.ts", "default": "./dist/plugins/renderers/index.js" },
+      "import": { "types": "./dist/plugins/renderers/index.d.mts", "default": "./dist/esm/plugins/renderers/index.js" },
+      "require": { "types": "./dist/plugins/renderers/index.d.ts", "default": "./dist/plugins/renderers/index.js" },
       "default": "./dist/plugins/renderers/index.js"
     },
     "./math": {
-      "types": "./dist/plugins/math/index.d.ts",
-      "react-native": "./dist/plugins/math/index.js",
-      "require": "./dist/plugins/math/index.js",
+      "react-native": { "types": "./dist/plugins/math/index.d.ts", "default": "./dist/plugins/math/index.js" },
+      "import": { "types": "./dist/plugins/math/index.d.mts", "default": "./dist/esm/plugins/math/index.js" },
+      "require": { "types": "./dist/plugins/math/index.d.ts", "default": "./dist/plugins/math/index.js" },
       "default": "./dist/plugins/math/index.js"
     },
     "./mermaid": {
-      "types": "./dist/plugins/mermaid/index.d.ts",
-      "react-native": "./dist/plugins/mermaid/index.js",
-      "require": "./dist/plugins/mermaid/index.js",
+      "react-native": { "types": "./dist/plugins/mermaid/index.d.ts", "default": "./dist/plugins/mermaid/index.js" },
+      "import": { "types": "./dist/plugins/mermaid/index.d.mts", "default": "./dist/esm/plugins/mermaid/index.js" },
+      "require": { "types": "./dist/plugins/mermaid/index.d.ts", "default": "./dist/plugins/mermaid/index.js" },
       "default": "./dist/plugins/mermaid/index.js"
     },
     "./mermaid/webview": {
-      "types": "./dist/plugins/mermaid/webview/index.d.ts",
-      "react-native": "./dist/plugins/mermaid/webview/index.js",
-      "require": "./dist/plugins/mermaid/webview/index.js",
+      "react-native": { "types": "./dist/plugins/mermaid/webview/index.d.ts", "default": "./dist/plugins/mermaid/webview/index.js" },
+      "import": { "types": "./dist/plugins/mermaid/webview/index.d.mts", "default": "./dist/esm/plugins/mermaid/webview/index.js" },
+      "require": { "types": "./dist/plugins/mermaid/webview/index.d.ts", "default": "./dist/plugins/mermaid/webview/index.js" },
       "default": "./dist/plugins/mermaid/webview/index.js"
     }
   },
@@ -58,8 +59,11 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/darkresearch/generative-ui.git",
-    "directory": "packages/streamdown-rn"
+    "url": "git+https://github.com/Aqua-123/streamdown-rn.git"
+  },
+  "homepage": "https://github.com/Aqua-123/streamdown-rn#readme",
+  "bugs": {
+    "url": "https://github.com/Aqua-123/streamdown-rn/issues"
   },
   "keywords": [
     "react-native",
@@ -70,7 +74,8 @@
     "generative-ui"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "node scripts/build/clean.mjs && tsc -p tsconfig.json && node scripts/build/finalize-esm.mjs",
+    "prepack": "npm run build",
     "dev": "tsc --watch",
     "test": "jest --runInBand",
     "test:parity": "jest --runInBand --testMatch='<rootDir>/tests/parity/**/*.test.ts?(x)'",
@@ -78,11 +83,18 @@
     "test:visual": "node tests/visual/capture.mjs",
     "visual:verify": "node tests/visual/verify-integrity.mjs",
     "visual:verify:self-test": "node tests/visual/verify-integrity.mjs --self-test",
+    "docs:verify:self-test": "node scripts/docs/verify.mjs --self-test",
     "docs:verify": "npm run build && node scripts/docs/verify.mjs",
+    "docs:promote-release": "node scripts/docs/promote-release.mjs",
+    "docs:reopen-next": "node scripts/docs/promote-release.mjs --reopen-next",
     "benchmark:parser": "bun benchmarks/parser.bench.ts",
     "benchmark:streaming": "bun benchmarks/streaming.bench.ts",
     "benchmark:host": "bun run benchmark:parser && bun run benchmark:streaming",
     "benchmark:hermes": "node scripts/benchmarks/verify-hermes.mjs",
+    "benchmark:hermes:capture": "node scripts/benchmarks/capture-hermes.mjs",
+    "benchmark:hermes:capture:self-test": "node scripts/benchmarks/capture-hermes.mjs --self-test",
+    "benchmark:hermes:extract": "node scripts/benchmarks/extract-hermes-trace.mjs",
+    "benchmark:hermes:extract:self-test": "node scripts/benchmarks/extract-hermes-trace.mjs --self-test",
     "benchmark:hermes:self-test": "node scripts/benchmarks/verify-hermes.mjs --self-test",
     "parity:refresh": "bun scripts/parity/inventory.ts --source .reference/streamdown",
     "parity:validate": "bun scripts/parity/validate.ts",
@@ -90,16 +102,20 @@
     "parity:drift": "bun scripts/parity/check-drift.ts",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0",
     "type-check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.tools.json --noEmit",
+    "workflow:lint": "node scripts/ci/actionlint.mjs",
     "pack:verify": "node tests/package/verify-pack.mjs",
     "pack:verify-optional-renderers": "node tests/package/verify-optional-renderers.mjs",
     "licenses:verify": "node scripts/release/licenses.mjs",
-    "advisories:verify": "bun audit --production",
+    "advisories:verify": "bun audit",
     "release:report": "node scripts/release/report.mjs",
     "release:report:verify": "node scripts/release/verify-report.mjs",
+    "release:evidence:self-test": "node scripts/release/validate-evidence-directory.selftest.mjs",
     "release:verify": "node scripts/release/verify.mjs",
-    "release:publish": "bunx changeset publish",
     "changeset:verify": "node scripts/release/changesets.mjs",
-    "ci:hosted": "bun run lint && bun run type-check && bun run parity:proof && bun run test:device-contract --silent && bun run visual:verify && bun run parity:drift --candidate-root .reference/streamdown && bun run build && bun run docs:verify && bun run licenses:verify && bun run advisories:verify && bun run release:report:verify && bun run changeset:verify && bun run pack:verify && bun run pack:verify-optional-renderers"
+    "changeset:version": "bunx changeset version && bun run docs:promote-release",
+    "package:candidate:self-test": "node tests/package/verify-hosted-candidate.mjs --self-test",
+    "package:published-fixture:verify": "node tests/package/verify-published-fixture.mjs",
+    "ci:hosted": "bun run lint && bun run type-check && bun run workflow:lint && bun run parity:proof && bun run test:device-contract --silent && bun run visual:verify:self-test && bun run visual:verify && bun run parity:drift --candidate-root .reference/streamdown && bun run benchmark:streaming && bun run benchmark:hermes:capture:self-test && bun run benchmark:hermes:extract:self-test && bun run benchmark:hermes:self-test && bun run docs:verify:self-test && bun run release:evidence:self-test && bun run package:candidate:self-test && bun run package:published-fixture:verify && bun run licenses:verify && bun run advisories:verify && bun run release:report:verify && bun run changeset:verify && node tests/package/verify-hosted-candidate.mjs"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -139,8 +155,10 @@
     "README.md",
     "ARCHITECTURE.md",
     "CHANGELOG.md",
+    "CONTRIBUTING.md",
     "LICENSE",
     "NOTICE",
+    "SECURITY.md",
     "docs/api.md",
     "docs/plugins.md",
     "docs/migration.md",

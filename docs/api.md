@@ -4,6 +4,10 @@
 
 The root entry exports `Streamdown`, `StreamdownRN`, the default alias, skeleton primitives, controls, capability helpers, security utilities, streaming instrumentation, and public types. DOM-only Streamdown properties such as `className`, `rehypePlugins`, `prefix`, and `remarkRehypeOptions` are typed as unsupported.
 
+## Stability before 1.0
+
+Before `1.0.0`, minor releases may contain breaking API changes. They are documented in the changelog and Changesets; compatibility aliases receive at least one minor release of deprecation where practical. Security fixes may remove unsafe APIs immediately.
+
 ```tsx verify
 import React from 'react';
 import {
@@ -88,7 +92,7 @@ export function EditorActions() {
 }
 ```
 
-Important streaming properties are `mode`, `isAnimating`, `isComplete`, `parseIncompleteMarkdown`, `animated`, `caret`, and `reducedMotion`. `announceStreaming` is opt-in and coalesced. `componentRegistry` serves the compact dynamic-component syntax. Consult the emitted `dist/index.d.ts` for the complete contract; `bun run docs:verify` compiles this example against that public declaration.
+Important streaming properties are `mode`, `isAnimating`, `isComplete`, `parseIncompleteMarkdown`, `animated`, `caret`, and `reducedMotion`. For long streams that are guaranteed to append, set `appendOnly` and change `streamKey` whenever a new message replaces the source; this avoids rescanning the full prior prefix while preserving an explicit reset boundary. `maxInputLength` is a positive integer ceiling over JavaScript string code units, not bytes; it defaults to 2,097,152 and applies to static input and the full cumulative stream value. Invalid values use the default. An oversized value bypasses parsing and capability invocation, calls `onError` with a `RangeError` on entry into the oversized state, and renders an accessible plain-text alert containing at most the final 2,048 code units. Dropping below the ceiling, or starting an in-limit value under a new `streamKey`, restores normal rendering. `announceStreaming` is opt-in and coalesced. `componentRegistry` serves the compact dynamic-component syntax. Consult the emitted `dist/index.d.ts` for the complete contract; `bun run docs:verify` compiles this example against that public declaration.
 
 ## Semantic slots
 
@@ -151,7 +155,9 @@ export const resolvedPrimitives = resolveThemePrimitives(customTheme);
 
 Core has no clipboard or file dependency. A host supplies `NativeCapabilities`, and Streamdown hides copy or download actions when the corresponding provider is absent. Each provider returns a `CapabilityResult`: `success`, `unavailable`, `denied`, `cancelled`, or `failed` with an optional `Error`. Thrown provider errors are also shown as accessible failure feedback.
 
-Image downloads require both `files.save` and `imageDownloads.download`. The latter receives a `NativeImageDownloadRequest` containing the final rendered URL, filename, `maxBytes`, `timeoutMs`, allowed MIME types, and `validateUrl`. The host transport must validate the initial URL and each redirect before issuing that request, enforce the byte ceiling while reading rather than after allocating the body, enforce MIME and timeout, and return a bounded `NativeFileRequest`. Without that capability the image download control is hidden. The exported `fetchImageFileRequest` keeps its original first four parameters, but now fails closed unless its fifth argument is an explicit `NativeImageDownloadCapability`; it never falls back to global `fetch`.
+Image downloads require both `files.save` and `imageDownloads.download`. The latter receives a `NativeImageDownloadRequest` containing the final rendered URL, filename, `maxBytes`, `timeoutMs`, allowed MIME types, and `validateUrl`. The host transport must validate the initial URL and each redirect before issuing that request, enforce the byte ceiling while reading rather than after allocating the body, enforce MIME and timeout, and return a bounded `NativeImageDownloadResult` with `Uint8Array` content. Without that capability the image download control is hidden. The exported `fetchImageFileRequest(capability, uri, basename?, maxBytes?, timeoutMs?, resourcePolicy?)` requires an explicit `NativeImageDownloadCapability` as its first argument and the renderer's `SecurityPolicyOptions` as its final argument when called outside `SafeImage`; it never falls back to global `fetch`. The policy is applied to the initial URL and every redirect through the supplied `validateUrl`. When `urlTransform` changed the initial URL, redirects are restricted to that transformed URL's origin because replaying a signing or proxy transform on an arbitrary redirect would be unsafe.
+
+Code-block display and highlighting are capped at the first 65,536 JavaScript string code units or 2,000 lines, whichever comes first. A visible truncation notice follows the retained source. Copy and download controls still receive the complete original code, while a token provider receives only the displayed prefix; provider output above 2,001 token lines, 8,192 tokens, or the display-size ceiling falls back to bounded plain code.
 
 This Expo recipe uses real clipboard, cache-file, and system sharing APIs. Install `expo-clipboard`, `expo-file-system`, and `expo-sharing` with `npx expo install`, then pass the memoized capabilities to every Streamdown surface:
 

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -19,24 +20,39 @@ const run = (command, args, options = {}) => {
   return result.stdout.trim();
 };
 
+const satisfiesPinnedRange = (version, range) => {
+  if (range === version) return true;
+  const actual = version.split('.').map(Number);
+  const minimum = range.startsWith('^') ? range.slice(1).split('.').map(Number) : [];
+  if (actual.length !== 3 || minimum.length !== 3 || [...actual, ...minimum].some(Number.isNaN)) return false;
+  if (actual[0] !== minimum[0]) return false;
+  if (minimum[0] === 0 && actual[1] !== minimum[1]) return false;
+  return actual[0] > minimum[0] || actual[1] > minimum[1] || (actual[1] === minimum[1] && actual[2] >= minimum[2]);
+};
+
 try {
-  run('npm', ['run', 'build']);
-  const pack = JSON.parse(run('npm', ['pack', '--json', '--pack-destination', temp]))[0];
-  assertSvgPeerManifest(JSON.parse(run('tar', ['-xOf', path.join(temp, pack.filename), 'package/package.json'])));
+  const suppliedTarball = process.env.STREAMDOWN_RELEASE_TARBALL;
+  let tarball;
+  if (suppliedTarball) {
+    tarball = path.resolve(root, suppliedTarball);
+    assert(fs.existsSync(tarball), `Missing release tarball ${tarball}`);
+    const digest = crypto.createHash('sha256').update(fs.readFileSync(tarball)).digest('hex');
+    assert.equal(digest, process.env.STREAMDOWN_RELEASE_PACKAGE_SHA256, 'Release tarball SHA-256 mismatch');
+  } else {
+    run('npm', ['run', 'build']);
+    const pack = JSON.parse(run('npm', ['pack', '--json', '--ignore-scripts', '--pack-destination', temp]))[0];
+    tarball = path.join(temp, pack.filename);
+  }
+  const packedManifest = JSON.parse(run('tar', ['-xOf', tarball, 'package/package.json']));
+  assertSvgPeerManifest(packedManifest);
   const consumer = path.join(temp, 'consumer');
   fs.cpSync(path.join(root, 'fixtures/current-rn'), consumer, { recursive: true });
+  fs.cpSync(path.join(root, 'tests/package/fixtures/optional/package.json'), path.join(consumer, 'package.json'));
+  fs.cpSync(path.join(root, 'tests/package/fixtures/optional/package-lock.json'), path.join(consumer, 'package-lock.json'));
+  run('npm', ['ci', '--ignore-scripts'], { cwd: consumer });
   const manifestPath = path.join(consumer, 'package.json');
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  Object.assign(manifest.dependencies, {
-    'streamdown-rn': `file:${path.join(temp, pack.filename)}`,
-    shiki: '4.3.1',
-    '@shikijs/langs': '4.3.1',
-    '@shikijs/themes': '4.3.1',
-    'ratex-react-native': '0.1.13',
-    'beautiful-mermaid': '1.1.3',
-    'react-native-svg': '15.15.5',
-    'react-native-webview': '14.0.1'
-  });
+  manifest.dependencies['streamdown-rn'] = `file:${tarball}`;
   fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   fs.writeFileSync(path.join(consumer, 'App.js'), `import React, { useEffect, useMemo, useState } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, Text } from 'react-native';
@@ -98,7 +114,14 @@ export default function App() {
   </SafeAreaView>;
 }
 `);
-  run('npm', ['install', '--ignore-scripts', '--no-package-lock'], { cwd: consumer });
+  const lock = JSON.parse(fs.readFileSync(path.join(consumer, 'package-lock.json'), 'utf8'));
+  for (const [name, range] of Object.entries(packedManifest.dependencies ?? {})) {
+    const version = lock.packages?.[`node_modules/${name}`]?.version;
+    assert(version && satisfiesPinnedRange(version, range), `${name}@${range} must be satisfied by the checked-in fixture lock`);
+  }
+  const installed = path.join(consumer, 'node_modules/streamdown-rn');
+  fs.mkdirSync(installed, { recursive: true });
+  run('tar', ['-xzf', tarball, '-C', installed, '--strip-components=1']);
   assertSingleHostSvg(consumer, run);
   for (const platform of ['ios', 'android']) {
     run('npx', ['expo', 'export', '--platform', platform, '--clear', '--output-dir', path.join(consumer, `dist-${platform}`)], { cwd: consumer });
