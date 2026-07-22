@@ -59,12 +59,12 @@ export function SafeImage({ uri, alt, theme, capabilities, controls, translation
         onLoad={() => { setState('loaded'); onLoad?.(); }}
         onError={(event) => { setState('failed'); onError?.(event); }}
       />
-      {(state === 'loaded' || Boolean(width && height)) && controlEnabled(controls, 'image', 'download') && capabilities.files ? <ActionButton
+      {(state === 'loaded' || Boolean(width && height)) && controlEnabled(controls, 'image', 'download') && capabilities.files && capabilities.imageDownloads ? <ActionButton
         label={translations.downloadImage}
         icon={icons?.download ?? defaultIcons.download}
         disabled={disabled}
         color={theme.colors.foreground}
-        onAction={async () => capabilities.files!.save(await fetchImageFileRequest(uri, alt || 'image'))}
+        onAction={async () => capabilities.files!.save(await fetchImageFileRequest(uri, alt || 'image', undefined, undefined, capabilities.imageDownloads))}
       /> : null}
     </View>
   );

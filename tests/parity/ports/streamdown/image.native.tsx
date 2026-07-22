@@ -19,20 +19,36 @@ describe('ImageComponent native outcomes', () => {
   });
   it('uses sanitized alt text as filename and exposes download only after load', async () => {
     const save = jest.fn().mockResolvedValue({ status: 'success' });
-    const response = { ok: true, headers: { get: () => 'image/png' }, arrayBuffer: async () => new Uint8Array([1]).buffer };
-    jest.spyOn(global, 'fetch').mockResolvedValue(response as unknown as Response);
-    const screen = render(<SafeImage uri="https://example.com/no-extension" alt="../Chart.png" theme={darkTheme} capabilities={{ files: { save } }} translations={defaultTranslations} />);
+    const download = jest.fn().mockResolvedValue({ basename: 'Chart.png', extension: 'png', mimeType: 'image/png', content: new Uint8Array([1]) });
+    const screen = render(<SafeImage uri="https://example.com/no-extension" alt="../Chart.png" theme={darkTheme} capabilities={{ files: { save }, imageDownloads: { download } }} translations={defaultTranslations} />);
     fireEvent(screen.getByRole('image'), 'load');
     fireEvent.press(screen.getByRole('button', { name: 'Download image' }));
+    await waitFor(() => expect(download).toHaveBeenCalledWith(expect.objectContaining({ uri: 'https://example.com/no-extension', basename: 'Chart.png' })));
     await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({ basename: 'Chart', extension: 'png', content: expect.any(Uint8Array) })));
-    jest.restoreAllMocks();
   });
-  it('surfaces fetch failures instead of bypassing link approval with a native open', async () => {
-    jest.spyOn(global, 'fetch').mockRejectedValue(new Error('network blocked'));
-    const screen = render(<SafeImage uri="https://example.com/a.png" alt="A" theme={darkTheme} capabilities={{ files: { save: jest.fn() } }} translations={defaultTranslations} />);
+  it('surfaces native download failures instead of bypassing link approval with a native open', async () => {
+    const download = jest.fn().mockRejectedValue(new Error('network blocked'));
+    const screen = render(<SafeImage uri="https://example.com/a.png" alt="A" theme={darkTheme} capabilities={{ files: { save: jest.fn() }, imageDownloads: { download } }} translations={defaultTranslations} />);
     fireEvent(screen.getByRole('image'), 'load');
     fireEvent.press(screen.getByRole('button', { name: 'Download image' }));
     await waitFor(() => expect(screen.getByText('network blocked')).toBeTruthy());
-    jest.restoreAllMocks();
+  });
+  it('fails closed without the explicit bounded downloader', () => {
+    const fetchMock = jest.spyOn(global, 'fetch');
+    const screen = render(<SafeImage uri="https://example.com/a.png" alt="A" theme={darkTheme} capabilities={{ files: { save: jest.fn() } }} translations={defaultTranslations} />);
+    fireEvent(screen.getByRole('image'), 'load');
+    expect(screen.queryByRole('button', { name: 'Download image' })).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+    fetchMock.mockRestore();
+  });
+  it('downloads the final transformed URL without running the transform again', async () => {
+    const urlTransform = jest.fn((url: string) => `${url}?signed=once`);
+    const download = jest.fn().mockResolvedValue({ basename: 'Chart', extension: 'png', mimeType: 'image/png', content: new Uint8Array([1]) });
+    const save = jest.fn().mockResolvedValue({ status: 'success' });
+    const screen = render(<Streamdown mode="static" urlTransform={urlTransform} capabilities={{ files: { save }, imageDownloads: { download } }}>![Chart](https://example.com/chart.png)</Streamdown>);
+    fireEvent(screen.getByRole('image'), 'load');
+    fireEvent.press(screen.getByRole('button', { name: 'Download image' }));
+    await waitFor(() => expect(download).toHaveBeenCalledWith(expect.objectContaining({ uri: 'https://example.com/chart.png?signed=once' })));
+    expect(urlTransform).toHaveBeenCalledTimes(1);
   });
 });

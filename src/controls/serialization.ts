@@ -4,7 +4,7 @@ import {
   tableDataToTSV,
   type TableData,
 } from '../core/tableSerialization';
-import type { NativeFileRequest } from '../platform/capabilities';
+import type { NativeFileRequest, NativeImageDownloadCapability } from '../platform/capabilities';
 import { sanitizeResourceURL } from '../core/security';
 
 export type TableFormat = 'csv' | 'tsv' | 'markdown';
@@ -64,6 +64,7 @@ const imageTypes: Record<string, string> = {
   'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif',
   'image/webp': 'webp', 'image/avif': 'avif',
 };
+const imageMimeTypes = Object.freeze(Object.keys(imageTypes));
 
 export function imageFileRequest(content: Uint8Array, mimeType: string, basename = 'image'): NativeFileRequest {
   const normalized = mimeType.split(';', 1)[0].toLowerCase();
@@ -79,7 +80,8 @@ export async function fetchImageFileRequest(
   uri: string,
   basename = 'image',
   maxBytes = DEFAULT_MAX_IMAGE_BYTES,
-  timeoutMs = 15_000
+  timeoutMs = 15_000,
+  capability?: NativeImageDownloadCapability
 ): Promise<NativeFileRequest> {
   if (!Number.isFinite(maxBytes) || maxBytes <= 0) {
     throw new TypeError('maxBytes must be a positive finite number');
@@ -89,25 +91,20 @@ export async function fetchImageFileRequest(
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
     throw new TypeError('timeoutMs must be a positive finite number');
   }
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(safe, { signal: controller.signal });
-    if (!response.ok) throw new Error(`Image download failed (${response.status})`);
-    if (response.url && !sanitizeResourceURL(response.url, 'image')) {
-      throw new Error('Image download redirected to a disallowed URL');
-    }
-    const declaredLength = Number(response.headers.get('content-length'));
-    if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {
-      throw new Error(`Image download exceeds ${maxBytes} bytes`);
-    }
-    const mimeType = response.headers.get('content-type') ?? '';
-    const content = new Uint8Array(await response.arrayBuffer());
-    if (content.byteLength > maxBytes) {
-      throw new Error(`Image download exceeds ${maxBytes} bytes`);
-    }
-    return imageFileRequest(content, mimeType, basename);
-  } finally {
-    clearTimeout(timeout);
+  if (!capability) throw new Error('Image downloads require a bounded native imageDownloads capability');
+  const request = await capability.download({
+    uri: safe,
+    basename: sanitizeBasename(basename, 'image'),
+    maxBytes,
+    timeoutMs,
+    mimeTypes: imageMimeTypes,
+    validateUrl: (url) => sanitizeResourceURL(url, 'image') !== null,
+  });
+  if (!(request.content instanceof Uint8Array)) {
+    throw new TypeError('Image download capability must return Uint8Array content');
   }
+  if (request.content.byteLength > maxBytes) {
+    throw new Error(`Image download exceeds ${maxBytes} bytes`);
+  }
+  return imageFileRequest(request.content, request.mimeType, request.basename);
 }

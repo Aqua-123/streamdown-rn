@@ -109,7 +109,7 @@ describe('remaining upstream coverage through native semantics', () => {
 
   it('moves an already available native image to loaded controls on load', () => {
     // parity:629e38e41056c0b8f4ae52038b6e5e41aea6d3b9b9151ac06849855dc2018c60
-    const screen = render(h(SafeImage, { uri: 'https://example.com/cached.png', alt: 'test', theme: darkTheme, capabilities: { files: { save: jest.fn() } }, translations: defaultTranslations }));
+    const screen = render(h(SafeImage, { uri: 'https://example.com/cached.png', alt: 'test', theme: darkTheme, capabilities: { files: { save: jest.fn() }, imageDownloads: { download: jest.fn() } }, translations: defaultTranslations }));
     fireEvent(screen.getByRole('image'), 'load');
     expect(screen.getByRole('button', { name: 'Download image' })).toBeTruthy();
   });

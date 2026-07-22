@@ -3,6 +3,7 @@ import type {
   StreamdownProps,
   StreamdownRNProps,
   NativeCapabilities,
+  NativeImageDownloadRequest,
 } from '../../src';
 import { createCodePlugin, type TokenProvider } from '../../src/plugins/code';
 import { createCjkPlugin } from '../../src/plugins/cjk';
@@ -19,6 +20,14 @@ const nativeProps: StreamdownProps = {
   },
   capabilities: {
     clipboard: { writeText: async () => ({ status: 'success' }) },
+    imageDownloads: {
+      download: async (request: NativeImageDownloadRequest) => ({
+        basename: request.basename,
+        extension: 'png',
+        mimeType: 'image/png',
+        content: new Uint8Array(),
+      }),
+    },
   } satisfies NativeCapabilities,
   controls: { code: { copy: true, download: false } },
   translations: { copyCode: 'Copy' },

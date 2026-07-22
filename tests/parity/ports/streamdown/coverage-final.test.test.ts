@@ -34,7 +34,7 @@ describe('final coverage native adaptations', () => {
     // parity:2e344fa70c6a55a30c28578820e92ba19c7c1a1151c595ad9f1f54e49451cc46
     // parity:9607fa04301b3472463cd82d206060501e3b8d86f7fe310e382ffdb056f18e8c
     const save = jest.fn(async () => ({ status: 'success' as const }));
-    const screen = render(h(Streamdown, { mode: 'static', capabilities: { files: { save } } }, '![cached](https://example.com/cached.png)'));
+    const screen = render(h(Streamdown, { mode: 'static', capabilities: { files: { save }, imageDownloads: { download: jest.fn() } } }, '![cached](https://example.com/cached.png)'));
     const image = screen.getByRole('image', { name: 'cached' });
     fireEvent(image, 'load');
     expect(screen.getByRole('button', { name: 'Download image' })).toBeTruthy();

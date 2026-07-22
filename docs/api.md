@@ -47,6 +47,8 @@ export const resolvedPrimitives = resolveThemePrimitives(customTheme);
 
 Core has no clipboard or file dependency. A host supplies `NativeCapabilities`, and Streamdown hides copy or download actions when the corresponding provider is absent. Each provider returns a `CapabilityResult`: `success`, `unavailable`, `denied`, `cancelled`, or `failed` with an optional `Error`. Thrown provider errors are also shown as accessible failure feedback.
 
+Image downloads require both `files.save` and `imageDownloads.download`. The latter receives a `NativeImageDownloadRequest` containing the final rendered URL, filename, `maxBytes`, `timeoutMs`, allowed MIME types, and `validateUrl`. The host transport must validate the initial URL and each redirect before issuing that request, enforce the byte ceiling while reading rather than after allocating the body, enforce MIME and timeout, and return a bounded `NativeFileRequest`. Without that capability the image download control is hidden. The exported `fetchImageFileRequest` keeps its original first four parameters, but now fails closed unless its fifth argument is an explicit `NativeImageDownloadCapability`; it never falls back to global `fetch`.
+
 This Expo recipe uses real clipboard, cache-file, and system sharing APIs. Install `expo-clipboard`, `expo-file-system`, and `expo-sharing` with `npx expo install`, then pass the memoized capabilities to every Streamdown surface:
 
 ```tsx noverify

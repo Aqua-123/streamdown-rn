@@ -128,6 +128,8 @@ export type {
   LinkApprovalLabels,
   NativeCapabilities,
   NativeFileRequest,
+  NativeImageDownloadCapability,
+  NativeImageDownloadRequest,
   PanZoomRenderProps,
 } from './platform/capabilities';
 

@@ -51,15 +51,44 @@ describe('native control serialization', () => {
     expect(() => imageFileRequest(new Uint8Array(), 'image/svg+xml')).toThrow('Unsupported image MIME type');
   });
 
-  it('bounds downloaded image bytes before creating a file request', async () => {
+  it('fails closed without allocating a response body when no bounded capability exists', async () => {
+    const allocate = jest.fn(async () => new ArrayBuffer(1024));
     const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue({
-      ok: true,
-      status: 200,
-      headers: new Headers({ 'content-type': 'image/png', 'content-length': '5' }),
-      arrayBuffer: async () => new Uint8Array([1, 2, 3, 4, 5]).buffer,
+      headers: new Headers({ 'content-type': 'image/png' }), arrayBuffer: allocate,
     } as Response);
-    await expect(fetchImageFileRequest('https://example.com/image.png', 'image', 4))
-      .rejects.toThrow('exceeds 4 bytes');
+    await expect(fetchImageFileRequest('https://example.com/missing-length.png'))
+      .rejects.toThrow('bounded native imageDownloads capability');
+    await expect(fetchImageFileRequest('https://example.com/false-small-length.png'))
+      .rejects.toThrow('bounded native imageDownloads capability');
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(allocate).not.toHaveBeenCalled();
     fetchMock.mockRestore();
+  });
+
+  it('delegates redirect, byte, MIME, and timeout enforcement to the explicit capability', async () => {
+    const download = jest.fn(async (request) => {
+      expect(request).toMatchObject({
+        uri: 'https://example.com/image.png', basename: 'Chart', maxBytes: 4, timeoutMs: 1234,
+        mimeTypes: expect.arrayContaining(['image/png', 'image/avif']),
+      });
+      expect([
+        'https://example.com/image.png',
+        'https://cdn.example.com/one',
+        'https://cdn.example.com/two',
+      ].every(request.validateUrl)).toBe(true);
+      expect(request.validateUrl('http://cdn.example.com/final')).toBe(false);
+      return { basename: request.basename, extension: 'wrong', mimeType: 'image/png', content: new Uint8Array([1, 2, 3, 4]) };
+    });
+    await expect(fetchImageFileRequest('https://example.com/image.png', '../Chart', 4, 1234, { download }))
+      .resolves.toMatchObject({ basename: 'Chart', extension: 'png', mimeType: 'image/png' });
+  });
+
+  it('rejects invalid capability results before saving them', async () => {
+    await expect(fetchImageFileRequest('https://example.com/image', 'image', 1, 1000, {
+      download: async () => ({ basename: 'image', extension: 'png', mimeType: 'image/png', content: new Uint8Array([1, 2]) }),
+    })).rejects.toThrow('exceeds 1 bytes');
+    await expect(fetchImageFileRequest('https://example.com/image', 'image', 1, 1000, {
+      download: async () => ({ basename: 'image', extension: 'svg', mimeType: 'image/svg+xml', content: new Uint8Array([1]) }),
+    })).rejects.toThrow('Unsupported image MIME type');
   });
 });

@@ -6,7 +6,7 @@ describe('native images and semantics', () => {
   // parity:c00225c9df84f3ccf47ca8696c01313c185736676fb43444286e78bdf00e3b9d
   // parity:60ee9eb9791bf911e0078d1222a09c532c07f9a3ef0702cfe455d38bba0ed5de
   it('loads, fails, retries, and keeps meaningful alt text', () => {
-    const screen = render(<Streamdown mode="static" capabilities={{ files: { save: jest.fn() } }}>![Chart](https://example.com/chart.png)</Streamdown>);
+    const screen = render(<Streamdown mode="static" capabilities={{ files: { save: jest.fn() }, imageDownloads: { download: jest.fn() } }}>![Chart](https://example.com/chart.png)</Streamdown>);
     const image = screen.getByRole('image', { name: 'Chart' });
     expect(image.props.style).toEqual(expect.arrayContaining([expect.objectContaining({ aspectRatio: expect.any(Number) })]));
     fireEvent(image, 'load');

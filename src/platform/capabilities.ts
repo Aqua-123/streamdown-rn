@@ -14,6 +14,22 @@ export interface NativeFileRequest {
   content: string | Uint8Array;
 }
 
+export interface NativeImageDownloadRequest {
+  /** Final transformed image URL. Validate it and every redirect before issuing that request. */
+  uri: string;
+  basename: string;
+  maxBytes: number;
+  timeoutMs: number;
+  mimeTypes: readonly string[];
+  /** The library's image URL policy. Call before the initial request and every redirect. */
+  validateUrl: (url: string) => boolean;
+}
+
+export interface NativeImageDownloadCapability {
+  /** Must stop after maxBytes and return only a fully validated, bounded image. */
+  download: (request: NativeImageDownloadRequest) => Promise<NativeFileRequest> | NativeFileRequest;
+}
+
 export interface LinkApprovalLabels {
   title: string;
   message: string;
@@ -39,6 +55,7 @@ export interface NativeCapabilities {
     /** The adapter owns unique sandbox paths and native save/share UI. */
     save: (request: NativeFileRequest) => Promise<CapabilityResult> | CapabilityResult;
   };
+  imageDownloads?: NativeImageDownloadCapability;
   share?: {
     shareText: (text: string, title?: string) => Promise<CapabilityResult> | CapabilityResult;
   };

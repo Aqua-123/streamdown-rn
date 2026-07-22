@@ -21,7 +21,7 @@ describe('final upstream coverage through native semantics', () => {
   it('treats a native load event as a ready cached image', () => {
     // parity:07035c5e3639c0e679e860cbd6460c7c28054468b54715f29543d7fa43fda715
     const save = jest.fn();
-    const screen = render(h(SafeImage, { ...imageProps, capabilities: { files: { save } } }));
+    const screen = render(h(SafeImage, { ...imageProps, capabilities: { files: { save }, imageDownloads: { download: jest.fn() } } }));
     fireEvent(screen.getByRole('image', { name: 'cached' }), 'load');
     expect(screen.getByRole('button', { name: 'Download image' })).toBeTruthy();
   });
