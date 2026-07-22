@@ -1,5 +1,7 @@
 node_modules/
 dist/
+!tests/package/fixtures/published-0.2.1/dist/
+!tests/package/fixtures/published-0.2.1/dist/**
 coverage/
 .reference/
 *.tgz
