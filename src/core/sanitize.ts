@@ -83,36 +83,64 @@ export function sanitizeProps(
   props: Record<string, unknown>,
   policy: ResourcePolicy = {}
 ): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-  
-  for (const [key, value] of Object.entries(props)) {
-    if (key === '__proto__' || key === 'prototype' || key === 'constructor') continue;
-    if (typeof value === 'string') {
-      if (looksLikeURL(value) || isResourceKey(key)) {
-        const safeUrl = sanitizeResourceURL(value, sinkForKey(key), policy);
-        result[key] = safeUrl ?? '';
-      } else {
-        result[key] = value;
-      }
-    } else if (Array.isArray(value)) {
-      // Recursively sanitize arrays
-      result[key] = value.map(item => {
-        if (typeof item === 'object' && item !== null) {
-          return sanitizeProps(item as Record<string, unknown>, policy);
-        }
-        if (typeof item === 'string' && (looksLikeURL(item) || isResourceKey(key))) {
-          return sanitizeResourceURL(item, sinkForKey(key), policy) ?? '';
-        }
-        return item;
-      });
-    } else if (typeof value === 'object' && value !== null) {
-      // Recursively sanitize nested objects
-      result[key] = sanitizeProps(value as Record<string, unknown>, policy);
-    } else {
-      // Preserve primitives (numbers, booleans, null)
-      result[key] = value;
-    }
+  const sanitized = sanitizeValue(props, '', policy, 0, {
+    remaining: 4096,
+    ancestry: new WeakSet(),
+  });
+  return sanitized && !Array.isArray(sanitized) && typeof sanitized === 'object'
+    ? sanitized as Record<string, unknown>
+    : {};
+}
+
+const MAX_PROP_DEPTH = 32;
+
+interface SanitizeBudget {
+  remaining: number;
+  ancestry: WeakSet<object>;
+}
+
+function sanitizeValue(
+  value: unknown,
+  key: string,
+  policy: ResourcePolicy,
+  depth: number,
+  budget: SanitizeBudget
+): unknown {
+  if (budget.remaining-- <= 0) return null;
+  if (typeof value === 'string') {
+    return looksLikeURL(value) || isResourceKey(key)
+      ? sanitizeResourceURL(value, sinkForKey(key), policy) ?? ''
+      : value;
   }
-  
-  return result;
+  if (typeof value !== 'object' || value === null) return value;
+  if (depth > MAX_PROP_DEPTH || budget.ancestry.has(value)) return null;
+
+  budget.ancestry.add(value);
+  try {
+    if (Array.isArray(value)) {
+      const result: unknown[] = [];
+      for (const item of value) {
+        if (budget.remaining <= 0) break;
+        result.push(sanitizeValue(item, key, policy, depth + 1, budget));
+      }
+      return result;
+    }
+
+    const result: Record<string, unknown> = {};
+    for (const nestedKey in value) {
+      if (budget.remaining <= 0) break;
+      if (!Object.prototype.hasOwnProperty.call(value, nestedKey)) continue;
+      if (nestedKey === '__proto__' || nestedKey === 'prototype' || nestedKey === 'constructor') continue;
+      result[nestedKey] = sanitizeValue(
+        (value as Record<string, unknown>)[nestedKey],
+        nestedKey,
+        policy,
+        depth + 1,
+        budget
+      );
+    }
+    return result;
+  } finally {
+    budget.ancestry.delete(value);
+  }
 }

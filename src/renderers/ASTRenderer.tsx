@@ -8,6 +8,7 @@ import { renderNode } from './nodeDispatcher';
 import { ComponentErrorContext } from './registryComponents';
 import { rootFor, textValue } from './semanticComposition';
 import type { ASTRendererProps, SemanticNode } from './rendererTypes';
+import { getBlockStyles, getTextStyles, resolveThemePrimitives } from '../themes';
 
 export type { ASTRendererProps } from './rendererTypes';
 export {
@@ -43,7 +44,15 @@ export const ASTRenderer: React.FC<ASTRendererProps> = ({ node, ...options }) =>
   }
   return (
     <ComponentErrorContext.Provider value={options.onError}>
-      {renderNode(semanticRoot, { ...options, direction, definitions, emptyFootnotes })}
+      {renderNode(semanticRoot, {
+        ...options,
+        direction,
+        definitions,
+        emptyFootnotes,
+        textStyles: getTextStyles(options.theme),
+        blockStyles: getBlockStyles(options.theme),
+        themePrimitives: resolveThemePrimitives(options.theme),
+      })}
     </ComponentErrorContext.Provider>
   );
 };

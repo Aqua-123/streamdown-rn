@@ -1,6 +1,6 @@
 import React, { type ReactNode } from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { controlRadius, getBlockStyles, getTextStyles, innerRadius, resolveThemePrimitives } from '../themes';
+import { controlRadius, innerRadius } from '../themes';
 import { TableControls, defaultTranslations } from '../controls';
 import { resolveCapabilities } from '../platform/defaults';
 import type { TableData } from '../core/tableSerialization';
@@ -39,9 +39,9 @@ export function renderTable(
   renderNode: RenderNode,
   key?: React.Key
 ): ReactNode {
-  const styles = getTextStyles(context.theme);
-  const blocks = getBlockStyles(context.theme);
-  const primitives = resolveThemePrimitives(context.theme);
+  const styles = context.textStyles;
+  const blocks = context.blockStyles;
+  const primitives = context.themePrimitives;
   const columnCount = Math.max(0, ...(node.children ?? []).map((row) => row.children?.length ?? 0));
   const columnWidths = tableColumnWidths(node, columnCount);
   const rows = (node.children ?? []).map((row, rowIndex) => {

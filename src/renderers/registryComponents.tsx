@@ -1,6 +1,6 @@
 import React, { type ReactNode, useContext, useEffect } from 'react';
 import { Text, View } from 'react-native';
-import type { ComponentRegistry, StableBlock, ThemeConfig } from '../core/types';
+import type { ComponentDefinition, ComponentRegistry, StableBlock, ThemeConfig } from '../core/types';
 import { hashContent } from '../core/types';
 import { extractComponentData, type ComponentData } from '../core/componentParser';
 import { sanitizeProps } from '../core/sanitize';
@@ -43,10 +43,55 @@ export interface ComponentBlockProps {
   isStreaming?: boolean;
   onError?: ComponentErrorHandler;
   resourcePolicy?: ResourcePolicy;
+  depth?: number;
 }
 
 function componentError(theme: ThemeConfig, message: string): ReactNode {
   return <View style={{ padding: 12, backgroundColor: theme.colors.codeBackground, marginBottom: theme.spacing.block }}><Text style={{ color: theme.colors.muted }}>{message}</Text></View>;
+}
+
+function componentChildrenKey(
+  children: ComponentData[] | undefined,
+  resourcePolicy?: ResourcePolicy
+): number {
+  const sanitized = sanitizeProps({ children: children ?? null }, resourcePolicy).children;
+  const parts: string[] = [];
+  let remainingNodes = 4096;
+  let remainingChars = 8192;
+
+  const append = (value: string) => {
+    if (remainingChars <= 0) return;
+    parts.push(value.slice(0, remainingChars));
+    remainingChars -= value.length;
+  };
+  const visit = (value: unknown) => {
+    if (remainingNodes-- <= 0 || remainingChars <= 0) return;
+    if (typeof value === 'string') {
+      append(`s${value.length}:${value.slice(0, 256)}:${value.slice(-256)}`);
+      return;
+    }
+    if (!value || typeof value !== 'object') {
+      append(`${typeof value}:${String(value)}`);
+      return;
+    }
+    if (Array.isArray(value)) {
+      append(`a${value.length}[`);
+      for (const item of value) visit(item);
+      append(']');
+      return;
+    }
+    const entries = Object.entries(value).sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0);
+    append(`o${entries.length}{`);
+    for (const [key, nestedValue] of entries) {
+      append(`k${key.length}:${key.slice(0, 128)}:${key.slice(-128)}`);
+      visit(nestedValue);
+    }
+    append('}');
+  };
+
+  visit(sanitized);
+  if (remainingNodes <= 0 || remainingChars <= 0) parts.push('[Component fingerprint limit]');
+  return hashContent(parts.join(''));
 }
 
 function ValidatedRegistryComponent({
@@ -66,20 +111,28 @@ function ValidatedRegistryComponent({
 }) {
   const contextualOnError = useContext(ComponentErrorContext);
   const onError = directOnError ?? contextualOnError;
-  const definition = componentRegistry.get(componentName);
   const safeProps = sanitizeProps(props, resourcePolicy);
   const safeStyle = style ? sanitizeProps(style, resourcePolicy) : undefined;
+  let definition: ComponentDefinition | undefined;
   let validationError: Error | null = null;
   try {
-    const result = componentRegistry.validate(componentName, safeProps);
-    if (!result.valid) validationError = new Error(`Invalid props for ${componentName}: ${result.errors.join(', ')}`);
+    definition = componentRegistry.get(componentName);
+    if (definition) {
+      const result = componentRegistry.validate(componentName, safeProps);
+      if (!result.valid) validationError = new Error(`Invalid props for ${componentName}: ${result.errors.join(', ')}`);
+    }
   } catch (error) {
     validationError = error instanceof Error ? error : new Error(String(error));
   }
   useEffect(() => {
     if (validationError) onError?.(validationError, componentName);
   }, [componentName, onError, validationError?.message]);
-  const fallback = componentError(theme, `⚠️ Invalid component: ${componentName}`);
+  const fallback = componentError(
+    theme,
+    validationError || definition
+      ? `⚠️ Invalid component: ${componentName}`
+      : `⚠️ Unknown component: ${componentName}`
+  );
   if (!definition || validationError) return fallback;
   const Component = isStreaming && definition.skeletonComponent
     ? definition.skeletonComponent
@@ -96,7 +149,9 @@ export const ComponentBlock: React.FC<ComponentBlockProps> = ({
   theme, componentRegistry, block, componentName: directName, props: directProps,
   style: directStyle, children: directChildren, isStreaming = false, onError,
   resourcePolicy,
+  depth = 0,
 }) => {
+  if (depth >= 32) return componentError(theme, '⚠️ Component nesting limit exceeded');
   const extracted = block ? extractComponentData(block.content, resourcePolicy) : undefined;
   const name = directName ?? extracted?.name ?? '';
   const props = directProps ?? extracted?.props ?? {};
@@ -104,10 +159,9 @@ export const ComponentBlock: React.FC<ComponentBlockProps> = ({
   const children = directChildren ?? extracted?.children;
   if (!name) return null;
   if (!componentRegistry) return componentError(theme, '⚠️ No component registry provided');
-  if (!componentRegistry.get(name)) return componentError(theme, `⚠️ Unknown component: ${name}`);
-  const childrenKey = hashContent(JSON.stringify(children ?? null));
+  const childrenKey = componentChildrenKey(children, resourcePolicy);
   const renderedChildren = children?.map((child, index) => (
-    <ComponentBlock key={index} theme={theme} componentRegistry={componentRegistry} componentName={child.name} props={child.props} style={child.style} children={child.children} isStreaming={isStreaming} onError={onError} resourcePolicy={resourcePolicy} />
+    <ComponentBlock key={index} theme={theme} componentRegistry={componentRegistry} componentName={child.name} props={child.props} style={child.style} children={child.children} isStreaming={isStreaming} onError={onError} resourcePolicy={resourcePolicy} depth={depth + 1} />
   ));
   return (
     <View style={{ marginBottom: theme.spacing.block }}>

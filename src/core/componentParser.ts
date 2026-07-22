@@ -23,6 +23,32 @@ export interface ComponentData {
   children?: ComponentData[];
 }
 
+const MAX_COMPONENT_DEPTH = 32;
+const MAX_COMPONENT_NODES = 1024;
+const MAX_COMPONENT_INPUT_LENGTH = 256 * 1024;
+
+function isWithinComponentLimits(content: string): boolean {
+  if (content.length > MAX_COMPONENT_INPUT_LENGTH) return false;
+  let depth = 0;
+  let nodes = 0;
+  let inString = false;
+  let escaped = false;
+  for (const character of content) {
+    if (escaped) { escaped = false; continue; }
+    if (character === '\\' && inString) { escaped = true; continue; }
+    if (character === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (character === '{' || character === '[') {
+      depth++;
+      nodes++;
+      if (depth > MAX_COMPONENT_DEPTH || nodes > MAX_COMPONENT_NODES) return false;
+    } else if (character === '}' || character === ']') {
+      depth = Math.max(0, depth - 1);
+    }
+  }
+  return true;
+}
+
 // ============================================================================
 // Helpers
 // ============================================================================
@@ -32,8 +58,51 @@ export interface ComponentData {
  * e.g., {c:"Card",p:{}} -> {"c":"Card","p":{}}
  */
 function normalizeToJSON(dsl: string): string {
-  // Quote unquoted keys: c: -> "c":, p: -> "p":, children: -> "children":
-  return dsl.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
+  let normalized = '';
+  let inString = false;
+  let escaped = false;
+  const containers: Array<'{' | '['> = [];
+
+  for (let index = 0; index < dsl.length;) {
+    const character = dsl[index];
+    if (inString) {
+      normalized += character;
+      if (escaped) escaped = false;
+      else if (character === '\\') escaped = true;
+      else if (character === '"') inString = false;
+      index++;
+      continue;
+    }
+    if (character === '"') {
+      inString = true;
+      normalized += character;
+      index++;
+      continue;
+    }
+    if (character === '{' || character === '[') containers.push(character);
+    else if (character === '}' || character === ']') containers.pop();
+
+    normalized += character;
+    index++;
+    if ((character !== '{' && character !== ',') || containers[containers.length - 1] !== '{') continue;
+
+    const whitespaceStart = index;
+    while (/\s/.test(dsl[index] ?? '')) index++;
+    normalized += dsl.slice(whitespaceStart, index);
+    const keyStart = index;
+    if (!/[A-Za-z_]/.test(dsl[index] ?? '')) continue;
+    index++;
+    while (/[A-Za-z0-9_]/.test(dsl[index] ?? '')) index++;
+    const keyEnd = index;
+    while (/\s/.test(dsl[index] ?? '')) index++;
+    if (dsl[index] !== ':') {
+      normalized += dsl.slice(keyStart, index);
+      continue;
+    }
+    normalized += `"${dsl.slice(keyStart, keyEnd)}"${dsl.slice(keyEnd, index)}:`;
+    index++;
+  }
+  return normalized;
 }
 
 /**
@@ -41,25 +110,35 @@ function normalizeToJSON(dsl: string): string {
  * Enables progressive prop rendering (e.g., {"title":"On-call → {"title":"On-call")
  */
 function closeUnclosedStrings(json: string): string {
-  // Track if we're inside a string (accounting for escapes)
-  let inString = false;
-  
-  for (let i = 0; i < json.length; i++) {
-    const char = json[i];
-    const prevChar = i > 0 ? json[i - 1] : '';
-    
-    // Check for quote (not escaped)
-    if (char === '"' && prevChar !== '\\') {
-      inString = !inString;
-    }
-  }
+  const { inString, escaped } = scanJsonStructure(json);
   
   // If we ended inside a string, close it
   if (inString) {
-    return json + '"';
+    // A lone trailing escape would escape the quote we add. Complete the
+    // escaped backslash first, then close the progressive string.
+    return json + (escaped ? '\\' : '') + '"';
   }
   
   return json;
+}
+
+function scanJsonStructure(json: string) {
+  const openStructures: Array<'{' | '['> = [];
+  let inString = false;
+  let escaped = false;
+  for (const char of json) {
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (char === '\\') escaped = true;
+      else if (char === '"') inString = false;
+      continue;
+    }
+    if (char === '"') inString = true;
+    else if (char === '{' || char === '[') openStructures.push(char);
+    else if (char === '}' && openStructures[openStructures.length - 1] === '{') openStructures.pop();
+    else if (char === ']' && openStructures[openStructures.length - 1] === '[') openStructures.pop();
+  }
+  return { openStructures, inString, escaped };
 }
 
 /**
@@ -92,31 +171,12 @@ export function tryParseIncompleteJSON(json: string): unknown | null {
     repaired = repaired.replace(/,\s*([}\]])/g, '$1');
     
     // Step 5: Count and close unbalanced braces/brackets
-    let braceDepth = 0;
-    let bracketDepth = 0;
-    let inString = false;
-    
-    for (const char of repaired) {
-      if (char === '"') {
-        // Simple toggle - we've already closed unclosed strings
-        inString = !inString;
-      }
-      if (!inString) {
-        if (char === '{') braceDepth++;
-        if (char === '}') braceDepth--;
-        if (char === '[') bracketDepth++;
-        if (char === ']') bracketDepth--;
-      }
-    }
-    
-    // Close brackets first (inner structures), then braces
-    while (bracketDepth > 0) {
-      repaired += ']';
-      bracketDepth--;
-    }
-    while (braceDepth > 0) {
-      repaired += '}';
-      braceDepth--;
+    const { openStructures } = scanJsonStructure(repaired);
+
+    // Close structures in their actual nesting order. Counting braces and
+    // brackets independently produces invalid repairs for partial children.
+    for (let index = openStructures.length - 1; index >= 0; index--) {
+      repaired += openStructures[index] === '{' ? '}' : ']';
     }
     
     try {
@@ -133,18 +193,30 @@ export function tryParseIncompleteJSON(json: string): unknown | null {
  */
 export function extractChildrenRecursive(
   children: unknown[],
-  policy: ResourcePolicy = {}
+  policy: ResourcePolicy = {},
+  depth = 0,
+  budget = { remaining: MAX_COMPONENT_NODES }
 ): ComponentData[] {
+  if (depth >= MAX_COMPONENT_DEPTH || budget.remaining <= 0) return [];
   return children
     .filter((child): child is { c: string; p?: Record<string, unknown>; style?: Record<string, unknown>; children?: unknown[] } => 
-      typeof child === 'object' && child !== null && 'c' in child
+      typeof child === 'object'
+      && child !== null
+      && 'c' in child
+      && typeof child.c === 'string'
     )
-    .map(child => ({
+    .slice(0, budget.remaining)
+    .map(child => {
+      budget.remaining--;
+      return ({
       name: child.c,
       props: sanitizeProps(child.p ?? {}, policy),
       style: child.style ? sanitizeProps(child.style, policy) : undefined,
-      children: child.children ? extractChildrenRecursive(child.children, policy) : undefined,
-    }));
+      children: Array.isArray(child.children)
+        ? extractChildrenRecursive(child.children, policy, depth + 1, budget)
+        : undefined,
+      });
+    });
 }
 
 /**
@@ -153,7 +225,16 @@ export function extractChildrenRecursive(
  */
 function findBalancedClose(content: string, openChar: string, closeChar: string): number {
   let depth = 0;
+  let inString = false;
+  let escaped = false;
   for (let i = 0; i < content.length; i++) {
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (content[i] === '\\') escaped = true;
+      else if (content[i] === '"') inString = false;
+      continue;
+    }
+    if (content[i] === '"') { inString = true; continue; }
     if (content[i] === openChar) depth++;
     if (content[i] === closeChar) {
       depth--;
@@ -226,26 +307,18 @@ function extractSingleComponentData(
  */
 function extractPartialChildren(
   childrenContent: string,
-  policy: ResourcePolicy
+  policy: ResourcePolicy,
+  depth = 0,
+  budget = { remaining: MAX_COMPONENT_NODES }
 ): ComponentData[] {
+  if (depth >= MAX_COMPONENT_DEPTH || budget.remaining <= 0) return [];
   const children: ComponentData[] = [];
   
-  // Find all child component starts: {c:"Name"
-  const childPattern = /\{c:\s*"([^"]+)"/g;
-  let match;
-  
-  while ((match = childPattern.exec(childrenContent)) !== null) {
-    const childName = match[1];
-    const childStart = match.index;
-    
-    // Extract the content for this child (up to next child or end)
-    const remainingContent = childrenContent.slice(childStart);
-    
-    // Find where this child ends (next {c:" or end of content)
-    const nextChildMatch = remainingContent.slice(1).match(/\{c:\s*"/);
-    const childContent = nextChildMatch 
-      ? remainingContent.slice(0, nextChildMatch.index! + 1)
-      : remainingContent;
+  for (const childContent of directChildObjects(childrenContent)) {
+    if (budget.remaining-- <= 0) break;
+    const nameMatch = childContent.match(/^\s*\{c:\s*"([^"]+)"/);
+    if (!nameMatch) continue;
+    const childName = nameMatch[1];
     
     // Extract props and style for this child
     const { props, style } = extractSingleComponentData(childContent, policy);
@@ -256,7 +329,7 @@ function extractPartialChildren(
     if (nestedChildrenMatch) {
       const nestedStart = nestedChildrenMatch.index! + nestedChildrenMatch[0].length;
       const nestedContent = childContent.slice(nestedStart);
-      nestedChildren = extractPartialChildren(nestedContent, policy);
+      nestedChildren = extractPartialChildren(nestedContent, policy, depth + 1, budget);
       if (nestedChildren.length === 0) nestedChildren = undefined;
     }
     
@@ -269,6 +342,42 @@ function extractPartialChildren(
   }
   
   return children;
+}
+
+function directChildObjects(content: string): string[] {
+  const objects: string[] = [];
+  let objectStart = -1;
+  let objectDepth = 0;
+  let arrayDepth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let index = 0; index < content.length; index++) {
+    const character = content[index];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (character === '\\') escaped = true;
+      else if (character === '"') inString = false;
+      continue;
+    }
+    if (character === '"') { inString = true; continue; }
+    if (character === '[') { arrayDepth++; continue; }
+    if (character === ']') { if (arrayDepth > 0) arrayDepth--; continue; }
+    if (character === '{') {
+      if (objectDepth === 0 && arrayDepth === 0) objectStart = index;
+      objectDepth++;
+      continue;
+    }
+    if (character === '}' && objectDepth > 0) {
+      objectDepth--;
+      if (objectDepth === 0 && objectStart >= 0) {
+        objects.push(content.slice(objectStart, index + 1));
+        objectStart = -1;
+      }
+    }
+  }
+  if (objectStart >= 0) objects.push(content.slice(objectStart));
+  return objects;
 }
 
 // ============================================================================
@@ -286,6 +395,7 @@ export function extractComponentData(
   content: string,
   policy: ResourcePolicy = {}
 ): ComponentData {
+  if (!isWithinComponentLimits(content)) return { name: '', props: {} };
   const nameMatch = content.match(/\[\{c:\s*"([^"]+)"/);
   if (!nameMatch) {
     return { name: '', props: {} };
@@ -316,10 +426,19 @@ export function extractComponentData(
   } else {
     // Streaming - extract what we can from partial content
     const componentContent = content.slice(nameMatch.index! + nameMatch[0].length);
+    const partial = tryParseIncompleteJSON(content);
+    const partialRoot = Array.isArray(partial) && partial[0] && typeof partial[0] === 'object'
+      ? partial[0] as { p?: Record<string, unknown>; style?: Record<string, unknown>; children?: unknown[] }
+      : undefined;
+    if (partialRoot) {
+      props = partialRoot.p ?? {};
+      style = partialRoot.style;
+      if (Array.isArray(partialRoot.children)) children = extractChildrenRecursive(partialRoot.children, policy);
+    }
     
     // Extract props using shared helper
     const pMatch = componentContent.match(/,\s*p:\s*/);
-    if (pMatch) {
+    if (!partialRoot && pMatch) {
       const pStart = pMatch.index! + pMatch[0].length;
       const afterP = componentContent.slice(pStart);
       const pEnd = findBalancedClose(afterP, '{', '}');
@@ -342,7 +461,7 @@ export function extractComponentData(
     
     // Extract layout style (top-level, not in props)
     const styleMatch = componentContent.match(/,\s*style:\s*\{/);
-    if (styleMatch) {
+    if (!partialRoot && styleMatch) {
       const styleStart = styleMatch.index! + styleMatch[0].length - 1; // Include the {
       const afterStyle = componentContent.slice(styleStart);
       const styleEnd = findBalancedClose(afterStyle, '{', '}');
@@ -358,7 +477,7 @@ export function extractComponentData(
     
     // Extract children (even if partial) - already sanitized in extractPartialChildren
     const childrenMatch = componentContent.match(/,\s*children:\s*\[/);
-    if (childrenMatch) {
+    if (!children && childrenMatch) {
       const childrenStart = childrenMatch.index! + childrenMatch[0].length;
       const childrenContent = componentContent.slice(childrenStart);
       children = extractPartialChildren(childrenContent, policy);

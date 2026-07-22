@@ -3,7 +3,7 @@
 Run the smallest gate that answers the question:
 
 ```bash
-bun run test                         # all Jest semantic/unit/device-contract suites
+bun run test                         # all Jest semantic and unit suites
 bun run test:parity                  # implemented pinned mappings
 bun run test:device-contract         # evidence schema, not device execution
 bun run type-check

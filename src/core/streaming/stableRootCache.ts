@@ -21,24 +21,30 @@ export class StableRootCache {
     instrumentation?.setCacheEntries(this.entries.length);
   }
 
-  get(
+  peek(
+    block: StableBlock,
+    options: SemanticParseOptions | undefined
+  ): Root | undefined {
+    return this.entries.find((entry) => entry.block === block && entry.options === options)?.root;
+  }
+
+  commit(
     block: StableBlock,
     options: SemanticParseOptions | undefined,
-    parse: () => Root
-  ): Root {
+    root: Root,
+    cacheHit: boolean
+  ): void {
     const index = this.entries.findIndex((entry) => entry.block === block && entry.options === options);
     if (index >= 0) {
       const [entry] = this.entries.splice(index, 1);
       this.entries.push(entry);
-      this.instrumentation?.recordCacheHit();
-      return entry.root;
+      if (cacheHit) this.instrumentation?.recordCacheHit();
+      return;
     }
     this.instrumentation?.recordStableParse();
-    const root = parse();
     this.entries.push({ block, options, root });
     if (this.entries.length > this.capacity) this.entries.shift();
     this.instrumentation?.setCacheEntries(this.entries.length);
-    return root;
   }
 
   clear(): void {

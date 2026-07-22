@@ -83,7 +83,37 @@ export interface ActiveBlock {
   content: string;
   /** Start position in the full text */
   startPos: number;
+  /** Incremental parser state for an open fenced-code or component block. */
+  explicitScanState?: ExplicitBlockScanState;
+  /** True once the leading characters can no longer change the block type. */
+  typeLocked?: boolean;
+  /** Cached trailing newline count, capped at two, for O(1) boundary checks. */
+  trailingNewlines?: 0 | 1 | 2;
+  /** A trailing CR may become part of a CRLF in the next append. */
+  trailingCarriageReturn?: boolean;
+  /** Incremental whitespace classification for boundary handling. */
+  hasNonWhitespace?: boolean;
 }
+
+export type ExplicitBlockScanState =
+  | {
+      type: 'codeBlock';
+      scannedTo: number;
+      lineStart: number;
+      fenceCharacter: '`' | '~';
+      fenceLength: number;
+      pendingLine?: string;
+      openingLine?: boolean;
+    }
+  | {
+      type: 'component';
+      scannedTo: number;
+      braceDepth: number;
+      bracketDepth: number;
+      inString: boolean;
+      escape: boolean;
+      lastCharacter?: string;
+    };
 
 /**
  * Block-specific metadata
@@ -370,6 +400,12 @@ export type NativeComponents = Record<
 export interface StreamdownProps extends SecurityPolicyOptions {
   /** Markdown content (streaming or complete) */
   children?: string;
+  /**
+   * Positive safe-integer ceiling measured in UTF-16 code units. Invalid or
+   * oversized input is reported through `onError` and rendered as a bounded
+   * plain-text preview. Defaults to 2 MiB for static and cumulative streams.
+   */
+  maxInputLength?: number;
   /** Component registry for {{c:...}} syntax */
   componentRegistry?: ComponentRegistry;
   /** Theme name or custom config */
@@ -395,6 +431,10 @@ export interface StreamdownProps extends SecurityPolicyOptions {
   normalizeHtmlIndentation?: boolean;
   /** Whether the host is currently delivering streamed content. */
   isAnimating?: boolean;
+  /** Skip full-prefix replacement checks for append-only streams. Change `streamKey` to reset. */
+  appendOnly?: boolean;
+  /** Identity for an append-only stream; changing it resets parser and animation state. */
+  streamKey?: string | number;
   /** Animate only content that became visible in the current append. */
   animated?: boolean | AnimationConfig;
   /** Native caret shown while streaming. */
@@ -447,27 +487,6 @@ export type StreamdownRNProps = StreamdownProps;
 /**
  * Props passed to block renderers
  */
-export interface BlockRendererProps {
-  /** The block to render */
-  block: StableBlock;
-  /** Current theme configuration */
-  theme: ThemeConfig;
-  /** Component registry (for component blocks) */
-  componentRegistry?: ComponentRegistry;
-}
-
-/**
- * Props for the active block renderer
- */
-export interface ActiveBlockRendererProps {
-  /** The active block content */
-  block: ActiveBlock;
-  /** Current theme configuration */
-  theme: ThemeConfig;
-  /** Component registry (for streaming components) */
-  componentRegistry?: ComponentRegistry;
-}
-
 // ============================================================================
 // Utilities
 // ============================================================================

@@ -49,6 +49,8 @@ export interface CodePluginOptions {
   maxCodeLength?: number;
   /** Maximum time for an asynchronous provider request. */
   highlightTimeoutMs?: number;
+  /** Maximum unique asynchronous provider requests retained at once. */
+  maxPendingRequests?: number;
   onError?: (error: Error) => void;
 }
 
@@ -75,6 +77,7 @@ export function createCodePlugin(options: CodePluginOptions = {}): CodeHighlight
   const maxCodeLength = positiveInteger(options.maxCodeLength, 1_000_000, 'maxCodeLength');
   const maxCacheUnits = positiveInteger(options.maxCacheUnits, 256_000, 'maxCacheUnits');
   const highlightTimeoutMs = positiveInteger(options.highlightTimeoutMs, 15_000, 'highlightTimeoutMs');
+  const maxPendingRequests = positiveInteger(options.maxPendingRequests, 8, 'maxPendingRequests');
   const languages = new Set(provider?.languages.map((language) => language.toLowerCase()) ?? []);
   const aliases = Object.fromEntries(
     Object.entries(provider?.aliases ?? {}).map(([alias, language]) => [alias.toLowerCase(), language.toLowerCase()])
@@ -87,6 +90,7 @@ export function createCodePlugin(options: CodePluginOptions = {}): CodeHighlight
     timer?: ReturnType<typeof setTimeout>;
   };
   const pending = new Map<string, PendingEntry>();
+  let activeRequests = 0;
   const themeIds = new WeakMap<object, number>();
   let nextThemeId = 1;
   const themeKey = (theme: ThemeInput): string => {
@@ -141,6 +145,10 @@ export function createCodePlugin(options: CodePluginOptions = {}): CodeHighlight
         existing?.subscribers.add(callback);
       }
       if (existing) return null;
+      if (activeRequests >= maxPendingRequests) {
+        options.onError?.(new RangeError(`Code highlighter exceeds ${maxPendingRequests} pending requests`));
+        return plainCodeResult(input.code);
+      }
       const entry: PendingEntry = { subscribers: new Set(callback ? [callback] : []) };
       pending.set(key, entry);
       try {
@@ -150,6 +158,13 @@ export function createCodePlugin(options: CodePluginOptions = {}): CodeHighlight
           if (pending.get(key) === entry) pending.delete(key);
           return result;
         }
+        activeRequests++;
+        let requestActive = true;
+        const releaseRequest = () => {
+          if (!requestActive) return;
+          requestActive = false;
+          activeRequests--;
+        };
         entry.timer = setTimeout(() => {
           if (pending.get(key) !== entry) return;
           pending.delete(key);
@@ -159,12 +174,14 @@ export function createCodePlugin(options: CodePluginOptions = {}): CodeHighlight
         }, highlightTimeoutMs);
         (entry.timer as unknown as { unref?: () => void }).unref?.();
         void result.then((highlighted) => {
+          releaseRequest();
           if (pending.get(key) !== entry) return;
           clearTimeout(entry.timer);
           pending.delete(key);
           remember(key, highlighted);
           entry.subscribers.forEach((subscriber) => subscriber(highlighted));
         }).catch((reason: unknown) => {
+          releaseRequest();
           if (pending.get(key) !== entry) return;
           clearTimeout(entry.timer);
           pending.delete(key);

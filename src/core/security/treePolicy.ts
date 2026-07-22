@@ -61,13 +61,24 @@ function elementName(node: PolicyNode, semanticElement?: string): string | null 
   }
 }
 
-function sanitizeNodeURL(node: PolicyNode, options: SecurityPolicyOptions): PolicyNode {
-  if (node.type !== 'link' && node.type !== 'image' && node.type !== 'definition') return node;
-  const sink: ResourceSink = node.type === 'image' ? 'image' : 'link';
-  const url = node.url ?? '';
+/** Apply the caller transform and validate its result for the concrete native sink. */
+export function transformResourceURL(
+  url: string,
+  sink: ResourceSink,
+  options: SecurityPolicyOptions,
+  node: Readonly<Node>
+): string | null {
   const transformed = options.urlTransform?.(url, sink, node) ??
     (options.urlTransform ? null : url);
-  const safe = transformed == null ? null : sanitizeResourceURL(transformed, sink, options);
+  return transformed == null ? null : sanitizeResourceURL(transformed, sink, options);
+}
+
+function sanitizeNodeURL(node: PolicyNode, options: SecurityPolicyOptions): PolicyNode {
+  // Definitions can feed either a linkReference or imageReference. Resolve them
+  // at that reference so the transform receives the actual native sink.
+  if (node.type !== 'link' && node.type !== 'image') return node;
+  const sink: ResourceSink = node.type === 'image' ? 'image' : 'link';
+  const safe = transformResourceURL(node.url ?? '', sink, options, node);
   return { ...node, url: safe ?? undefined } as PolicyNode;
 }
 

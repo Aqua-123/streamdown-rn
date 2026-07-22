@@ -9,6 +9,7 @@ export interface StreamingMetrics {
   activeRenders: number;
   cacheHits: number;
   cacheEntries: number;
+  parserDurationNs: readonly number[];
 }
 
 export interface StreamingInstrumentation {
@@ -21,10 +22,14 @@ export interface StreamingInstrumentation {
   recordActiveRender(): void;
   recordCacheHit(): void;
   setCacheEntries(count: number): void;
+  /** Optional high-resolution parser samples for Release-Hermes evidence. */
+  recordParserDuration?(durationNs: number): void;
   snapshot(): Readonly<StreamingMetrics>;
 }
 
 export function createStreamingInstrumentation(): StreamingInstrumentation {
+  const parserDurationNs: number[] = [];
+  let parserDurationCursor = 0;
   const metrics: StreamingMetrics = {
     appendedCharacters: 0,
     resets: 0,
@@ -36,6 +41,7 @@ export function createStreamingInstrumentation(): StreamingInstrumentation {
     activeRenders: 0,
     cacheHits: 0,
     cacheEntries: 0,
+    parserDurationNs,
   };
   return {
     recordAppend: (count) => { metrics.appendedCharacters += count; },
@@ -47,6 +53,19 @@ export function createStreamingInstrumentation(): StreamingInstrumentation {
     recordActiveRender: () => { metrics.activeRenders++; },
     recordCacheHit: () => { metrics.cacheHits++; },
     setCacheEntries: (count) => { metrics.cacheEntries = count; },
-    snapshot: () => Object.freeze({ ...metrics }),
+    recordParserDuration: (durationNs) => {
+      if (!Number.isSafeInteger(durationNs) || durationNs < 0) return;
+      if (parserDurationNs.length < 1024) parserDurationNs.push(durationNs);
+      else {
+        parserDurationNs[parserDurationCursor] = durationNs;
+        parserDurationCursor = (parserDurationCursor + 1) % parserDurationNs.length;
+      }
+    },
+    snapshot: () => {
+      const samples = parserDurationCursor === 0
+        ? [...parserDurationNs]
+        : [...parserDurationNs.slice(parserDurationCursor), ...parserDurationNs.slice(0, parserDurationCursor)];
+      return Object.freeze({ ...metrics, parserDurationNs: Object.freeze(samples) });
+    },
   };
 }

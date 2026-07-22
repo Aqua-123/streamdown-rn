@@ -111,6 +111,25 @@ describe('native resource security policy', () => {
     expect(secure.getByLabelText('safe')).toBeTruthy();
   });
 
+  it('applies bounded data-image policy to image references at their image sink', () => {
+    const node = {
+      type: 'root',
+      children: [
+        { type: 'paragraph', children: [{ type: 'imageReference', identifier: 'pixel', alt: 'pixel' }] },
+        { type: 'definition', identifier: 'pixel', url: 'data:image/png;base64,YQ==' },
+      ],
+    };
+    const rejected = render(React.createElement(ASTRenderer, { node, theme: lightTheme }));
+    expect(rejected.queryByLabelText('pixel')).toBeNull();
+
+    const allowed = render(React.createElement(ASTRenderer, {
+      node,
+      theme: lightTheme,
+      securityPolicy: { dataImages: { mimeTypes: ['image/png'], maxBytes: 1 } },
+    }));
+    expect(allowed.getByLabelText('pixel')).toBeTruthy();
+  });
+
   it('revalidates transformed values for their sink', () => {
     const tree = parseSemanticDocument(
       '[safe](https://example.com) ![image](https://example.com/a.png)'
@@ -367,6 +386,28 @@ describe('custom registry trust boundary', () => {
     consoleError.mockRestore();
   });
 
+  it('catches registry lookup errors and reports the component name', async () => {
+    const onError = jest.fn();
+    const registry = {
+      get: () => { throw new Error('lookup failed'); },
+      has: () => true,
+      validate: () => ({ valid: true, errors: [] }),
+    };
+    const result = render(React.createElement(ComponentBlock, {
+      componentName: 'BrokenRegistry',
+      props: {},
+      componentRegistry: registry,
+      theme: lightTheme,
+      onError,
+    }));
+
+    expect(result.getByText('⚠️ Invalid component: BrokenRegistry')).toBeTruthy();
+    await waitFor(() => expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'lookup failed' }),
+      'BrokenRegistry'
+    ));
+  });
+
   it('retries a failed component only after its inputs change', async () => {
     const onError = jest.fn();
     const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -381,6 +422,17 @@ describe('custom registry trust boundary', () => {
         (status === 'styled' && style?.opacity !== 1) ||
         (status === 'streaming' && _isStreaming) ||
         (status === 'nested' && !children) ||
+        (status === 'child-props' && React.Children.toArray(children).some((child) =>
+          React.isValidElement(child) && (child.props as { props?: { label?: string } }).props?.label !== 'ready'
+        )) ||
+        (status === 'child-style' && React.Children.toArray(children).some((child) =>
+          React.isValidElement(child) && (child.props as { style?: { opacity?: number } }).style?.opacity !== 1
+        )) ||
+        (status === 'descendant' && React.Children.toArray(children).some((child) => {
+          if (!React.isValidElement(child)) return true;
+          const grandchild = (child.props as { children?: Array<{ props?: { label?: string } }> }).children?.[0];
+          return grandchild?.props?.label !== 'ready';
+        })) ||
         status === 'definition'
       ) throw new Error('not ready');
       return React.createElement(View, null, React.createElement(Text, null, status), children);
@@ -388,7 +440,8 @@ describe('custom registry trust boundary', () => {
     let definition = { component };
     const registry = {
       get: (name: string) => name === 'Child'
-        ? { component: ({ label }: { label?: string }) => React.createElement(Text, null, label) }
+        ? { component: ({ label, children }: { label?: string; children?: React.ReactNode }) =>
+          React.createElement(View, null, label && React.createElement(Text, null, label), children) }
         : definition,
       has: () => true,
       validate: () => ({ valid: true, errors: [] }),
@@ -435,12 +488,41 @@ describe('custom registry trust boundary', () => {
     expect(result.getByText('nested')).toBeTruthy();
     expect(result.getByText('child')).toBeTruthy();
 
-    result.rerender(renderCard('definition'));
+    result.rerender(renderCard('child-props', {
+      children: [{ name: 'Child', props: { label: 'partial' } }],
+    }));
     await waitFor(() => expect(onError).toHaveBeenCalledTimes(5));
+    result.rerender(renderCard('child-props', {
+      children: [{ name: 'Child', props: { label: 'ready' } }],
+    }));
+    expect(result.getByText('child-props')).toBeTruthy();
+    expect(result.getByText('ready')).toBeTruthy();
+
+    result.rerender(renderCard('child-style', {
+      children: [{ name: 'Child', props: { label: 'styled child' }, style: { opacity: 0.5 } }],
+    }));
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(6));
+    result.rerender(renderCard('child-style', {
+      children: [{ name: 'Child', props: { label: 'styled child' }, style: { opacity: 1 } }],
+    }));
+    expect(result.getByText('child-style')).toBeTruthy();
+
+    result.rerender(renderCard('descendant', {
+      children: [{ name: 'Child', props: {}, children: [{ name: 'Child', props: { label: 'partial' } }] }],
+    }));
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(7));
+    result.rerender(renderCard('descendant', {
+      children: [{ name: 'Child', props: {}, children: [{ name: 'Child', props: { label: 'ready' } }] }],
+    }));
+    expect(result.getByText('descendant')).toBeTruthy();
+    expect(result.getByText('ready')).toBeTruthy();
+
+    result.rerender(renderCard('definition'));
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(8));
     definition = { component: () => React.createElement(Text, null, 'replacement') };
     result.rerender(renderCard('definition'));
     expect(result.getByText('replacement')).toBeTruthy();
-    expect(onError).toHaveBeenCalledTimes(5);
+    expect(onError).toHaveBeenCalledTimes(8);
     consoleError.mockRestore();
   });
 });

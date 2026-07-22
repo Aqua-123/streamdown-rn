@@ -3,9 +3,9 @@ export type StreamUpdate =
   | { kind: 'append'; from: number; added: string }
   | { kind: 'reset'; from: 0; added: string };
 
-export function classifyStreamUpdate(previous: string, next: string): StreamUpdate {
+export function classifyStreamUpdate(previous: string, next: string, appendOnly = false): StreamUpdate {
   if (previous === next) return { kind: 'identity', from: next.length, added: '' };
-  if (next.length > previous.length && next.startsWith(previous)) {
+  if (next.length > previous.length && (appendOnly || next.startsWith(previous))) {
     return { kind: 'append', from: previous.length, added: next.slice(previous.length) };
   }
   return { kind: 'reset', from: 0, added: next };
@@ -40,12 +40,14 @@ export function normalizeAnimationConfig(
 ): NormalizedAnimationConfig | null {
   if (!value) return null;
   if (value === true) return DEFAULT_ANIMATION;
+  const duration = Number.isFinite(value.duration) ? value.duration! : DEFAULT_ANIMATION.duration;
+  const stagger = Number.isFinite(value.stagger) ? value.stagger! : DEFAULT_ANIMATION.stagger;
   return {
     animation: value.animation ?? DEFAULT_ANIMATION.animation,
-    duration: Math.max(0, value.duration ?? DEFAULT_ANIMATION.duration),
+    duration: Math.max(0, duration),
     easing: value.easing ?? DEFAULT_ANIMATION.easing,
     sep: value.sep ?? DEFAULT_ANIMATION.sep,
-    stagger: Math.max(0, value.stagger ?? DEFAULT_ANIMATION.stagger),
+    stagger: Math.max(0, stagger),
   };
 }
 
@@ -59,4 +61,15 @@ export function getAnimationWindow(
     return null;
   }
   return { from: previous.length, to: next.length };
+}
+
+/** Build an append animation window from the already-classified update. */
+export function getAnimationWindowFrom(
+  from: number,
+  nextLength: number,
+  enabled: boolean,
+  reducedMotion: boolean
+): { from: number; to: number } | null {
+  if (!enabled || reducedMotion || from < 0 || from >= nextLength) return null;
+  return { from, to: nextLength };
 }

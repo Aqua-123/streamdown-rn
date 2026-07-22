@@ -25,9 +25,13 @@ export interface NativeImageDownloadRequest {
   validateUrl: (url: string) => boolean;
 }
 
+export interface NativeImageDownloadResult extends Omit<NativeFileRequest, 'content'> {
+  content: Uint8Array;
+}
+
 export interface NativeImageDownloadCapability {
   /** Must stop after maxBytes and return only a fully validated, bounded image. */
-  download: (request: NativeImageDownloadRequest) => Promise<NativeFileRequest> | NativeFileRequest;
+  download: (request: NativeImageDownloadRequest) => Promise<NativeImageDownloadResult> | NativeImageDownloadResult;
 }
 
 export interface LinkApprovalLabels {

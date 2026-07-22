@@ -2,10 +2,11 @@ import React, { type ReactNode } from 'react';
 import { Text, View } from 'react-native';
 import { AnimatedRevealText } from '../core/streaming';
 import { sanitizeResourceURL } from '../core/security';
+import { transformResourceURL } from '../core/security/treePolicy';
 import { NativeLink, SafeImage, defaultTranslations } from '../controls';
 import { resolveCapabilities } from '../platform/defaults';
-import type { CustomRenderer, RendererPlugin } from '../plugins/renderers';
-import { getBlockStyles, getTextStyles, resolveThemePrimitives } from '../themes';
+import type { CustomRenderer } from '../plugins/renderers';
+import { findCustomRendererInternal } from './customRendererLookup';
 import { NativeCodeBlock } from './codeRenderer';
 import {
   composedStyle,
@@ -22,21 +23,6 @@ import {
 import { renderTable } from './tableRenderer';
 import type { RenderContext, SemanticNode } from './rendererTypes';
 
-// Kept local so the core runtime does not load the optional renderers subpath.
-function selectCustomRenderer(
-  plugin: RendererPlugin | readonly CustomRenderer[] | undefined,
-  language: string
-): CustomRenderer | undefined {
-  const normalized = language.toLowerCase();
-  const renderers = Array.isArray(plugin)
-    ? plugin as readonly CustomRenderer[]
-    : (plugin as RendererPlugin | undefined)?.renderers;
-  return renderers?.find(({ language: candidate }) =>
-    (Array.isArray(candidate) ? candidate : [candidate])
-      .some((value) => value.toLowerCase() === normalized)
-  );
-}
-
 /** The single auditable semantic-node dispatcher. */
 export function renderNode(
   node: SemanticNode,
@@ -44,13 +30,15 @@ export function renderNode(
   inline = false,
   key?: React.Key
 ): ReactNode {
-  const styles = getTextStyles(context.theme);
-  const blocks = getBlockStyles(context.theme);
-  const children = renderChildren(node, context, inline, renderNode);
-  const primitives = resolveThemePrimitives(context.theme);
+  const styles = context.textStyles;
+  const blocks = context.blockStyles;
+  const children = node.type === 'root' || node.type === 'paragraph' || node.type === 'heading' || node.type === 'list' || node.type === 'table'
+    ? null
+    : renderChildren(node, context, inline, renderNode);
+  const primitives = context.themePrimitives;
   switch (node.type) {
     case 'root':
-      return <View key={key} style={{ backgroundColor: primitives.background }}>{renderChildren(node, context, false, renderNode)}</View>;
+      return <View key={key} style={{ backgroundColor: primitives.background }}>{renderChildren(node, context, inline, renderNode)}</View>;
     case 'paragraph':
       return renderParagraph(node, context, renderNode, key);
     case 'heading': {
@@ -110,7 +98,7 @@ export function renderNode(
     case 'thematicBreak':
       return withOverride(node, context, false, null, (overrides) => <View key={key} style={composedStyle(blocks.horizontalRule, viewStyle(overrides))} />, key);
     case 'code': {
-      const custom = selectCustomRenderer(context.plugins?.renderers, node.lang ?? '');
+      const custom = findCustomRendererInternal<CustomRenderer>(context.plugins?.renderers, node.lang ?? '');
       if (custom) {
         const Custom = custom.component;
         return <Custom key={key} code={node.value ?? ''} language={node.lang ?? ''} isIncomplete={Boolean(context.isStreaming && context.codeFenceIncomplete)} meta={node.meta ?? undefined} />;
@@ -162,7 +150,7 @@ export function renderNode(
     case 'linkReference': {
       const definition = node.identifier ? context.definitions.get(node.identifier) : undefined;
       const safe = definition?.url
-        ? sanitizeResourceURL(definition.url, 'link', context.securityPolicy)
+        ? transformResourceURL(definition.url, 'link', context.securityPolicy ?? {}, node)
         : null;
       if (!safe) return <Text key={key}>{children}</Text>;
       return withOverride(
@@ -178,14 +166,14 @@ export function renderNode(
       if (inline) return node.alt ? `[Image: ${node.alt}]` : '';
       const safe = node.url ? sanitizeResourceURL(node.url, 'image', context.securityPolicy) : null;
       if (!safe) return node.alt ? <Text key={key} style={styles.body}>[Image: {node.alt}]</Text> : null;
-      const image = <SafeImage key={safe} uri={safe} alt={node.alt ?? undefined} theme={context.theme} capabilities={context.capabilities ?? resolveCapabilities()} controls={context.controls} translations={context.translations ?? defaultTranslations} icons={context.icons} disabled={context.controlsDisabled ?? context.isStreaming} />;
+      const image = <SafeImage key={safe} uri={safe} alt={node.alt ?? undefined} theme={context.theme} capabilities={context.capabilities ?? resolveCapabilities()} controls={context.controls} translations={context.translations ?? defaultTranslations} icons={context.icons} disabled={context.controlsDisabled ?? context.isStreaming} resourcePolicy={context.securityPolicy} />;
       return withOverride(safe === node.url ? node : { ...node, url: safe }, context, false, null, (overrides) => <View key={key} style={viewStyle(overrides)}>{image}</View>, key);
     }
     case 'imageReference': {
       if (inline) return node.alt ? `[Image: ${node.alt}]` : '';
       const definition = node.identifier ? context.definitions.get(node.identifier) : undefined;
       const safe = definition?.url
-        ? sanitizeResourceURL(definition.url, 'image', context.securityPolicy)
+        ? transformResourceURL(definition.url, 'image', context.securityPolicy ?? {}, node)
         : null;
       if (!safe) return node.alt ? <Text key={key}>[Image: {node.alt}]</Text> : null;
       return withOverride(
@@ -193,7 +181,7 @@ export function renderNode(
         context,
         false,
         null,
-        (overrides) => <View key={key} style={viewStyle(overrides)}><SafeImage key={safe} uri={safe} alt={node.alt ?? undefined} theme={context.theme} capabilities={context.capabilities ?? resolveCapabilities()} controls={context.controls} translations={context.translations ?? defaultTranslations} icons={context.icons} disabled={context.controlsDisabled ?? context.isStreaming} /></View>,
+        (overrides) => <View key={key} style={viewStyle(overrides)}><SafeImage key={safe} uri={safe} alt={node.alt ?? undefined} theme={context.theme} capabilities={context.capabilities ?? resolveCapabilities()} controls={context.controls} translations={context.translations ?? defaultTranslations} icons={context.icons} disabled={context.controlsDisabled ?? context.isStreaming} resourcePolicy={context.securityPolicy} /></View>,
         key
       );
     }
@@ -214,7 +202,7 @@ export function renderNode(
     case 'customTag': {
       const customChildren = node.data?.literal
         ? textValue(node)
-        : renderChildren(node, context, inline, renderNode);
+        : children;
       return withOverride(node, context, inline, customChildren, () => {
         if (inline) return <Text key={key}>{customChildren}</Text>;
         if (node.data?.literal) return <View key={key}><Text>{customChildren}</Text></View>;
@@ -223,7 +211,7 @@ export function renderNode(
     }
     default: {
       const fallbackChildren = node.children?.length
-        ? renderChildren(node, context, inline, renderNode)
+        ? children
         : (inline ? node.value ?? null : <Text>{node.value ?? ''}</Text>);
       return withOverride(node, context, inline, fallbackChildren, () => fallbackChildren, key);
     }

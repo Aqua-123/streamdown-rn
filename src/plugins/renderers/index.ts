@@ -3,6 +3,7 @@ import type { CjkPlugin } from '../cjk';
 import type { CodeHighlighterPlugin, ThemeInput } from '../code';
 import type { MathPlugin } from '../math';
 import type { DiagramPlugin } from '../mermaid';
+import { findCustomRendererInternal } from '../../renderers/customRendererLookup';
 
 export interface CustomRendererProps {
   code: string;
@@ -44,11 +45,5 @@ export function findCustomRenderer(
   plugin: RendererPlugin | readonly CustomRenderer[] | undefined,
   language: string
 ): CustomRenderer | undefined {
-  const normalized = language.toLowerCase();
-  const renderers = Array.isArray(plugin)
-    ? plugin as readonly CustomRenderer[]
-    : (plugin as RendererPlugin | undefined)?.renderers;
-  return renderers?.find(({ language: candidate }) =>
-    (Array.isArray(candidate) ? candidate : [candidate]).some((value) => value.toLowerCase() === normalized)
-  );
+  return findCustomRendererInternal<CustomRenderer>(plugin, language);
 }

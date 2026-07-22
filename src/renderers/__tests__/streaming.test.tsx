@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Text, View } from 'react-native';
-import { render, within } from '@testing-library/react-native';
+import { render, waitFor, within } from '@testing-library/react-native';
 import { Streamdown } from '../../StreamdownRN';
 import { createStreamingInstrumentation } from '../../core/streaming';
 
@@ -46,6 +46,13 @@ function semanticSignature(json: unknown): unknown[] {
 }
 
 describe('streaming lifecycle', () => {
+  it('keeps only the latest bounded parser timing samples', () => {
+    const metrics = createStreamingInstrumentation();
+    for (let duration = 0; duration < 1_100; duration++) metrics.recordParserDuration?.(duration);
+    expect(metrics.snapshot().parserDurationNs).toHaveLength(1_024);
+    expect(metrics.snapshot().parserDurationNs[0]).toBe(76);
+    expect(metrics.snapshot().parserDurationNs.at(-1)).toBe(1_099);
+  });
   it('suppresses only empty defined footnotes in active streaming roots', () => {
     const empty = 'Empty[^empty], full[^full], unresolved[^missing].\n\n[^empty]:\n[^full]: Body';
     const screen = render(<Streamdown mode="streaming">{empty}</Streamdown>);
@@ -108,6 +115,16 @@ describe('streaming lifecycle', () => {
     expect(metrics.snapshot().stableParses).toBe(after.stableParses + 1);
   });
 
+  it('keeps completed stable-block batches mounted across active appends', () => {
+    const metrics = createStreamingInstrumentation();
+    const stable = Array.from({ length: 65 }, (_, index) => `# H${index}\n\n`).join('');
+    const screen = render(<Streamdown instrumentation={metrics}>{`${stable}active`}</Streamdown>);
+    const before = metrics.snapshot();
+    expect(before.stableRenders).toBe(65);
+    screen.rerender(<Streamdown instrumentation={metrics}>{`${stable}active grows`}</Streamdown>);
+    expect(metrics.snapshot().stableRenders).toBe(before.stableRenders);
+  });
+
   it('rerenders stable output for behavior changes without reparsing its Root', () => {
     const metrics = createStreamingInstrumentation();
     const allow = (url: string) => url;
@@ -120,6 +137,115 @@ describe('streaming lifecycle', () => {
     expect(after.stableRenders).toBe(before.stableRenders + 1);
     expect(after.stableParses).toBe(before.stableParses);
     expect(after.cacheHits).toBe(before.cacheHits + 1);
+  });
+
+  it('counts active rerenders caused by behavior-only prop changes', () => {
+    const metrics = createStreamingInstrumentation();
+    const screen = render(<Streamdown instrumentation={metrics} theme="dark">active</Streamdown>);
+    const before = metrics.snapshot().activeRenders;
+    screen.rerender(<Streamdown instrumentation={metrics} theme="light">active</Streamdown>);
+    expect(metrics.snapshot().activeRenders).toBe(before + 1);
+  });
+
+  it('uses a bounded plain-text preview for a pathological active block', () => {
+    const metrics = createStreamingInstrumentation();
+    const content = 'a'.repeat(3 * 1024);
+    const screen = render(<Streamdown instrumentation={metrics}>{content}</Streamdown>);
+    expect(visibleText(screen.toJSON())).toBe(`…${'a'.repeat(2 * 1024)}`);
+    expect(metrics.snapshot().activeParses).toBe(0);
+    screen.rerender(<Streamdown instrumentation={metrics} isComplete>{content}</Streamdown>);
+    expect(screen.getByText(content)).toBeTruthy();
+    expect(metrics.snapshot().documentParses).toBe(1);
+  });
+
+  it('updates oversized previews on a bounded cadence and restores the complete document', () => {
+    const initial = 'a'.repeat(3 * 1024);
+    const screen = render(<Streamdown>{initial}</Streamdown>);
+    const preview = visibleText(screen.toJSON());
+
+    screen.rerender(<Streamdown>{`${initial}b`}</Streamdown>);
+    expect(visibleText(screen.toJSON())).toBe(preview);
+
+    const complete = `${initial}${'b'.repeat(256)}`;
+    screen.rerender(<Streamdown>{complete}</Streamdown>);
+    expect(visibleText(screen.toJSON())).not.toBe(preview);
+    screen.rerender(<Streamdown isComplete>{complete}</Streamdown>);
+    expect(screen.getByText(complete)).toBeTruthy();
+  });
+
+  it('rejects input beyond the configured cumulative ceiling and recovers below it', async () => {
+    const onError = jest.fn();
+    const metrics = createStreamingInstrumentation();
+    const screen = render(<Streamdown maxInputLength={8} onError={onError} instrumentation={metrics}>{'12345678'}</Streamdown>);
+    expect(screen.getByText('12345678')).toBeTruthy();
+    expect(onError).not.toHaveBeenCalled();
+    const parsesAtLimit = metrics.snapshot().activeParses;
+
+    screen.rerender(<Streamdown maxInputLength={8} onError={onError} instrumentation={metrics}>{'123456789'}</Streamdown>);
+    expect(visibleText(screen.getByRole('alert'))).toContain('8-UTF-16-code-unit limit');
+    expect(visibleText(screen.toJSON())).toContain('123456789');
+    await waitFor(() => expect(onError).toHaveBeenCalledWith(expect.any(RangeError)));
+    expect(metrics.snapshot().activeParses).toBe(parsesAtLimit);
+
+    screen.rerender(<Streamdown maxInputLength={8} onError={onError} instrumentation={metrics} isComplete>{'1234567890'}</Streamdown>);
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(metrics.snapshot().documentParses).toBe(0);
+
+    screen.rerender(<Streamdown maxInputLength={8} onError={onError} instrumentation={metrics}>{'recovery'}</Streamdown>);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByText('recovery')).toBeTruthy();
+  });
+
+  it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1])(
+    'rejects invalid maxInputLength configuration %p instead of restoring the default',
+    async (maxInputLength) => {
+      const onError = jest.fn();
+      const screen = render(<Streamdown maxInputLength={maxInputLength} onError={onError}>content</Streamdown>);
+      expect(visibleText(screen.getByRole('alert'))).toContain('positive safe integer');
+      await waitFor(() => expect(onError).toHaveBeenCalledWith(expect.any(RangeError)));
+    }
+  );
+
+  it('measures maxInputLength in UTF-16 code units', () => {
+    const screen = render(<Streamdown maxInputLength={2}>😀</Streamdown>);
+    expect(screen.getByText('😀')).toBeTruthy();
+    screen.rerender(<Streamdown maxInputLength={1}>😀</Streamdown>);
+    expect(screen.getByRole('alert')).toBeTruthy();
+  });
+
+  it('bounds progressive component extraction while preserving smaller previews', () => {
+    const Probe = ({ label }: { label?: string }) => <Text>{label}</Text>;
+    const registry = {
+      get: (name: string) => name === 'Probe' ? { component: Probe } : undefined,
+      has: (name: string) => name === 'Probe',
+      validate: () => ({ valid: true, errors: [] }),
+    };
+    const small = '[{c:"Probe",p:{"label":"small"}}]';
+    const screen = render(<Streamdown componentRegistry={registry}>{small}</Streamdown>);
+    expect(screen.getByText('small')).toBeTruthy();
+
+    const large = `[{c:"Probe",p:{"label":"${'a'.repeat(9 * 1024)}`;
+    screen.rerender(<Streamdown componentRegistry={registry}>{large}</Streamdown>);
+    expect(visibleText(screen.toJSON())).toBe(`…${'a'.repeat(2 * 1024)}`);
+    expect(screen.queryByText('small')).toBeNull();
+  });
+
+  it.each(['', ' \n\t'])('resets populated state through an empty stream value %p', (empty) => {
+    const metrics = createStreamingInstrumentation();
+    const screen = render(<Streamdown instrumentation={metrics}>{'# Stable\n\nactive'}</Streamdown>);
+    screen.rerender(<Streamdown instrumentation={metrics}>{empty}</Streamdown>);
+    expect(screen.toJSON()).toBeNull();
+    expect(metrics.snapshot().resets).toBe(1);
+    screen.rerender(<Streamdown instrumentation={metrics}>{'new content'}</Streamdown>);
+    expect(screen.getByText('new content')).toBeTruthy();
+    expect(screen.queryByText('Stable')).toBeNull();
+  });
+
+  it('resets an append-only stream when its key changes', () => {
+    const screen = render(<Streamdown appendOnly streamKey="one">first message</Streamdown>);
+    screen.rerender(<Streamdown appendOnly streamKey="two">longer replacement</Streamdown>);
+    expect(screen.getByText('longer replacement')).toBeTruthy();
+    expect(screen.queryByText('first message')).toBeNull();
   });
 
   it('reparses stable roots only when parser inputs change', () => {

@@ -3,14 +3,14 @@ import type { Nodes, Root } from 'mdast';
 
 const FOOTNOTE_REFERENCE = /\[\^[\w-]{1,200}\](?!:)/;
 const FOOTNOTE_DEFINITION = /\[\^[\w-]{1,200}\]:/;
-const CODE_FENCE = /^[ \t]{0,3}(`{3,}|~{3,})(.*)$/;
+const CODE_FENCE = /^ {0,3}(`{3,}|~{3,})(.*)$/;
 const TABLE_DELIMITER =
   /^\|?[ \t]*:?-{1,}:?[ \t]*(\|[ \t]*:?-{1,}:?[ \t]*)*\|?$/;
 
 export function hasIncompleteCodeFence(markdown: string): boolean {
   let character: string | undefined;
   let length = 0;
-  for (const line of markdown.split('\n')) {
+  for (const line of markdown.split(/\r\n|\r|\n/)) {
     const match = CODE_FENCE.exec(line);
     if (!match) continue;
     const run = match[1];
@@ -28,7 +28,7 @@ export function hasIncompleteCodeFence(markdown: string): boolean {
 }
 
 export function hasTable(markdown: string): boolean {
-  return markdown.split('\n').some((line) => {
+  return markdown.split(/\r\n|\r|\n/).some((line) => {
     const value = line.trim();
     return value.includes('|') && TABLE_DELIMITER.test(value);
   });
@@ -73,6 +73,9 @@ export function analyzeMarkdownBoundary(markdown: string): MarkdownBoundary {
       for (const match of node.value.matchAll(/!?\[[^\]\n]*\]\[([^\]\n]+)\]/g)) {
         references.add(match[1].toLowerCase());
       }
+      for (const match of node.value.matchAll(/!?\[([^\]\n]+)\](?![([])/g)) {
+        if (!match[1].startsWith('^')) references.add(match[1].toLowerCase());
+      }
       for (const match of node.value.matchAll(/\[\^([\w-]{1,200})\](?!:)/g)) {
         references.add(match[1].toLowerCase());
       }
@@ -81,7 +84,7 @@ export function analyzeMarkdownBoundary(markdown: string): MarkdownBoundary {
 
   const html = htmlBalance(markdown);
   const unresolved = [...references].some((identifier) => !definitions.has(identifier));
-  const documentWide = references.size > 0 && [...references].every((identifier) => definitions.has(identifier));
+  const documentWide = definitions.size > 0 || (references.size > 0 && [...references].every((identifier) => definitions.has(identifier)));
   const partitions = documentWide || html.spansBlankLine
     ? [markdown]
     : partitionsFromTree(markdown, tree);
@@ -89,7 +92,7 @@ export function analyzeMarkdownBoundary(markdown: string): MarkdownBoundary {
 
   return {
     partitions,
-    retain: unresolved || emptyFootnote || html.open || trailing?.type === 'list',
+    retain: definitions.size > 0 || unresolved || emptyFootnote || html.open || trailing?.type === 'list',
     closedHtml: html.spansBlankLine && !html.open,
   };
 }
@@ -113,12 +116,12 @@ function htmlBalance(markdown: string): { open: boolean; spansBlankLine: boolean
   for (const match of markdown.matchAll(/<\s*(\/?)\s*([a-z][\w-]*)(?=\s|\/?>)[^>]*>/gi)) {
     const [, closing, rawName] = match;
     const name = rawName.toLowerCase();
-    if (/\/$/.test(match[0]) || ['br', 'hr', 'img', 'input', 'meta', 'link'].includes(name)) continue;
+    if (/\/\s*>$/.test(match[0]) || ['br', 'hr', 'img', 'input', 'meta', 'link'].includes(name)) continue;
     sawTag = true;
     if (!closing) stack.push(name);
     else if (stack[stack.length - 1] === name) stack.pop();
   }
-  return { open: stack.length > 0, spansBlankLine: sawTag && markdown.includes('\n\n') };
+  return { open: stack.length > 0, spansBlankLine: sawTag && /(?:\r\n|\r|\n){2}/.test(markdown) };
 }
 
 const RTL = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;

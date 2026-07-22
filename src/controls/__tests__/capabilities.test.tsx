@@ -52,6 +52,50 @@ describe('NativeLink', () => {
     await waitFor(() => expect(open).toHaveBeenCalledWith('https://example.com'));
   });
 
+  it('does not open a stale URL when the link changes during asynchronous approval', async () => {
+    let resolveApproval!: (value: { status: 'success' }) => void;
+    const approve = jest.fn(() => new Promise<{ status: 'success' }>((resolve) => { resolveApproval = resolve; }));
+    const open = jest.fn(async () => ({ status: 'success' as const }));
+    const capabilities = { links: { approve, open } };
+    const screen = render(<NativeLink url="https://example.com/old" capabilities={capabilities}><Text>Example</Text></NativeLink>);
+
+    fireEvent.press(screen.getByRole('link'));
+    screen.rerender(<NativeLink url="https://example.com/new" capabilities={capabilities}><Text>Example</Text></NativeLink>);
+    resolveApproval({ status: 'success' });
+
+    await waitFor(() => expect(screen.getByRole('link').props.accessibilityState).toEqual({ busy: false }));
+    expect(open).not.toHaveBeenCalled();
+  });
+
+  it('does not use a stale capability adapter when it changes during approval', async () => {
+    let resolveApproval!: (value: { status: 'success' }) => void;
+    const oldOpen = jest.fn(async () => ({ status: 'success' as const }));
+    const newOpen = jest.fn(async () => ({ status: 'success' as const }));
+    const screen = render(
+      <NativeLink
+        url="https://example.com"
+        capabilities={{ links: { approve: () => new Promise((resolve) => { resolveApproval = resolve; }), open: oldOpen } }}
+      >
+        <Text>Example</Text>
+      </NativeLink>
+    );
+
+    fireEvent.press(screen.getByRole('link'));
+    screen.rerender(
+      <NativeLink
+        url="https://example.com"
+        capabilities={{ links: { approve: async () => ({ status: 'success' }), open: newOpen } }}
+      >
+        <Text>Example</Text>
+      </NativeLink>
+    );
+    resolveApproval({ status: 'success' });
+
+    await waitFor(() => expect(screen.getByRole('link').props.accessibilityState).toEqual({ busy: false }));
+    expect(oldOpen).not.toHaveBeenCalled();
+    expect(newOpen).not.toHaveBeenCalled();
+  });
+
   it('intercepts a safe link through the native approval capability', async () => {
     const approve = jest.fn(async () => ({ status: 'cancelled' as const }));
     const open = jest.fn();

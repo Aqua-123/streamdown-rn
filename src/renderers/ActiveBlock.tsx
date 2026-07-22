@@ -9,10 +9,11 @@
  * 3. Render AST with ASTRenderer
  */
 
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
+import type { Root } from 'mdast';
 import type { ActiveBlock as ActiveBlockType, ThemeConfig, ComponentRegistry, IncompleteTagState, NativeComponents } from '../core/types';
 import { fixIncompleteMarkdown } from '../core/incomplete';
-import { parseSemanticDocument, type SemanticParseOptions } from '../core/parser';
+import { getSemanticParseError, parseSemanticDocument, type SemanticParseOptions } from '../core/parser';
 import type { SecurityPolicyOptions } from '../core/security';
 import { ASTRenderer, ComponentBlock, extractComponentData } from './ASTRenderer';
 import type { NormalizedAnimationConfig, StreamingInstrumentation } from '../core/streaming';
@@ -23,6 +24,18 @@ import type { PluginConfig } from '../plugins/renderers';
 import type { ThemeInput } from '../plugins/code';
 import { hasIncompleteCodeFence } from '../core/blockSemantics';
 import type { NativeSlots } from './types';
+
+const EMPTY_ROOT: Root = { type: 'root', children: [] };
+const MAX_FORMATTED_ACTIVE_BLOCK_LENGTH = 2 * 1024;
+const MAX_PROGRESSIVE_COMPONENT_LENGTH = 8 * 1024;
+const OVERSIZED_PREVIEW_LENGTH = 2 * 1024;
+const OVERSIZED_PREVIEW_CADENCE = 256;
+
+function oversizedPreview(content: string): string {
+  const visibleEnd = content.length - (content.length % OVERSIZED_PREVIEW_CADENCE);
+  const visibleStart = Math.max(0, visibleEnd - OVERSIZED_PREVIEW_LENGTH);
+  return `${visibleStart ? '…' : ''}${content.slice(visibleStart, visibleEnd)}`;
+}
 
 interface ActiveBlockProps {
   block: ActiveBlockType | null;
@@ -87,7 +100,30 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
   lineNumbers,
   isAnimating = false,
 }) => {
-  instrumentation?.recordActiveRender();
+  useEffect(() => instrumentation?.recordActiveRender());
+  const exceedsFormattedPreviewLimit = Boolean(block && block.type !== 'component' && block.content.length > MAX_FORMATTED_ACTIVE_BLOCK_LENGTH);
+  const exceedsComponentPreviewLimit = Boolean(block?.type === 'component' && block.content.length > MAX_PROGRESSIVE_COMPONENT_LENGTH);
+  const shouldParse = Boolean(block?.content.trim() && block.type !== 'component' && !exceedsFormattedPreviewLimit);
+  const fixedContent = shouldParse
+    ? (parseIncompleteMarkdown ? fixIncompleteMarkdown(block!.content, tagState) : block!.content)
+    : '';
+  const ast = useMemo(
+    () => {
+      if (!shouldParse) return EMPTY_ROOT;
+      const startedAt = performance.now();
+      const root = parseSemanticDocument(fixedContent, parseOptions);
+      instrumentation?.recordParserDuration?.(Math.round((performance.now() - startedAt) * 1_000_000));
+      return root;
+    },
+    [fixedContent, instrumentation, parseOptions, shouldParse]
+  );
+  useEffect(() => {
+    if (shouldParse) instrumentation?.recordActiveParse();
+  }, [instrumentation, parseOptions, shouldParse, block?.content]);
+  useEffect(() => {
+    const parseError = getSemanticParseError(ast);
+    if (parseError) onError?.(parseError);
+  }, [ast, onError]);
   // No active block — nothing to render
   if (!block || !block.content.trim()) {
     return null;
@@ -95,6 +131,13 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
   
   // Special handling for component blocks (don't use remark)
   if (block.type === 'component') {
+    if (exceedsComponentPreviewLimit) {
+      return (
+        <Text style={{ color: theme.colors.foreground, fontFamily: theme.fonts.regular }}>
+          {oversizedPreview(block.content)}{showCaret && caret ? (caret === 'circle' ? ' ●' : ' ▋') : ''}
+        </Text>
+      );
+    }
     const { name, props, style, children } = extractComponentData(block.content, securityPolicy);
     return (
       <ComponentBlock
@@ -110,15 +153,17 @@ export const ActiveBlock: React.FC<ActiveBlockProps> = ({
       />
     );
   }
-  
-  // Fix incomplete markdown for format-as-you-type UX
-  const fixedContent = parseIncompleteMarkdown
-    ? fixIncompleteMarkdown(block.content, tagState)
-    : block.content;
-  
-  // Parse with remark
-  instrumentation?.recordActiveParse();
-  const ast = parseSemanticDocument(fixedContent, parseOptions);
+
+  // Re-parsing every token of one pathological, unbroken block is quadratic.
+  // Keep the streaming preview readable and bounded; completion uses the full
+  // stable/document parser and restores semantic formatting.
+  if (exceedsFormattedPreviewLimit) {
+    return (
+      <Text style={{ color: theme.colors.foreground, fontFamily: theme.fonts.regular }}>
+        {oversizedPreview(block.content)}{showCaret && caret ? (caret === 'circle' ? ' ●' : ' ▋') : ''}
+      </Text>
+    );
+  }
   
   // Render from AST
   if (ast.children.length) {

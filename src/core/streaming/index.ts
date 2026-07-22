@@ -1,6 +1,7 @@
 export {
   classifyStreamUpdate,
   getAnimationWindow,
+  getAnimationWindowFrom,
   normalizeAnimationConfig,
   type AnimationConfig,
   type NormalizedAnimationConfig,

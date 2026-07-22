@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Image, Text, View } from 'react-native';
+import type { SecurityPolicyOptions } from '../core/security';
 import type { ThemeConfig } from '../core/types';
 import type { NativeCapabilities } from '../platform/capabilities';
 import { ActionButton } from './ActionButton';
@@ -9,7 +10,7 @@ import type { StreamdownTranslations } from './translations';
 import { fetchImageFileRequest } from './serialization';
 import { defaultIcons, type IconMap } from './icons';
 
-export function SafeImage({ uri, alt, theme, capabilities, controls, translations, icons, disabled, onLoad, onError, width, height }: {
+export function SafeImage({ uri, alt, theme, capabilities, controls, translations, icons, disabled, onLoad, onError, width, height, resourcePolicy }: {
   uri: string;
   alt?: string;
   theme: ThemeConfig;
@@ -22,6 +23,7 @@ export function SafeImage({ uri, alt, theme, capabilities, controls, translation
   onError?: (error?: unknown) => void;
   width?: number;
   height?: number;
+  resourcePolicy?: SecurityPolicyOptions;
 }) {
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<'loading' | 'loaded' | 'failed'>('loading');
@@ -41,6 +43,7 @@ export function SafeImage({ uri, alt, theme, capabilities, controls, translation
     return <View accessibilityRole="alert"><Text style={{ color: theme.colors.foreground }}>{translations.imageNotAvailable}</Text><ActionButton
       label={translations.retryImage}
       icon={icons?.retry ?? defaultIcons.retry}
+      disabled={disabled}
       color={theme.colors.foreground}
       onAction={() => { setState('loading'); setAttempt((value) => value + 1); return { status: 'success' }; }}
     /></View>;
@@ -64,7 +67,7 @@ export function SafeImage({ uri, alt, theme, capabilities, controls, translation
         icon={icons?.download ?? defaultIcons.download}
         disabled={disabled}
         color={theme.colors.foreground}
-        onAction={async () => capabilities.files!.save(await fetchImageFileRequest(uri, alt || 'image', undefined, undefined, capabilities.imageDownloads))}
+        onAction={async () => capabilities.files!.save(await fetchImageFileRequest(capabilities.imageDownloads!, uri, alt || 'image', undefined, undefined, resourcePolicy))}
       /> : null}
     </View>
   );

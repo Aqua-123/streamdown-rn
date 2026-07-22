@@ -138,4 +138,28 @@ describe('streamdown-code companion native adaptations', () => {
     await resolveHighlight(createCodePlugin({ provider: provider(highlight), themes: [light, dark] }), request('x', 'javascript', [light, dark]));
     expect(highlight).toHaveBeenCalledWith(expect.objectContaining({ themes: [light, dark] }));
   });
+  it('bounds unique asynchronous provider work', () => {
+    const highlight = jest.fn(() => new Promise<HighlightResult>(() => undefined));
+    const onError = jest.fn();
+    const plugin = createCodePlugin({ provider: provider(highlight), maxPendingRequests: 2, onError });
+    expect(plugin.highlight(request('one'))).toBeNull();
+    expect(plugin.highlight(request('two'))).toBeNull();
+    expect(plugin.highlight(request('three'))).toEqual(plainCodeResult('three'));
+    expect(highlight).toHaveBeenCalledTimes(2);
+    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('2 pending requests') }));
+  });
+  it('keeps timed-out provider work counted until the provider settles', () => {
+    jest.useFakeTimers();
+    const highlight = jest.fn(() => new Promise<HighlightResult>(() => undefined));
+    const plugin = createCodePlugin({ provider: provider(highlight), maxPendingRequests: 2, highlightTimeoutMs: 1 });
+    plugin.highlight(request('one'));
+    plugin.highlight(request('two'));
+    jest.runOnlyPendingTimers();
+    expect(plugin.highlight(request('three'))).toEqual(plainCodeResult('three'));
+    expect(highlight).toHaveBeenCalledTimes(2);
+    jest.useRealTimers();
+  });
+  it.each([0, -1, 1.5])('rejects invalid pending-work limits (%s)', (maxPendingRequests) => {
+    expect(() => createCodePlugin({ maxPendingRequests })).toThrow('maxPendingRequests must be a positive integer');
+  });
 });

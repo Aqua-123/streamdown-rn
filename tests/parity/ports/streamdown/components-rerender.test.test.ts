@@ -3,7 +3,7 @@ import { render } from '@testing-library/react-native';
 import { Streamdown, createStreamingInstrumentation } from '../../../../src';
 import { classifyStreamUpdate } from '../../../../src/core/streaming';
 
-const CASES = [
+const CASES: ReadonlyArray<readonly [string, string, ('active' | 'stable')?]> = [
   ['parity:3f00dc21204dc8c5baf943a817f513a88503dd4a5537b8a1498634ff0eb84465', '1. ordered'],
   ['parity:a593f1c50a55ab73c4722f4a48cea998921e89d752d515ef2e2318b3b2ca5a4e', '- item'],
   ['parity:840694b862bacc89aba2cc798dce47a562196c8c7a0269c9d234cda8ebd711d4', '- unordered'],
@@ -14,22 +14,27 @@ const CASES = [
   ['parity:c2ba274a1e3ff9f5109e16bfb4291d096bdfb6c681400da48e15b1bb3e059c2c', '| a |\n| - |\n| b |'],
   ['parity:646eb1c373d736ce398b954ba6060fd0f22ccb8fa0e7eb2c7c2344f2f6053b5b', '| head |\n| - |\n| cell |'],
   ['parity:d0169bca12d4cffe75c4fe8086d623b8a9129a9b6dcd8ee94f65ac33ec26eafd', '> quote'],
-  ['parity:407287ad683246f6a8079d9bde7b8f61434c5e001fe637d0cc2c88c9e3e7a60e', 'ref[^n]\n\n[^n]: note'],
+  ['parity:407287ad683246f6a8079d9bde7b8f61434c5e001fe637d0cc2c88c9e3e7a60e', 'ref[^n]\n\n[^n]: note', 'active'],
   ['parity:65cd303154e80f5d4a86e8176297ca307a8a155ef67be7c1c89f20fc34b36cd1', '`inline`'],
   ['parity:7859d2b5ef6c8d2261180795b69d31bec6ec1323dc40b915d350a07a3132d1c5', '![alt](https://example.com/a.png)'],
   ['parity:6bcd409b176abc9b7d612ef4dd2dc3c0ed9d239a413c7ad4b1a679aea613e8e0', 'paragraph'],
   ['parity:1a1cf57c35f31209c4d7bd9b928295de82eb154ea34dbe3cacde6a4946d58f8e', 'section'],
-] as const;
+];
 
 describe('native renderer prop-aware memoization', () => {
-  it.each(CASES)('%s updates %s without stale stable blocks', (marker, markdown) => {
+  it.each(CASES)('%s updates %s without stale stable blocks', (marker, markdown, renderKind = 'stable') => {
     expect(marker).toMatch(/^parity:[a-f0-9]{64}$/);
     const metrics = createStreamingInstrumentation();
     const children = `${markdown}\n\nactive`;
     const screen = render(React.createElement(Streamdown, { instrumentation: metrics, theme: 'dark' }, children));
     const before = metrics.snapshot();
     screen.rerender(React.createElement(Streamdown, { instrumentation: metrics, theme: 'light' }, children));
-    expect(metrics.snapshot().stableRenders).toBeGreaterThan(before.stableRenders);
+    const after = metrics.snapshot();
+    if (renderKind === 'active') {
+      expect(after.activeRenders).toBeGreaterThan(before.activeRenders);
+    } else {
+      expect(after.stableRenders).toBeGreaterThan(before.stableRenders);
+    }
   });
 
   it('resets when source positions cannot be preserved', () => {

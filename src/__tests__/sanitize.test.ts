@@ -184,6 +184,18 @@ describe('Security: Prop Sanitization', () => {
   });
 
   describe('nested objects', () => {
+    it('preserves repeated aliases while cutting true cycles', () => {
+      const shared = { href: 'javascript:alert(1)', label: 'same' };
+      const cycle: Record<string, unknown> = { label: 'cycle' };
+      cycle.self = cycle;
+
+      expect(sanitizeProps({ first: shared, second: shared, cycle })).toEqual({
+        first: { href: '', label: 'same' },
+        second: { href: '', label: 'same' },
+        cycle: { label: 'cycle', self: null },
+      });
+    });
+
     it('should sanitize URLs in nested objects', () => {
       const props = { config: { href: 'javascript:alert(1)' } };
       const safe = sanitizeProps(props);
@@ -204,6 +216,31 @@ describe('Security: Prop Sanitization', () => {
       expect(
         ((safe.level1 as Record<string, unknown>).level2 as Record<string, unknown>).level3 as Record<string, unknown>
       ).toEqual({ url: '' });
+    });
+
+    it('bounds hostile recursive objects without overflowing the stack', () => {
+      const root: Record<string, unknown> = {};
+      let cursor = root;
+      for (let index = 0; index < 20_000; index++) {
+        const next: Record<string, unknown> = {};
+        cursor.next = next;
+        cursor = next;
+      }
+      expect(() => sanitizeProps(root)).not.toThrow();
+    });
+
+    it('stops enumerating wide objects when the traversal budget is exhausted', () => {
+      let reads = 0;
+      const wide: Record<string, unknown> = {};
+      for (let index = 0; index < 20_000; index++) {
+        Object.defineProperty(wide, `key${index}`, {
+          enumerable: true,
+          get: () => { reads++; return index; },
+        });
+      }
+      const safe = sanitizeProps(wide);
+      expect(Object.keys(safe).length).toBeLessThanOrEqual(4095);
+      expect(reads).toBeLessThanOrEqual(4095);
     });
   });
 
@@ -226,6 +263,17 @@ describe('Security: Prop Sanitization', () => {
       const props = { tags: ['hello', 'world'] };
       const safe = sanitizeProps(props);
       expect(safe.tags).toEqual(['hello', 'world']);
+    });
+
+    it('preserves nested arrays while sharing URL sanitization and traversal limits', () => {
+      const props = {
+        urls: [['javascript:alert(1)', 'https://safe.com'], [{ href: 'data:text/html,bad' }]],
+        oversized: Array.from({ length: 5000 }, (_, index) => index),
+      };
+      const safe = sanitizeProps(props);
+      expect(safe.urls).toEqual([['', 'https://safe.com'], [{ href: '' }]]);
+      expect(Array.isArray((safe.urls as unknown[])[0])).toBe(true);
+      expect((safe.oversized as unknown[]).length).toBeLessThan(5000);
     });
   });
 });

@@ -89,7 +89,12 @@ describe('ImageComponent native outcomes', () => {
   });
   it('downloads the final transformed URL without running the transform again', async () => {
     const urlTransform = jest.fn((url: string) => `${url}?signed=once`);
-    const download = jest.fn().mockResolvedValue({ basename: 'Chart', extension: 'png', mimeType: 'image/png', content: new Uint8Array([1]) });
+    const download = jest.fn(async (request) => {
+      expect(request.validateUrl(request.uri)).toBe(true);
+      expect(request.validateUrl('https://example.com/redirected.png')).toBe(true);
+      expect(request.validateUrl('https://attacker.test/redirected.png')).toBe(false);
+      return { basename: 'Chart', extension: 'png', mimeType: 'image/png', content: new Uint8Array([1]) };
+    });
     const save = jest.fn().mockResolvedValue({ status: 'success' });
     const screen = render(<Streamdown mode="static" urlTransform={urlTransform} capabilities={{ files: { save }, imageDownloads: { download } }}>![Chart](https://example.com/chart.png)</Streamdown>);
     fireEvent(screen.getByRole('image'), 'load');

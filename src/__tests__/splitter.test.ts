@@ -101,6 +101,16 @@ describe('Block Splitter', () => {
       expect(registry.activeBlock?.type).toBe('codeBlock');
     });
 
+    it('does not reopen a fence after whitespace crosses a line boundary', () => {
+      let registry = processNewContent(INITIAL_REGISTRY, '```js\none\n```');
+      const stable = registry.blocks[0];
+      for (const suffix of ['   \n', 'after', ' grows']) {
+        registry = processNewContent(registry, `${registry.source}${suffix}`);
+      }
+      expect(registry.blocks[0]).toBe(stable);
+      expect(registry.activeBlock?.content).toBe('after grows');
+    });
+
     it('should detect code block with language', () => {
       const input = '```typescript\nconst x = 1;\n```\n\n'; // Need double newline to finalize
       const registry = processNewContent(INITIAL_REGISTRY, input);
@@ -302,9 +312,9 @@ describe('Block Splitter', () => {
       registry = processNewContent(registry, '######');
       expect(registry.activeBlock?.type).toBe('heading');
       
-      // 7 hashes should still be detected as heading (capped at 6)
+      // Seven hashes are plain paragraph text under CommonMark.
       registry = processNewContent(registry, '#######');
-      expect(registry.activeBlock?.type).toBe('heading');
+      expect(registry.activeBlock?.type).toBe('paragraph');
     });
     
     it('should finalize with correct heading level when newline arrives', () => {

@@ -6,7 +6,7 @@ import type { BlockMeta, BlockType, HeadingLevel } from '../types';
  */
 export const BLOCK_PATTERNS = {
   heading: /^(#{1,6})\s+(.*)$/,
-  codeBlockStart: /^(`{3,}|~{3,})(\w*)?$/,
+  codeBlockStart: /^( {0,3})(`{3,}|~{3,})(.*)$/,
   unorderedList: /^(\s*)([-*+])\s+(.*)$/,
   orderedList: /^(\s*)(\d+)\.\s+(.*)$/,
   blockquote: /^>\s?(.*)$/,
@@ -27,7 +27,7 @@ export const PARTIAL_BLOCK_PATTERNS = {
   // Heading with space (confirmed heading, content may follow)
   headingWithSpace: /^#{1,6}\s/,
   // Code block: ``` or ~~~ (3+ chars)
-  codeBlockStart: /^(`{3,}|~{3,})/,
+  codeBlockStart: /^ {0,3}(`{3,}|~{3,})/,
   // Blockquote: > at start
   blockquote: /^>/,
   // Unordered list: - or * or + at start (need to distinguish from hr)
@@ -42,6 +42,12 @@ export const PARTIAL_BLOCK_PATTERNS = {
   image: /^!\[/,
 } as const;
 
+export function matchCodeBlockStart(line: string): RegExpMatchArray | null {
+  const match = line.match(BLOCK_PATTERNS.codeBlockStart);
+  if (!match || (match[2][0] === '`' && match[3].includes('`'))) return null;
+  return match;
+}
+
 /**
  * Detect block type from a COMPLETE line (requires full marker + content)
  * Used for finalization decisions
@@ -49,6 +55,7 @@ export const PARTIAL_BLOCK_PATTERNS = {
 export function detectBlockType(
   line: string
 ): { type: BlockType; meta: Partial<BlockMeta> } | null {
+  line = line.replace(/\r$/, '');
   const headingMatch = line.match(BLOCK_PATTERNS.heading);
   if (headingMatch) {
     return {
@@ -57,11 +64,11 @@ export function detectBlockType(
     };
   }
 
-  if (BLOCK_PATTERNS.codeBlockStart.test(line)) {
-    const match = line.match(BLOCK_PATTERNS.codeBlockStart);
+  const codeBlockMatch = matchCodeBlockStart(line);
+  if (codeBlockMatch) {
     return {
       type: 'codeBlock',
-      meta: { type: 'codeBlock', language: match?.[2] || '' },
+      meta: { type: 'codeBlock', language: codeBlockMatch[3].trim().split(/\s+/, 1)[0] || '' },
     };
   }
 
@@ -116,7 +123,7 @@ export function detectPartialBlockType(
   content: string
 ): { type: BlockType; meta: Partial<BlockMeta>; confidence: 'definite' | 'likely' | 'possible' } | null {
   // Get first line only (block type is determined by first line)
-  const firstLine = content.split('\n')[0];
+  const firstLine = content.split('\n')[0].replace(/\r$/, '');
   if (!firstLine) return null;
   
   // First, check if we have a COMPLETE match (highest confidence)
@@ -148,10 +155,11 @@ export function detectPartialBlockType(
   
   // Code block: ``` or ~~~
   if (PARTIAL_BLOCK_PATTERNS.codeBlockStart.test(firstLine)) {
-    const match = firstLine.match(/^(`{3,}|~{3,})(\w*)/);
+    const match = matchCodeBlockStart(firstLine);
+    if (!match) return null;
     return {
       type: 'codeBlock',
-      meta: { type: 'codeBlock', language: match?.[2] || '' },
+      meta: { type: 'codeBlock', language: match[3].trim().split(/\s+/, 1)[0] || '' },
       confidence: 'definite',
     };
   }
@@ -220,4 +228,3 @@ export function detectPartialBlockType(
   
   return null;
 }
-

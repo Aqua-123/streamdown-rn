@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Text, View } from 'react-native';
 import type {
   BlockRegistry,
@@ -9,8 +9,8 @@ import type {
 import type { SecurityPolicyOptions } from './core/security';
 import { INITIAL_REGISTRY } from './core/types';
 import { processNewContent, finalizeActiveBlock } from './core/splitter';
-import { fixIncompleteMarkdown } from './core/incomplete';
-import { normalizeHtmlIndentation, parseSemanticDocument } from './core/parser';
+import { fixIncompleteMarkdown, INITIAL_INCOMPLETE_STATE, updateTagState } from './core/incomplete';
+import { getSemanticParseError, normalizeHtmlIndentation, parseSemanticDocument } from './core/parser';
 import { getTheme } from './themes';
 import { StableBlock } from './renderers/StableBlock';
 import { ActiveBlock } from './renderers/ActiveBlock';
@@ -18,7 +18,7 @@ import { ASTRenderer } from './renderers/ASTRenderer';
 import { hasIncompleteCodeFence, hasTable } from './core/blockSemantics';
 import {
   classifyStreamUpdate,
-  getAnimationWindow,
+  getAnimationWindowFrom,
   normalizeAnimationConfig,
   StableRootCache,
   useReducedMotion,
@@ -28,6 +28,9 @@ import { resolveTranslations, useStreamingAnnouncement } from './controls';
 import type { ThemeInput } from './plugins/code';
 
 const DEFAULT_CODE_THEMES: [ThemeInput, ThemeInput] = ['github-light', 'github-dark'];
+const DEFAULT_MAX_INPUT_LENGTH = 2 * 1024 * 1024;
+const MAX_INPUT_FALLBACK_LENGTH = 2 * 1024;
+const STABLE_BLOCK_BATCH_SIZE = 32;
 
 function rejectDOMProps(props: Record<string, unknown>): void {
   const name = ['className', 'prefix', 'rehypePlugins', 'remarkRehypeOptions']
@@ -35,10 +38,67 @@ function rejectDOMProps(props: Record<string, unknown>): void {
   if (name) throw new TypeError(`${name} is DOM-only and is not supported by Streamdown for React Native`);
 }
 
+type StableBlockProps = React.ComponentProps<typeof StableBlock>;
+type StableBlockListProps = Omit<StableBlockProps, 'block'> & {
+  blocks: readonly StableBlockProps['block'][];
+  generation: number;
+};
+
+const StableBlockBatch = React.memo(({
+  blocks,
+  generation,
+  ...props
+}: StableBlockListProps) => (
+  <>
+    {blocks.map((block) => (
+      <StableBlock key={`${generation}:${block.id}`} block={block} {...props} />
+    ))}
+  </>
+));
+StableBlockBatch.displayName = 'StableBlockBatch';
+
+const StableBlockList: React.FC<StableBlockListProps> = ({ blocks, generation, ...props }) => {
+  const cache = useRef<{
+    generation: number;
+    source: readonly StableBlockProps['block'][];
+    batches: Array<readonly StableBlockProps['block'][]>;
+  }>({ generation, source: [], batches: [] });
+  const previous = cache.current;
+  const extendsPrevious = previous.generation === generation
+    && blocks.length >= previous.source.length
+    && (!previous.source.length || blocks[previous.source.length - 1] === previous.source[previous.source.length - 1]);
+
+  if (!extendsPrevious) {
+    const batches: Array<readonly StableBlockProps['block'][]> = [];
+    for (let index = 0; index < blocks.length; index += STABLE_BLOCK_BATCH_SIZE) {
+      batches.push(blocks.slice(index, index + STABLE_BLOCK_BATCH_SIZE));
+    }
+    cache.current = { generation, source: blocks, batches };
+  } else if (blocks.length > previous.source.length) {
+    let index = previous.source.length;
+    const partial = index % STABLE_BLOCK_BATCH_SIZE;
+    if (partial) {
+      const room = STABLE_BLOCK_BATCH_SIZE - partial;
+      const added = blocks.slice(index, index + room);
+      previous.batches[previous.batches.length - 1] = [...previous.batches[previous.batches.length - 1], ...added];
+      index += added.length;
+    }
+    for (; index < blocks.length; index += STABLE_BLOCK_BATCH_SIZE) {
+      previous.batches.push(blocks.slice(index, index + STABLE_BLOCK_BATCH_SIZE));
+    }
+    previous.source = blocks;
+  }
+
+  return <>{cache.current.batches.map((batch, index) => (
+    <StableBlockBatch key={`${generation}:${index}`} blocks={batch} generation={generation} {...props} />
+  ))}</>;
+};
+
 const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
   rejectDOMProps(props as unknown as Record<string, unknown>);
   const {
     children: value,
+    maxInputLength: requestedMaxInputLength,
     componentRegistry,
     components,
     slots,
@@ -52,6 +112,8 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
     parseIncompleteMarkdown = true,
     normalizeHtmlIndentation: shouldNormalizeHtmlIndentation = false,
     isAnimating = false,
+    appendOnly = false,
+    streamKey,
     animated,
     caret,
     reducedMotion,
@@ -80,9 +142,14 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
     dataImages,
   } = props;
   const rawChildren = typeof value === 'string' ? value : '';
-  const children = shouldNormalizeHtmlIndentation
+  const maxInputLengthValid = requestedMaxInputLength === undefined
+    || (Number.isSafeInteger(requestedMaxInputLength) && requestedMaxInputLength > 0);
+  const maxInputLength = requestedMaxInputLength ?? DEFAULT_MAX_INPUT_LENGTH;
+  const inputTooLarge = maxInputLengthValid && rawChildren.length > maxInputLength;
+  const inputRejected = !maxInputLengthValid || inputTooLarge;
+  const children = shouldNormalizeHtmlIndentation && !inputRejected
     ? normalizeHtmlIndentation(rawChildren)
-    : rawChildren;
+    : inputRejected ? '' : rawChildren;
   const registryRef = useRef<BlockRegistry>(INITIAL_REGISTRY);
   const contentRef = useRef('');
   const generationRef = useRef(0);
@@ -90,6 +157,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
   const lastUpdateTimeRef = useRef(performance.now());
   const previousContentRef = useRef('');
   const previousAnimatingRef = useRef<boolean | null>(null);
+  const streamKeyRef = useRef(streamKey);
   const onAnimationStartRef = useRef(onAnimationStart);
   const onAnimationEndRef = useRef(onAnimationEnd);
   const onErrorRef = useRef(onError);
@@ -98,7 +166,17 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
   onAnimationEndRef.current = onAnimationEnd;
   onErrorRef.current = onError;
   instrumentationRef.current = instrumentation;
-  stableRootCacheRef.current.setInstrumentation(instrumentation);
+  useEffect(() => {
+    if (inputRejected) {
+      const message = maxInputLengthValid
+        ? `Markdown input exceeds the ${maxInputLength}-UTF-16-code-unit limit`
+        : 'maxInputLength must be a positive safe integer measured in UTF-16 code units';
+      onErrorRef.current?.(new RangeError(message));
+    }
+  }, [inputRejected, maxInputLength, maxInputLengthValid, streamKey]);
+  useLayoutEffect(() => {
+    stableRootCacheRef.current.setInstrumentation(instrumentation);
+  }, [instrumentation]);
   const prefersReducedMotion = useReducedMotion(reducedMotion);
   const nativeCapabilities = useMemo(() => resolveCapabilities(capabilities), [capabilities]);
   const nativeTranslations = useMemo(() => resolveTranslations(translations), [translations]);
@@ -151,65 +229,119 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
   const completeRoot = useMemo(
     () => {
       if (!(mode === 'static' || isComplete) || !children) return null;
-      instrumentationRef.current?.recordDocumentParse();
-      return parseSemanticDocument(children, parseOptions);
+      const startedAt = performance.now();
+      const root = parseSemanticDocument(children, parseOptions);
+      instrumentationRef.current?.recordParserDuration?.(Math.round((performance.now() - startedAt) * 1_000_000));
+      return root;
     },
     [children, isComplete, mode, parseOptions]
   );
+  useEffect(() => {
+    if (!completeRoot) return;
+    instrumentationRef.current?.recordDocumentParse();
+    const parseError = getSemanticParseError(completeRoot);
+    if (parseError) onErrorRef.current?.(parseError);
+  }, [completeRoot]);
 
   const streamState = useMemo(() => {
+    const currentGeneration = generationRef.current;
     if (mode === 'static') {
-      if (contentRef.current) {
-        registryRef.current = INITIAL_REGISTRY;
-        contentRef.current = '';
-        stableRootCacheRef.current.clear();
-        generationRef.current++;
-        previousContentRef.current = '';
-      }
-      return { registry: INITIAL_REGISTRY, generation: generationRef.current, animationFrom: children.length };
+      const reset = Boolean(contentRef.current);
+      return {
+        registry: INITIAL_REGISTRY,
+        generation: currentGeneration + Number(reset),
+        animationFrom: children.length,
+        nextContent: '',
+        nextStreamKey: streamKey,
+        clearCache: reset,
+        resetDebugContent: reset,
+        event: 'none' as const,
+      };
     }
     if (!children || children.trim().length === 0) {
-      if (contentRef.current) {
-        instrumentation?.recordReset();
-        stableRootCacheRef.current.clear();
-        generationRef.current++;
-        previousContentRef.current = '';
-      }
-      registryRef.current = INITIAL_REGISTRY;
-      contentRef.current = '';
-      return { registry: INITIAL_REGISTRY, generation: generationRef.current, animationFrom: 0 };
+      const reset = Boolean(contentRef.current);
+      return {
+        registry: INITIAL_REGISTRY,
+        generation: currentGeneration + Number(reset),
+        animationFrom: 0,
+        nextContent: '',
+        nextStreamKey: streamKey,
+        clearCache: reset,
+        resetDebugContent: reset,
+        event: reset ? 'reset' as const : 'none' as const,
+      };
     }
-    const previous = contentRef.current;
-    const update = classifyStreamUpdate(previous, children);
+    const keyChanged = streamKeyRef.current !== streamKey;
+    const previous = keyChanged ? '' : contentRef.current;
+    const update = keyChanged
+      ? { kind: 'reset' as const, from: 0, added: children }
+      : classifyStreamUpdate(previous, children, appendOnly);
     try {
+      let baseRegistry = registryRef.current;
+      let generation = currentGeneration;
+      let clearCache = false;
       if (update.kind === 'reset') {
-        registryRef.current = INITIAL_REGISTRY;
-        stableRootCacheRef.current.clear();
-        generationRef.current++;
-        instrumentation?.recordReset();
-        previousContentRef.current = '';
-      } else if (update.kind === 'append') {
-        instrumentation?.recordAppend(update.added.length);
+        baseRegistry = INITIAL_REGISTRY;
+        generation++;
+        clearCache = true;
       }
-      contentRef.current = children;
-      let updated = processNewContent(registryRef.current, children);
+      let updated = processNewContent(
+        baseRegistry,
+        children,
+        update.kind === 'append',
+        update.kind === 'append' ? update.added : undefined
+      );
       if (isComplete && updated.activeBlock) updated = finalizeActiveBlock(updated);
-      registryRef.current = updated;
-      return { registry: updated, generation: generationRef.current, animationFrom: update.from };
+      return {
+        registry: updated,
+        generation,
+        animationFrom: update.from,
+        nextContent: children,
+        nextStreamKey: streamKey,
+        clearCache,
+        resetDebugContent: update.kind === 'reset',
+        event: update.kind,
+        appendLength: update.kind === 'append' ? update.added.length : 0,
+      };
     } catch (error) {
-      onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
-      return { registry: registryRef.current, generation: generationRef.current, animationFrom: children.length };
+      return {
+        registry: registryRef.current,
+        generation: currentGeneration,
+        animationFrom: children.length,
+        nextContent: contentRef.current,
+        nextStreamKey: streamKeyRef.current,
+        clearCache: false,
+        resetDebugContent: false,
+        event: 'none' as const,
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
     }
-  }, [children, instrumentation, isComplete, mode]);
+  }, [appendOnly, children, isComplete, mode, streamKey]);
+  useLayoutEffect(() => {
+    if (streamState.error) {
+      onErrorRef.current?.(streamState.error);
+      return;
+    }
+    if (streamState.clearCache) stableRootCacheRef.current.clear();
+    if (streamState.resetDebugContent) previousContentRef.current = '';
+    registryRef.current = streamState.registry;
+    contentRef.current = streamState.nextContent;
+    streamKeyRef.current = streamState.nextStreamKey;
+    generationRef.current = streamState.generation;
+    if (streamState.event === 'reset') instrumentationRef.current?.recordReset();
+    if (streamState.event === 'append') instrumentationRef.current?.recordAppend(streamState.appendLength ?? 0);
+  }, [streamState]);
   const { registry, generation, animationFrom } = streamState;
-  const animationWindow = getAnimationWindow(
-    children.slice(0, animationFrom),
-    children,
+  const animationWindow = getAnimationWindowFrom(
+    animationFrom,
+    children.length,
     Boolean(animationConfig && isAnimating),
     prefersReducedMotion
   );
   const activeContent = registry.activeBlock?.content ?? '';
-  const deferHeavyContent = hasIncompleteCodeFence(activeContent) || hasTable(activeContent);
+  const deferHeavyContent = activeContent.length > 2 * 1024
+    || hasIncompleteCodeFence(activeContent)
+    || hasTable(activeContent);
   const showCaret = Boolean(caret && isAnimating && !isComplete && mode === 'streaming' && !deferHeavyContent);
 
   useEffect(() => {
@@ -232,6 +364,9 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
     if (!onDebug || !children) return;
     const now = performance.now();
     const previousContent = previousContentRef.current;
+    const tagState = registry.activeBlock
+      ? updateTagState(INITIAL_INCOMPLETE_STATE, registry.activeBlock.content)
+      : INITIAL_INCOMPLETE_STATE;
     const snapshot: DebugSnapshot = {
       position: registry.cursor,
       totalLength: children.length,
@@ -250,10 +385,10 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
           contentLength: registry.activeBlock.content.length,
           content: registry.activeBlock.content,
         } : null,
-        tagState: { ...registry.activeTagState },
+        tagState: { ...tagState },
       },
       fixedContent: registry.activeBlock
-        ? fixIncompleteMarkdown(registry.activeBlock.content, registry.activeTagState)
+        ? fixIncompleteMarkdown(registry.activeBlock.content, tagState)
         : null,
       timestamp: now,
       deltaMs: now - lastUpdateTimeRef.current,
@@ -263,6 +398,21 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
     previousContentRef.current = children;
   }, [children, onDebug, registry]);
 
+  if (inputRejected) {
+    const preview = rawChildren.slice(-MAX_INPUT_FALLBACK_LENGTH);
+    const omission = rawChildren.length > MAX_INPUT_FALLBACK_LENGTH ? '…' : '';
+    const message = maxInputLengthValid
+      ? `Markdown input exceeds the ${maxInputLength}-UTF-16-code-unit limit.`
+      : 'maxInputLength must be a positive safe integer measured in UTF-16 code units.';
+    return (
+      <View style={style}>
+        <Text accessibilityRole="alert">
+          {`${message}\n${omission}${preview}`}
+        </Text>
+      </View>
+    );
+  }
+
   if (!children || children.trim().length === 0) {
     return showCaret ? (
       <View style={style}>
@@ -271,33 +421,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
     ) : null;
   }
 
-  if (mode === 'static') {
-    return (
-      <View style={style}>
-        <ASTRenderer
-          node={completeRoot!}
-          theme={themeConfig}
-          componentRegistry={componentRegistry}
-          components={components}
-          slots={slots}
-          onError={onError}
-          securityPolicy={securityPolicy}
-          allowedTags={allowedTags}
-          literalTagContent={literalTagContent}
-          dir={dir}
-          capabilities={nativeCapabilities}
-          controls={controls}
-          translations={nativeTranslations}
-          icons={icons}
-          plugins={plugins}
-          shikiTheme={shikiTheme}
-          lineNumbers={lineNumbers}
-        />
-      </View>
-    );
-  }
-
-  if (isComplete) {
+  if (mode === 'static' || isComplete) {
     return (
       <View style={style}>
         <ASTRenderer
@@ -326,10 +450,9 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
   return (
     <View style={style}>
       {streamingBusy ? <View accessible accessibilityRole="progressbar" accessibilityLabel={nativeTranslations.streamingResponse} accessibilityState={{ busy: true }} style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }} /> : null}
-      {registry.blocks.map((block) => (
-        <StableBlock
-          key={`${generation}:${block.id}`}
-          block={block}
+      <StableBlockList
+          generation={generation}
+          blocks={registry.blocks}
           theme={themeConfig}
           componentRegistry={componentRegistry}
           components={components}
@@ -350,8 +473,7 @@ const StreamdownComponent: React.FC<StreamdownProps> = (props) => {
           plugins={plugins}
           shikiTheme={shikiTheme}
           lineNumbers={lineNumbers}
-        />
-      ))}
+      />
       <ActiveBlock
         key={generation}
         block={registry.activeBlock}

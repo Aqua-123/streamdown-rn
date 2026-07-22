@@ -5,10 +5,10 @@
  * Memoized to prevent re-renders — once a block is stable, it never changes.
  */
 
-import React from 'react';
+import React, { useEffect, useLayoutEffect, useMemo } from 'react';
 import type { StableBlock as StableBlockType, ThemeConfig, ComponentRegistry, NativeComponents } from '../core/types';
 import type { SecurityPolicyOptions } from '../core/security';
-import { parseSemanticDocument, type SemanticParseOptions } from '../core/parser';
+import { getSemanticParseError, parseSemanticDocument, type SemanticParseOptions } from '../core/parser';
 import { ASTRenderer, ComponentBlock } from './ASTRenderer';
 import type { StableRootCache, StreamingInstrumentation } from '../core/streaming';
 import type { NativeCapabilities } from '../platform/capabilities';
@@ -47,7 +47,7 @@ interface StableBlockProps {
  */
 const StableBlockRenderer: React.FC<StableBlockProps> =
   ({ block, theme, componentRegistry, onError, components, slots, securityPolicy, allowedTags, literalTagContent, dir, parseOptions, rootCache, instrumentation, capabilities, controls, translations, icons, controlsDisabled, plugins, shikiTheme, lineNumbers }) => {
-    instrumentation?.recordStableRender();
+    useLayoutEffect(() => instrumentation?.recordStableRender());
     // Component blocks don't have AST (custom syntax, not markdown)
     if (block.type === 'component') {
       return (
@@ -61,60 +61,56 @@ const StableBlockRenderer: React.FC<StableBlockProps> =
       );
     }
     
-    // Cache the complete Root so document-wide constructs retain every sibling.
-    const ast = rootCache.get(block, parseOptions, () => parseSemanticDocument(block.content, parseOptions));
-    if (ast) {
-      return (
-        <ASTRenderer
-          node={ast}
-          theme={theme}
-          componentRegistry={componentRegistry}
-          onError={onError}
-          components={components}
-          slots={slots}
-          securityPolicy={securityPolicy}
-          allowedTags={allowedTags}
-          literalTagContent={literalTagContent}
-          dir={dir}
-          capabilities={capabilities}
-          controls={controls}
-          translations={translations}
-          icons={icons}
-          controlsDisabled={controlsDisabled}
-          plugins={plugins}
-          shikiTheme={shikiTheme}
-          lineNumbers={lineNumbers}
-        />
-      );
-    }
-    
-    // Fallback if no AST (shouldn't happen for stable blocks)
-    console.warn('StableBlock has no AST:', block.type, block.id);
-    return null;
+    return <MarkdownStableBlock {...{ block, theme, componentRegistry, onError, components, slots, securityPolicy, allowedTags, literalTagContent, dir, parseOptions, rootCache, instrumentation, capabilities, controls, translations, icons, controlsDisabled, plugins, shikiTheme, lineNumbers }} />;
   };
 
-export const StableBlock = React.memo(StableBlockRenderer, (previous, next) =>
-  previous.block === next.block &&
-  previous.theme === next.theme &&
-  previous.componentRegistry === next.componentRegistry &&
-  previous.onError === next.onError &&
-  previous.components === next.components &&
-  previous.slots === next.slots &&
-  previous.securityPolicy === next.securityPolicy &&
-  previous.allowedTags === next.allowedTags &&
-  previous.literalTagContent === next.literalTagContent &&
-  previous.dir === next.dir &&
-  previous.parseOptions === next.parseOptions &&
-  previous.rootCache === next.rootCache &&
-  previous.instrumentation === next.instrumentation
-  && previous.capabilities === next.capabilities
-  && previous.controls === next.controls
-  && previous.translations === next.translations
-  && previous.icons === next.icons
-  && previous.controlsDisabled === next.controlsDisabled
-  && previous.plugins === next.plugins
-  && previous.shikiTheme === next.shikiTheme
-  && previous.lineNumbers === next.lineNumbers
-);
+const MarkdownStableBlock: React.FC<StableBlockProps> = ({
+  block, theme, componentRegistry, onError, components, slots, securityPolicy,
+  allowedTags, literalTagContent, dir, parseOptions, rootCache, instrumentation, capabilities,
+  controls, translations, icons, controlsDisabled, plugins, shikiTheme, lineNumbers,
+}) => {
+  const cachedAst = rootCache.peek(block, parseOptions);
+  const ast = useMemo(
+    () => {
+      if (cachedAst) return cachedAst;
+      const startedAt = performance.now();
+      const root = parseSemanticDocument(block.content, parseOptions);
+      instrumentation?.recordParserDuration?.(Math.round((performance.now() - startedAt) * 1_000_000));
+      return root;
+    },
+    [block, cachedAst, instrumentation, parseOptions]
+  );
+  useEffect(() => {
+    rootCache.commit(block, parseOptions, ast, cachedAst !== undefined);
+  });
+  useEffect(() => {
+    const parseError = getSemanticParseError(ast);
+    if (parseError) onError?.(parseError);
+  }, [ast, onError]);
+  return (
+    <ASTRenderer
+      node={ast}
+      theme={theme}
+      componentRegistry={componentRegistry}
+      onError={onError}
+      components={components}
+      slots={slots}
+      securityPolicy={securityPolicy}
+      allowedTags={allowedTags}
+      literalTagContent={literalTagContent}
+      dir={dir}
+      capabilities={capabilities}
+      controls={controls}
+      translations={translations}
+      icons={icons}
+      controlsDisabled={controlsDisabled}
+      plugins={plugins}
+      shikiTheme={shikiTheme}
+      lineNumbers={lineNumbers}
+    />
+  );
+};
+
+export const StableBlock = React.memo(StableBlockRenderer);
 
 StableBlock.displayName = 'StableBlock';

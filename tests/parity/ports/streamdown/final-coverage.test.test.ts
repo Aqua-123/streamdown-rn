@@ -40,6 +40,12 @@ describe('final upstream coverage through native semantics', () => {
     expect(screen.getByRole('button', { name: 'Retry image' })).toBeTruthy();
   });
 
+  it('disables failed-image retry while streaming controls are disabled', () => {
+    const screen = render(h(SafeImage, { ...imageProps, capabilities: {}, disabled: true }));
+    fireEvent(screen.getByRole('image'), 'error');
+    expect(screen.getByRole('button', { name: 'Retry image' }).props.accessibilityState.disabled).toBe(true);
+  });
+
   // parity:9a8b67a561acc14d43118bf66ec990c4349af003d348a340a40aaa1c7974962b
   it('hides Mermaid controls and pan/zoom when the family is disabled', async () => {
     const plugin = createMermaidPlugin({ adapter: {

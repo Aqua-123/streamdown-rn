@@ -1,9 +1,11 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Text, View } from 'react-native';
 import type { Root } from 'mdast';
 import { ASTRenderer } from '../ASTRenderer';
 import { lightTheme } from '../../themes';
+import { truncateCodeForDisplay } from '../codeRenderer';
+import { createCodePlugin } from '../../plugins/code';
 
 describe('native semantic renderer', () => {
   it('renders every portable node family without dropping siblings', () => {
@@ -122,5 +124,45 @@ describe('native semantic renderer', () => {
     );
     expect(screen.getByRole('link', { name: 'Docs' })).toBeTruthy();
     expect(screen.getByLabelText('Logo')).toBeTruthy();
+  });
+
+  it('bounds displayed code while copy retains the full source', async () => {
+    const source = `first\n${'x'.repeat(70_000)}\nlast`;
+    const writeText = jest.fn(async () => ({ status: 'success' as const }));
+    const screen = render(
+      <ASTRenderer
+        node={{ type: 'root', children: [{ type: 'code', lang: 'txt', value: source }] }}
+        theme={lightTheme}
+        capabilities={{ clipboard: { writeText } }}
+      />
+    );
+    expect(screen.getByText('[Code display truncated; copy or download retains the full source]')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Copy Code' }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(source));
+  });
+
+  it('bounds code by lines and leaves ordinary trailing newlines unmarked', () => {
+    expect(truncateCodeForDisplay('one\n').truncated).toBe(false);
+    const result = truncateCodeForDisplay('x\n'.repeat(2_001));
+    expect(result.truncated).toBe(true);
+    expect(result.code.split('\n')).toHaveLength(2_001);
+  });
+
+  it('falls back when a token provider expands bounded code into excessive native nodes', () => {
+    const code = createCodePlugin({
+      provider: {
+        languages: ['txt'],
+        highlight: () => ({ tokens: [Array.from({ length: 9_000 }, () => ({ content: 'expanded' }))] }),
+      },
+    });
+    const screen = render(
+      <ASTRenderer
+        node={{ type: 'root', children: [{ type: 'code', lang: 'txt', value: 'safe' }] }}
+        theme={lightTheme}
+        plugins={{ code }}
+      />
+    );
+    expect(screen.getByText('safe')).toBeTruthy();
+    expect(screen.queryByText('expanded')).toBeNull();
   });
 });

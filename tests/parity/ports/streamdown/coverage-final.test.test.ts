@@ -70,7 +70,9 @@ describe('final coverage native adaptations', () => {
   // parity:0f7ea229cab0b37f3b782a8c1db19bcd43e85ac9ff41c1fd798feeb11421ff5b
   it('handles an invalid non-function plugin defensively before parsing', () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
-    expect(parseSemanticDocument('Hello', { supplied: [['string-plugin' as never, { test: true }]] }).children).toEqual([]);
+    expect(parseSemanticDocument('Hello', { supplied: [['string-plugin' as never, { test: true }]] }).children).toEqual([
+      { type: 'paragraph', children: [{ type: 'text', value: 'Hello' }] },
+    ]);
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
   });

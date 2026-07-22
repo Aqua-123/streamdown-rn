@@ -4,7 +4,6 @@ import type { Content, Root } from 'mdast';
 import type { Node } from 'unist';
 import type { NativeSemanticData } from '../core/types';
 import { extractComponentData } from '../core/componentParser';
-import { getTextStyles } from '../themes';
 import { CheckIcon } from '../controls/icons';
 import {
   NATIVE_ELEMENT_NAMES,
@@ -193,7 +192,7 @@ export function renderParagraph(
   renderNode: RenderNode,
   key?: React.Key
 ): ReactNode {
-  const styles = getTextStyles(context.theme);
+  const styles = context.textStyles;
   const children = node.children ?? [];
   if (
     context.componentRegistry &&
@@ -246,7 +245,7 @@ export function renderList(
   renderNode: RenderNode,
   key?: React.Key
 ): ReactNode {
-  const styles = getTextStyles(context.theme);
+  const styles = context.textStyles;
   const start = node.start ?? 1;
   const rows = (node.children ?? []).map((item, index) => {
     const marker = item.checked == null ? (node.ordered ? `${start + index}.` : '•') : null;

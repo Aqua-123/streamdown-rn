@@ -137,9 +137,11 @@ describe('composable semantic slots', () => {
     expect(screen.queryByRole('image')).toBeNull();
   });
 
-  it('passes transformed safe URLs to direct and reference link and image slots', () => {
+  it('passes each direct and reference URL through its actual sink exactly once', () => {
     const seen: Array<[string, string | undefined, string]> = [];
-    const transform = (url: string) => `https://cdn.example.com${new URL(url).pathname}`;
+    const transform = jest.fn((url: string, sink: 'link' | 'image') =>
+      `https://${sink}.cdn.example.com${new URL(url).pathname}`
+    );
     const slots: NativeSlots = {
       a: ({ semantic, renderDefault }) => {
         seen.push(['a', semantic.url, semantic.type]);
@@ -157,11 +159,42 @@ describe('composable semantic slots', () => {
     );
 
     expect(seen).toEqual(expect.arrayContaining([
-      ['a', 'https://cdn.example.com/direct', 'link'],
-      ['a', 'https://cdn.example.com/reference', 'linkReference'],
-      ['img', 'https://cdn.example.com/direct.png', 'image'],
-      ['img', 'https://cdn.example.com/reference.png', 'imageReference'],
+      ['a', 'https://link.cdn.example.com/direct', 'link'],
+      ['a', 'https://link.cdn.example.com/reference', 'linkReference'],
+      ['img', 'https://image.cdn.example.com/direct.png', 'image'],
+      ['img', 'https://image.cdn.example.com/reference.png', 'imageReference'],
     ]));
+    expect(transform.mock.calls.map(([, sink]) => sink)).toEqual([
+      'link', 'image', 'link', 'image',
+    ]);
+  });
+
+  it('passes the renderer image policy to the download redirect validator', async () => {
+    jest.spyOn(Image, 'getSize').mockImplementation(() => undefined);
+    const save = jest.fn().mockResolvedValue({ status: 'success' });
+    const download = jest.fn().mockImplementation(async (request) => {
+      expect(request.uri).toBe('https://images.example.com/chart.png');
+      expect(request.validateUrl('https://images.example.com/next.png')).toBe(true);
+      expect(request.validateUrl('https://attacker.example/next.png')).toBe(false);
+      return { basename: 'chart', extension: 'png', mimeType: 'image/png', content: new Uint8Array([1]) };
+    });
+    const screen = render(
+      <Streamdown
+        mode="static"
+        controls={{ image: { download: true } }}
+        capabilities={{ files: { save }, imageDownloads: { download } }}
+        urlTransform={(url, sink) => sink === 'image'
+          ? `https://images.example.com${new URL(url).pathname}`
+          : url}
+      >
+        {'![Chart][chart]\n\n[chart]: https://origin.example/chart.png'}
+      </Streamdown>
+    );
+
+    fireEvent(screen.getByRole('image', { name: 'Chart' }), 'load');
+    fireEvent.press(screen.getByRole('button', { name: 'Download image' }));
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    expect(download).toHaveBeenCalledTimes(1);
   });
 
   it('preserves the no-slot renderer output', () => {

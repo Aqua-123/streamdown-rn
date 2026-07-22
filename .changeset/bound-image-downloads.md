@@ -1,5 +1,5 @@
 ---
-"streamdown-rn": patch
+"streamdown-rn": minor
 ---
 
-Fail image downloads closed unless a host provides bounded native reads with pre-request redirect validation.
+Require a bounded native image-download capability at the public helper boundary and validate binary adapter results before saving.

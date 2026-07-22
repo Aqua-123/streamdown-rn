@@ -159,6 +159,7 @@ export type {
   NativeCapabilities,
   NativeFileRequest,
   NativeImageDownloadCapability,
+  NativeImageDownloadResult,
   NativeImageDownloadRequest,
   PanZoomRenderProps,
 } from './platform/capabilities';

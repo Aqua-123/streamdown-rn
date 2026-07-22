@@ -58,20 +58,6 @@ describe('native control serialization', () => {
     expect(() => imageFileRequest(new Uint8Array(), 'image/svg+xml')).toThrow('Unsupported image MIME type');
   });
 
-  it('fails closed without allocating a response body when no bounded capability exists', async () => {
-    const allocate = jest.fn(async () => new ArrayBuffer(1024));
-    const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue({
-      headers: new Headers({ 'content-type': 'image/png' }), arrayBuffer: allocate,
-    } as Response);
-    await expect(fetchImageFileRequest('https://example.com/missing-length.png'))
-      .rejects.toThrow('bounded native imageDownloads capability');
-    await expect(fetchImageFileRequest('https://example.com/false-small-length.png'))
-      .rejects.toThrow('bounded native imageDownloads capability');
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(allocate).not.toHaveBeenCalled();
-    fetchMock.mockRestore();
-  });
-
   it('delegates redirect, byte, MIME, and timeout enforcement to the explicit capability', async () => {
     const download = jest.fn(async (request) => {
       expect(request).toMatchObject({
@@ -86,16 +72,37 @@ describe('native control serialization', () => {
       expect(request.validateUrl('http://cdn.example.com/final')).toBe(false);
       return { basename: request.basename, extension: 'wrong', mimeType: 'image/png', content: new Uint8Array([1, 2, 3, 4]) };
     });
-    await expect(fetchImageFileRequest('https://example.com/image.png', '../Chart', 4, 1234, { download }))
+    await expect(fetchImageFileRequest({ download }, 'https://example.com/image.png', '../Chart', 4, 1234))
       .resolves.toMatchObject({ basename: 'Chart', extension: 'png', mimeType: 'image/png' });
   });
 
+  it('applies the renderer policy to every image redirect without re-transforming the initial URL', async () => {
+    const urlTransform = jest.fn((url: string) => `${url}?signed=once`);
+    const download = jest.fn(async (request) => {
+      expect(request.validateUrl('https://origin.trusted.test/redirected.png')).toBe(true);
+      expect(request.validateUrl('https://attacker.test/image.png')).toBe(false);
+      expect(request.validateUrl('http://origin.trusted.test/image.png')).toBe(false);
+      return { basename: 'image', extension: 'png', mimeType: 'image/png', content: new Uint8Array([1]) };
+    });
+
+    await fetchImageFileRequest(
+      { download },
+      'https://origin.trusted.test/image.png?signed=once',
+      'image',
+      undefined,
+      undefined,
+      { urlTransform }
+    );
+
+    expect(urlTransform).not.toHaveBeenCalled();
+  });
+
   it('rejects invalid capability results before saving them', async () => {
-    await expect(fetchImageFileRequest('https://example.com/image', 'image', 1, 1000, {
+    await expect(fetchImageFileRequest({
       download: async () => ({ basename: 'image', extension: 'png', mimeType: 'image/png', content: new Uint8Array([1, 2]) }),
-    })).rejects.toThrow('exceeds 1 bytes');
-    await expect(fetchImageFileRequest('https://example.com/image', 'image', 1, 1000, {
+    }, 'https://example.com/image', 'image', 1, 1000)).rejects.toThrow('exceeds 1 bytes');
+    await expect(fetchImageFileRequest({
       download: async () => ({ basename: 'image', extension: 'svg', mimeType: 'image/svg+xml', content: new Uint8Array([1]) }),
-    })).rejects.toThrow('Unsupported image MIME type');
+    }, 'https://example.com/image', 'image', 1, 1000)).rejects.toThrow('Unsupported image MIME type');
   });
 });

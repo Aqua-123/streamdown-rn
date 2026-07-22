@@ -1,6 +1,7 @@
 import type { Root } from 'mdast';
 import { sanitizeProps } from '../core/sanitize';
 import type { ResourcePolicy } from '../core/security';
+import { assertBoundedSemanticTree } from '../core/parser';
 
 type SemanticNode = {
   type: string;
@@ -13,6 +14,8 @@ const OPEN_TAG = /^<([A-Za-z][\w.-]*)([^>]*)\/?\s*>$/;
 const CLOSE_TAG = /^<\/([A-Za-z][\w.-]*)\s*>$/;
 const ATTRIBUTE = /([:\w.-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
 const HTML_TOKEN = /<!--[\s\S]*?-->|<\/?[A-Za-z][^>]*>/g;
+const MAX_CUSTOM_TAG_TOKENS = 1024;
+const MAX_CUSTOM_TAG_DEPTH = 64;
 
 function declaredTag(
   tag: string,
@@ -20,6 +23,40 @@ function declaredTag(
 ): string | undefined {
   const normalized = tag.toLowerCase();
   return Object.keys(allowedTags).find((candidate) => candidate.toLowerCase() === normalized);
+}
+
+function customTagInputIsBounded(
+  root: Root,
+  allowedTags: Readonly<Record<string, readonly string[]>>
+): boolean {
+  const nodes: SemanticNode[] = [root as unknown as SemanticNode];
+  const openTags: string[] = [];
+  let tokens = 0;
+  while (nodes.length) {
+    const node = nodes.pop()!;
+    if (node.children) {
+      for (let index = node.children.length - 1; index >= 0; index -= 1) {
+        nodes.push(node.children[index]);
+      }
+    }
+    if (node.type !== 'html' || !node.value) continue;
+    for (const match of node.value.matchAll(HTML_TOKEN)) {
+      const value = match[0].trim();
+      const open = OPEN_TAG.exec(value);
+      const close = open ? null : CLOSE_TAG.exec(value);
+      const tag = declaredTag((open ?? close)?.[1] ?? '', allowedTags);
+      if (!tag) continue;
+      tokens += 1;
+      if (tokens > MAX_CUSTOM_TAG_TOKENS) return false;
+      if (open && !/\/\s*>$/.test(value)) {
+        openTags.push(tag.toLowerCase());
+        if (openTags.length > MAX_CUSTOM_TAG_DEPTH) return false;
+      } else if (close && openTags[openTags.length - 1] === tag.toLowerCase()) {
+        openTags.pop();
+      }
+    }
+  }
+  return true;
 }
 
 function expandHtmlNodes(
@@ -124,7 +161,9 @@ export function materializeCustomTags(
   policy: ResourcePolicy = {}
 ): Root {
   if (Object.keys(allowedTags).length === 0) return root;
-  return {
+  assertBoundedSemanticTree(root);
+  if (!customTagInputIsBounded(root, allowedTags)) return root;
+  const materialized: Root = {
     ...root,
     children: transformChildren(
       root.children as unknown as SemanticNode[],
@@ -133,4 +172,6 @@ export function materializeCustomTags(
       policy
     ) as Root['children'],
   };
+  assertBoundedSemanticTree(materialized);
+  return materialized;
 }

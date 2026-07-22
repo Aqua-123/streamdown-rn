@@ -2,12 +2,51 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import { Text } from 'react-native';
 import { Streamdown } from '../../../../src/StreamdownRN';
+import { materializeCustomTags } from '../../../../src/renderers/semanticTags';
 import { renderedText } from './native-cluster-helpers';
 
 const Tag = ({ children, semantic }: { children?: React.ReactNode; semantic: { attributes?: Readonly<Record<string, unknown>> } }) =>
   React.createElement(Text, { testID: 'tag' }, `${String(semantic.attributes?.allowed ?? semantic.attributes?.note_id ?? '')}:${children}`);
 
 describe('adapted native custom tags', () => {
+  it.each([1025, 2048, 8192])('keeps %i unmatched custom tags inert outside fixed work bounds', (count) => {
+    const unmatched = {
+      type: 'root',
+      children: [{ type: 'html', value: '<custom>'.repeat(count) }],
+    } as never;
+    expect(materializeCustomTags(unmatched, { custom: [] })).toBe(unmatched);
+  });
+
+  it('keeps over-deep custom tags inert', () => {
+    const deep = {
+      type: 'root',
+      children: [{ type: 'html', value: `${'<custom>'.repeat(65)}value${'</custom>'.repeat(65)}` }],
+    } as never;
+    expect(materializeCustomTags(deep, { custom: [] })).toBe(deep);
+  });
+
+  it('materializes custom tags at the fixed token boundary', () => {
+    const root = {
+      type: 'root',
+      children: [{ type: 'html', value: '<custom/>'.repeat(1024) }],
+    } as never;
+    const result = materializeCustomTags(root, { custom: [] }) as unknown as { children: Array<{ type: string }> };
+    expect(result).not.toBe(root);
+    expect(result.children).toHaveLength(1024);
+    expect(result.children.every((node) => node.type === 'customTag')).toBe(true);
+  });
+
+  it('reapplies the semantic-tree node bound after materialization', () => {
+    const root = {
+      type: 'root',
+      children: [
+        ...Array.from({ length: 49_000 }, () => ({ type: 'text', value: 'x' })),
+        { type: 'html', value: '<custom/>'.repeat(1024) },
+      ],
+    } as never;
+    expect(() => materializeCustomTags(root, { custom: [] })).toThrow(/exceeds 50000 nodes/);
+  });
+
   // parity:e883f2cb2d2121d2a74af1c0a54b6b98de31c37ea908e25f70c13629201cff78
   it('renders custom tags when allowedTags is provided', () => {
     const result = render(React.createElement(Streamdown, {

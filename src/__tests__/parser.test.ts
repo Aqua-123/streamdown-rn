@@ -89,4 +89,77 @@ describe('portable semantic parser', () => {
       math,
     ]);
   });
+
+  it('preserves source as inert text and reports plugin parse failures', () => {
+    const failure = new Error('plugin failed');
+    const onError = jest.fn();
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const broken = () => () => {
+      throw failure;
+    };
+    const tree = parseSemanticDocument('**keep this source**', { after: [broken], onError });
+
+    expect(tree.children[0]).toEqual({
+      type: 'paragraph',
+      children: [{ type: 'text', value: '**keep this source**' }],
+    });
+    expect(onError).toHaveBeenCalledWith(failure);
+    warn.mockRestore();
+  });
+
+  it('falls back to inert text before recursive consumers see an over-deep tree', () => {
+    const source = `${'> '.repeat(300)}nested`;
+    const onError = jest.fn();
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const tree = parseSemanticDocument(source, { onError });
+
+    expect(tree.children[0]).toEqual({
+      type: 'paragraph',
+      children: [{ type: 'text', value: source }],
+    });
+    expect(onError.mock.calls[0]?.[0]).toBeInstanceOf(RangeError);
+    warn.mockRestore();
+  });
+
+  it('rejects emphasis and link bombs before remark plugins allocate a tree', () => {
+    const after = jest.fn(() => undefined);
+    const onError = jest.fn();
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    for (const source of ['*x*'.repeat(35_000), '[]()'.repeat(26_000)]) {
+      const tree = parseSemanticDocument(source, { after: [after], onError });
+      const preview = (tree.children[0] as { children: Array<{ value: string }> }).children[0].value;
+      expect(preview.length).toBeLessThan(9_000);
+      expect(preview).toContain('[Markdown preview truncated]');
+    }
+    expect(after).not.toHaveBeenCalled();
+    expect(onError).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
+
+  it('rejects a 250k-line fence before remark plugins allocate a tree', () => {
+    const after = jest.fn(() => undefined);
+    const onError = jest.fn();
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const tree = parseSemanticDocument(`\`\`\`txt\n${'x\n'.repeat(250_000)}\`\`\``, { after: [after], onError });
+    const preview = (tree.children[0] as { children: Array<{ value: string }> }).children[0].value;
+    expect(preview.length).toBeLessThan(9_000);
+    expect(after).not.toHaveBeenCalled();
+    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('physical lines') }));
+    warn.mockRestore();
+  });
+
+  it('accepts the physical-line boundary when it forms one fenced node', () => {
+    const onError = jest.fn();
+    const source = `\`\`\`txt\n${'x\n'.repeat(49_998)}\`\`\``;
+    expect(parseSemanticDocument(source, { onError }).children[0]).toMatchObject({ type: 'code' });
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it('accepts the structural-marker boundary and ignores fenced source markers', () => {
+    const onError = jest.fn();
+    expect(parseSemanticDocument('*'.repeat(25_000), { onError }).children[0]).toMatchObject({ type: 'thematicBreak' });
+    const fenced = `\`\`\`txt\n\`\`\`still code\n${'<'.repeat(30_000)}\n\`\`\``;
+    expect(parseSemanticDocument(fenced, { onError }).children[0]).toMatchObject({ type: 'code' });
+    expect(onError).not.toHaveBeenCalled();
+  });
 });

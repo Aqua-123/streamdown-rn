@@ -8,6 +8,7 @@ import type { ControlsConfig, IconMap, StreamdownTranslations } from '../control
 import type { PluginConfig } from '../plugins/renderers';
 import type { ThemeInput } from '../plugins/code';
 import type { NativeSlots } from './types';
+import type { getBlockStyles, getTextStyles, resolveThemePrimitives } from '../themes';
 
 export type ComponentErrorHandler = (error: Error, componentName?: string) => void;
 
@@ -58,6 +59,9 @@ export interface RenderContext extends Omit<ASTRendererProps, 'node'> {
   direction?: 'ltr' | 'rtl';
   definitions: ReadonlyMap<string, { url?: string; title?: string | null }>;
   emptyFootnotes: ReadonlySet<string>;
+  textStyles: ReturnType<typeof getTextStyles>;
+  blockStyles: ReturnType<typeof getBlockStyles>;
+  themePrimitives: ReturnType<typeof resolveThemePrimitives>;
 }
 
 export type RenderNode = (

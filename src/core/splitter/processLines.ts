@@ -1,23 +1,47 @@
-import type { BlockRegistry, IncompleteTagState } from '../types';
-import { INITIAL_INCOMPLETE_STATE, updateTagState } from '../incomplete';
+import type { BlockRegistry, ExplicitBlockScanState, IncompleteTagState, StableBlock } from '../types';
+import { INITIAL_INCOMPLETE_STATE } from '../incomplete';
 import { detectBlockType, detectPartialBlockType } from './blockPatterns';
 import { finalizeBlock } from './finalizeBlock';
-import { isCodeBlockClosed, isComponentClosed } from './blockClosers';
-import { logDebug } from './logger';
+import { scanExplicitBlock } from './blockClosers';
 import { analyzeMarkdownBoundary } from '../blockSemantics';
+import { advanceTrailingNewlineState } from './newlineState';
 
 interface ProcessArgs {
   registry: BlockRegistry;
-  fullText: string;
+  fullText: { readonly length: number };
   lines: string[];
   activeContent: string;
   tagState: IncompleteTagState;
   activeStartPos: number;
   canFinalizeCodeBlock: boolean;
+  explicitScanState?: ExplicitBlockScanState;
+  explicitBlockClosed?: boolean;
+  appendedHasNewline?: boolean;
+  appendedHasNonWhitespace?: boolean;
+  appendedHasBlockBreak?: boolean;
+  blockBuffer?: StableBlock[];
 }
 
 export function processLines(args: ProcessArgs): BlockRegistry {
-  const normalizedArgs = consumeLeadingBlocks(args);
+  const normalizedArgs = normalizeExplicitType(consumeLeadingBlocks(args));
+  const active = normalizedArgs.registry.activeBlock;
+  if (active?.typeLocked
+    && active.type !== 'heading'
+    && active.type !== 'codeBlock'
+    && active.type !== 'component'
+    && (!normalizedArgs.appendedHasNewline || active.type === 'paragraph')
+    && (active.hasNonWhitespace || !normalizedArgs.appendedHasNewline)
+    && !normalizedArgs.appendedHasBlockBreak) {
+    return updateActiveBlock(
+      normalizedArgs.registry,
+      normalizedArgs.activeContent,
+      normalizedArgs.tagState,
+      normalizedArgs.fullText,
+      undefined,
+      false,
+      normalizedArgs.appendedHasNonWhitespace
+    );
+  }
   return (
     handleExplicitClosingBlocks(normalizedArgs) ??
     handleHeadingBlock(normalizedArgs) ??
@@ -33,49 +57,25 @@ function handleExplicitClosingBlocks({
   activeContent,
   tagState,
   canFinalizeCodeBlock,
+  explicitScanState,
+  explicitBlockClosed,
+  blockBuffer,
 }: ProcessArgs): BlockRegistry | null {
   const currentType = registry.activeBlock?.type;
-  if (currentType === 'codeBlock') {
-    if (canFinalizeCodeBlock && isCodeBlockClosed(activeContent)) {
-      const block = finalizeBlock(
-        activeContent,
-        'codeBlock',
-        registry.blockCounter,
-        registry.activeBlock!.startPos
-      );
-      return {
-        blocks: [...registry.blocks, block],
-        activeBlock: null,
-        activeTagState: INITIAL_INCOMPLETE_STATE,
-        cursor: fullText.length,
-        blockCounter: registry.blockCounter + 1,
-      };
-    }
-
-    return updateActiveBlock(registry, activeContent, tagState, fullText);
-  }
-
-  if (currentType === 'component') {
-    if (isComponentClosed(activeContent)) {
-      const block = finalizeBlock(
-        activeContent,
-        'component',
-        registry.blockCounter,
-        registry.activeBlock!.startPos
-      );
-      return {
-        blocks: [...registry.blocks, block],
-        activeBlock: null,
-        activeTagState: INITIAL_INCOMPLETE_STATE,
-        cursor: fullText.length,
-        blockCounter: registry.blockCounter + 1,
-      };
-    }
-
-    return updateActiveBlock(registry, activeContent, tagState, fullText);
-  }
-
-  return null;
+  if (currentType !== 'codeBlock' && currentType !== 'component') return null;
+  const scan = explicitScanState
+    ? { state: explicitScanState, close: explicitBlockClosed ? activeContent.length : null }
+    : scanExplicitBlock(activeContent, currentType, registry.activeBlock?.explicitScanState);
+  const closed = scan.close !== null && (currentType === 'component' || canFinalizeCodeBlock);
+  if (!closed) return updateActiveBlock(registry, activeContent, tagState, fullText, scan.state);
+  const block = finalizeBlock(activeContent, currentType, registry.blockCounter, registry.activeBlock!.startPos);
+  return {
+    blocks: appendBlock(registry.blocks, block, blockBuffer),
+    activeBlock: null,
+    activeTagState: INITIAL_INCOMPLETE_STATE,
+    cursor: fullText.length,
+    blockCounter: registry.blockCounter + 1,
+  };
 }
 
 function handleHeadingBlock({
@@ -83,19 +83,16 @@ function handleHeadingBlock({
   fullText,
   activeContent,
   tagState,
+  blockBuffer,
 }: ProcessArgs): BlockRegistry | null {
   if (registry.activeBlock?.type !== 'heading') return null;
 
-  const newlineIndex = activeContent.indexOf('\n');
-  if (newlineIndex === -1) return null;
+  const newline = firstLineBreak(activeContent);
+  if (!newline) return null;
+  if (detectBlockType(activeContent.slice(0, newline.index))?.type !== 'heading') return null;
 
-  const headingContent = activeContent.slice(0, newlineIndex).trimEnd();
-  const remainder = activeContent.slice(newlineIndex + 1);
-
-  logDebug('finalizing heading block', {
-    headingContent,
-    remainderPreview: remainder.slice(0, 40),
-  });
+  const headingContent = activeContent.slice(0, newline.index).trimEnd();
+  const remainder = activeContent.slice(newline.index + newline.length);
 
   const headingBlock = finalizeBlock(
     headingContent,
@@ -106,12 +103,12 @@ function handleHeadingBlock({
 
   const normalizedRemainder = normalizeBlockContent(
     remainder,
-    headingBlock.endPos + 1
+    headingBlock.endPos + newline.length
   );
 
   if (!normalizedRemainder.content.trim()) {
     return {
-      blocks: [...registry.blocks, headingBlock],
+      blocks: appendBlock(registry.blocks, headingBlock, blockBuffer),
       activeBlock: null,
       activeTagState: INITIAL_INCOMPLETE_STATE,
       cursor: fullText.length,
@@ -120,10 +117,10 @@ function handleHeadingBlock({
   }
 
   const detectedNext = detectBlockType(
-    normalizedRemainder.content.split('\n')[0]
+    firstLine(normalizedRemainder.content)
   );
   return {
-    blocks: [...registry.blocks, headingBlock],
+    blocks: appendBlock(registry.blocks, headingBlock, blockBuffer),
     activeBlock: {
       type: detectedNext?.type || 'paragraph',
       content: normalizedRemainder.content,
@@ -140,42 +137,44 @@ function handleParagraphBoundary({
   fullText,
   activeContent,
   tagState,
+  blockBuffer,
 }: ProcessArgs): BlockRegistry | null {
   if (registry.activeBlock?.type !== 'paragraph') return null;
 
-  const lastNewlineIndex = activeContent.lastIndexOf('\n');
+  const lastNewline = lastLineBreak(activeContent);
   if (
-    lastNewlineIndex === -1 ||
-    lastNewlineIndex >= activeContent.length - 1
+    !lastNewline ||
+    lastNewline.index + lastNewline.length >= activeContent.length
   ) {
     return null;
   }
 
-  const lastLine = activeContent.slice(lastNewlineIndex + 1);
+  const lastLine = activeContent.slice(lastNewline.index + lastNewline.length);
   const detectedNext = detectBlockType(lastLine);
   if (!detectedNext || detectedNext.type === 'paragraph') return null;
   if (detectedNext.type === 'footnote') {
     const identifier = lastLine.match(/^\[\^([^\]]+)\]:/)?.[1];
-    const prior = activeContent.slice(0, lastNewlineIndex);
+    const prior = activeContent.slice(0, lastNewline.index);
     if (identifier && prior.includes(`[^${identifier}]`)) return null;
   }
 
-  const paragraphContent = activeContent.slice(0, lastNewlineIndex).trimEnd();
+  const paragraphContent = activeContent.slice(0, lastNewline.index).trimEnd();
   const normalizedRemainder = normalizeBlockContent(
-    activeContent.slice(lastNewlineIndex + 1),
-    registry.activeBlock.startPos + lastNewlineIndex + 1
+    activeContent.slice(lastNewline.index + lastNewline.length),
+    registry.activeBlock.startPos + lastNewline.index + lastNewline.length
   );
 
   const blocks = paragraphContent
-    ? [
-        ...registry.blocks,
+    ? appendBlock(
+        registry.blocks,
         finalizeBlock(
           paragraphContent,
           'paragraph',
           registry.blockCounter,
           registry.activeBlock.startPos
         ),
-      ]
+        blockBuffer
+      )
     : registry.blocks;
 
   const blockCounter =
@@ -200,14 +199,15 @@ function handleDoubleNewline({
   activeContent,
   tagState,
   activeStartPos,
+  blockBuffer,
 }: ProcessArgs): BlockRegistry | null {
-  if (!activeContent.includes('\n\n')) return null;
-  const closesAtBoundary = /\n\n+$/.test(activeContent);
-  const inspectsDeferredBoundary = /\n\n+[ \t]*\S$/.test(activeContent);
+  if (!/(?:\r\n|\r|\n){2}/.test(activeContent)) return null;
+  const closesAtBoundary = /(?:\r\n|\r|\n){2,}$/.test(activeContent);
+  const inspectsDeferredBoundary = /(?:\r\n|\r|\n){2,}[ \t]*\S$/.test(activeContent);
   const closesHtml = /<\/\s*[a-z][\w-]*\s*>$/i.test(activeContent);
   if (!closesAtBoundary && !inspectsDeferredBoundary && !closesHtml) return null;
 
-  const candidate = closesAtBoundary ? activeContent.replace(/\n+$/, '') : activeContent;
+  const candidate = closesAtBoundary ? activeContent.replace(/(?:\r\n|\r|\n)+$/, '') : activeContent;
   const analysis = analyzeMarkdownBoundary(candidate);
   if (analysis.retain) return null;
 
@@ -215,7 +215,7 @@ function handleDoubleNewline({
     ? analysis.partitions.length
     : Math.max(0, analysis.partitions.length - 1);
   let offset = 0;
-  let blocks = [...registry.blocks];
+  const blocks = blockBuffer ?? [...registry.blocks];
   let blockCounter = registry.blockCounter;
   const baseStart =
     registry.activeBlock?.startPos !== undefined
@@ -225,12 +225,9 @@ function handleDoubleNewline({
   for (const partition of analysis.partitions.slice(0, stableCount)) {
     const segment = partition.trimEnd();
     if (!segment) continue;
-    const detected = detectBlockType(segment.split('\n')[0]);
+    const detected = detectBlockType(firstLine(segment));
     const type = detected?.type || 'paragraph';
-    blocks = [
-      ...blocks,
-      finalizeBlock(segment, type, blockCounter, baseStart + offset),
-    ];
+    blocks.push(finalizeBlock(segment, type, blockCounter, baseStart + offset));
     blockCounter++;
     offset += partition.length;
   }
@@ -242,7 +239,7 @@ function handleDoubleNewline({
     remainderStart
   );
   const detected = detectBlockType(
-    normalizedRemainder.content.split('\n')[0]
+    firstLine(normalizedRemainder.content)
   );
 
   return {
@@ -269,16 +266,19 @@ function handleActiveBlock({
   tagState,
   activeStartPos,
   canFinalizeCodeBlock,
+  appendedHasNewline,
+  appendedHasBlockBreak,
 }: ProcessArgs): BlockRegistry {
   if (!registry.activeBlock) {
     const { normalizedContent, trimmedChars } =
       trimLeadingWhitespace(activeContent);
-    const normalizedLines = normalizedContent.split('\n');
+    const normalizedLines = splitLines(normalizedContent);
     
     // Use partial detection for immediate type recognition
     const partialDetected = detectPartialBlockType(normalizedContent);
     const completeDetected = detectBlockType(normalizedLines[0]);
     const detected = completeDetected || partialDetected;
+    const initialNewlineState = advanceTrailingNewlineState({ count: 0, pendingCarriageReturn: false }, normalizedContent);
 
     const updatedRegistry = {
       ...registry,
@@ -286,6 +286,14 @@ function handleActiveBlock({
         type: detected?.type || 'paragraph',
         content: normalizedContent,
         startPos: activeStartPos + trimmedChars,
+        trailingNewlines: initialNewlineState.count,
+        trailingCarriageReturn: initialNewlineState.pendingCarriageReturn,
+        hasNonWhitespace: /\S/.test(normalizedContent),
+        typeLocked: Boolean(
+          (completeDetected && completeDetected.type !== 'horizontalRule')
+          || (partialDetected?.confidence === 'definite' && partialDetected.type !== 'horizontalRule')
+        )
+          || (!detected && normalizedContent.trim().length > 0 && !canStillBecomeSpecialBlock(normalizedContent)),
       },
       activeTagState: tagState,
       cursor: fullText.length,
@@ -298,17 +306,37 @@ function handleActiveBlock({
       tagState,
       activeStartPos: activeStartPos + trimmedChars,
       canFinalizeCodeBlock,
+      appendedHasNewline: appendedHasNewline ?? /[\r\n]/.test(normalizedContent),
+      appendedHasBlockBreak: appendedHasBlockBreak ?? /(?:\r\n|\r|\n){2}/.test(normalizedContent),
     });
   }
 
-  return updateActiveBlock(registry, activeContent, tagState, fullText);
+  const updated = updateActiveBlock(registry, activeContent, tagState, fullText);
+  const promoted = registry.activeBlock.type !== updated.activeBlock?.type
+    && (updated.activeBlock?.type === 'codeBlock' || updated.activeBlock?.type === 'component');
+  return promoted
+    ? processLines({
+        registry: updated,
+        fullText,
+        lines: [activeContent],
+        activeContent,
+        tagState,
+        activeStartPos,
+        canFinalizeCodeBlock,
+        appendedHasNewline,
+        appendedHasBlockBreak,
+      })
+    : updated;
 }
 
 function updateActiveBlock(
   registry: BlockRegistry,
   content: string,
   tagState: IncompleteTagState,
-  fullText: string
+  fullText: { readonly length: number },
+  explicitScanState?: ExplicitBlockScanState,
+  checkWhitespaceBoundary = true,
+  appendedHasNonWhitespace?: boolean
 ): BlockRegistry {
   if (!registry.activeBlock) {
     return {
@@ -318,18 +346,59 @@ function updateActiveBlock(
       cursor: fullText.length,
     };
   }
+
+  if (
+    registry.activeBlock.type !== 'codeBlock'
+    && registry.activeBlock.type !== 'component'
+    && checkWhitespaceBoundary
+    && /[\r\n]/.test(content)
+    && content.trim().length === 0
+  ) {
+    return {
+      ...registry,
+      activeBlock: null,
+      activeTagState: INITIAL_INCOMPLETE_STATE,
+      cursor: fullText.length,
+    };
+  }
+
+  if (registry.activeBlock.type === 'codeBlock' || registry.activeBlock.type === 'component') {
+    return {
+      ...registry,
+      activeBlock: {
+        ...registry.activeBlock,
+        content,
+        explicitScanState,
+        hasNonWhitespace: registry.activeBlock.hasNonWhitespace || appendedHasNonWhitespace || /\S/.test(content),
+      },
+      activeTagState: INITIAL_INCOMPLETE_STATE,
+      cursor: fullText.length,
+    };
+  }
+
+  if (registry.activeBlock.typeLocked) {
+    return {
+      ...registry,
+      activeBlock: {
+        ...registry.activeBlock,
+        content,
+        hasNonWhitespace: registry.activeBlock.hasNonWhitespace || appendedHasNonWhitespace || /\S/.test(content),
+      },
+      activeTagState: tagState,
+      cursor: fullText.length,
+    };
+  }
   
   // Re-detect type on each update using partial detection
   // This allows type to change as more characters arrive
   // e.g., "#" → heading, "# " → heading (confirmed), "# Hello" → heading
   const partialDetected = detectPartialBlockType(content);
-  const firstLine = content.split('\n')[0];
-  const completeDetected = detectBlockType(firstLine);
+  const completeDetected = detectBlockType(firstLine(content));
   
   // Prefer complete detection, fall back to partial, then keep current type
   const newType = completeDetected?.type 
     ?? partialDetected?.type 
-    ?? registry.activeBlock.type;
+    ?? 'paragraph';
   
   return {
     ...registry,
@@ -337,10 +406,46 @@ function updateActiveBlock(
       ...registry.activeBlock,
       content,
       type: newType,
+      explicitScanState,
+      hasNonWhitespace: registry.activeBlock.hasNonWhitespace || appendedHasNonWhitespace || /\S/.test(content),
+      typeLocked: Boolean(
+        (completeDetected && completeDetected.type !== 'horizontalRule')
+        || (partialDetected?.confidence === 'definite' && partialDetected.type !== 'horizontalRule')
+      )
+        || (!completeDetected && !partialDetected && content.trim().length > 0 && !canStillBecomeSpecialBlock(content)),
     },
     activeTagState: tagState,
     cursor: fullText.length,
   };
+}
+
+function normalizeExplicitType(args: ProcessArgs): ProcessArgs {
+  const active = args.registry.activeBlock;
+  if (active?.type !== 'codeBlock') return args;
+  if (active.explicitScanState?.type === 'codeBlock' && active.explicitScanState.openingLine === false) return args;
+  if (detectBlockType(firstLine(args.activeContent))?.type === 'codeBlock') return args;
+  return {
+    ...args,
+    registry: {
+      ...args.registry,
+      activeBlock: { ...active, type: 'paragraph', explicitScanState: undefined, typeLocked: false },
+    },
+  };
+}
+
+function canStillBecomeSpecialBlock(content: string): boolean {
+  if (/[\r\n]/.test(content)) return false;
+  const indentation = content.match(/^[ \t]*/)?.[0] ?? '';
+  if (indentation.length > 3) return false;
+  const prefix = content.slice(indentation.length, indentation.length + 256);
+  if (!prefix) return true;
+  return /^#{1,6}$/.test(prefix)
+    || /^`{1,2}$/.test(prefix)
+    || /^~{1,2}$/.test(prefix)
+    || /^[-*+_]{1,2}$/.test(prefix)
+    || /^\d+\.?$/.test(prefix)
+    || ['[', '[{', '[{c', '[{c:', '!'].includes(prefix)
+    || /^\[\^[^\]\n]*\]?:?/.test(prefix);
 }
 
 function trimLeadingWhitespace(content: string) {
@@ -367,17 +472,18 @@ function consumeLeadingBlocks(args: ProcessArgs): ProcessArgs {
     return args;
   }
 
-  let content = args.activeContent;
+  const source = args.activeContent;
+  let offset = 0;
   let startPos = args.activeStartPos;
-  let blocks = [...args.registry.blocks];
+  const blocks = args.blockBuffer ?? [...args.registry.blocks];
   let blockCounter = args.registry.blockCounter;
 
   while (true) {
-    const { normalizedContent, trimmedChars } = trimLeadingWhitespace(content);
-    content = normalizedContent;
-    startPos += trimmedChars;
+    const beforeTrim = offset;
+    while (source[offset] === '\r' || source[offset] === '\n') offset++;
+    startPos += offset - beforeTrim;
 
-    if (!content) {
+    if (offset >= source.length) {
       return {
         ...args,
         registry: { ...args.registry, blocks, blockCounter },
@@ -388,35 +494,83 @@ function consumeLeadingBlocks(args: ProcessArgs): ProcessArgs {
       };
     }
 
-    const newlineIndex = content.indexOf('\n');
-    if (newlineIndex === -1) {
+    const newline = firstLineBreakFrom(source, offset);
+    if (!newline) {
       break;
     }
 
-    const firstLine = content.slice(0, newlineIndex);
-    const detected = detectBlockType(firstLine);
+    const line = source.slice(offset, newline.index);
+    const detected = detectBlockType(line);
     if (!detected || detected.type !== 'heading') {
       break;
     }
 
     const headingBlock = finalizeBlock(
-      firstLine.trimEnd(),
+      line.trimEnd(),
       'heading',
       blockCounter,
       startPos
     );
-    blocks = [...blocks, headingBlock];
+    blocks.push(headingBlock);
     blockCounter++;
-    content = content.slice(newlineIndex + 1);
-    startPos += newlineIndex + 1;
+    const consumed = newline.index + newline.length - offset;
+    offset = newline.index + newline.length;
+    startPos += consumed;
   }
+
+  const content = source.slice(offset);
 
   return {
     ...args,
     registry: { ...args.registry, blocks, blockCounter },
     activeContent: content,
-    lines: content.split('\n'),
-    tagState: updateTagState(INITIAL_INCOMPLETE_STATE, content),
+    lines: splitLines(content),
+    tagState: INITIAL_INCOMPLETE_STATE,
     activeStartPos: startPos,
   };
+}
+
+function appendBlock(
+  blocks: readonly StableBlock[],
+  block: StableBlock,
+  blockBuffer?: StableBlock[]
+): readonly StableBlock[] {
+  if (blockBuffer) {
+    blockBuffer.push(block);
+    return blockBuffer;
+  }
+  return [...blocks, block];
+}
+
+function splitLines(content: string): string[] {
+  return content.split(/\r\n|\r|\n/);
+}
+
+function firstLine(content: string): string {
+  const newline = firstLineBreak(content);
+  return newline ? content.slice(0, newline.index) : content;
+}
+
+function firstLineBreak(content: string): { index: number; length: 1 | 2 } | null {
+  return firstLineBreakFrom(content, 0);
+}
+
+function firstLineBreakFrom(content: string, from: number): { index: number; length: 1 | 2 } | null {
+  const carriageReturn = content.indexOf('\r', from);
+  const lineFeed = content.indexOf('\n', from);
+  const index = carriageReturn === -1
+    ? lineFeed
+    : lineFeed === -1 ? carriageReturn : Math.min(carriageReturn, lineFeed);
+  if (index === -1) return null;
+  return { index, length: content[index] === '\r' && content[index + 1] === '\n' ? 2 : 1 };
+}
+
+function lastLineBreak(content: string): { index: number; length: 1 | 2 } | null {
+  for (let index = content.length - 1; index >= 0; index--) {
+    if (content[index] === '\n') {
+      return { index: index > 0 && content[index - 1] === '\r' ? index - 1 : index, length: index > 0 && content[index - 1] === '\r' ? 2 : 1 };
+    }
+    if (content[index] === '\r') return { index, length: 1 };
+  }
+  return null;
 }

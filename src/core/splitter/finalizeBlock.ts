@@ -35,7 +35,7 @@ function extractBlockMeta(content: string, type: BlockType): BlockMeta {
       };
     }
     case 'codeBlock': {
-      const match = content.match(/^(?:`{3,}|~{3,})(\w*)/);
+      const match = content.match(/^ {0,3}(?:`{3,}|~{3,})(\S*)/);
       return {
         type: 'codeBlock',
         language: match?.[1] || '',

@@ -39,6 +39,13 @@ describe('PanZoom native interactions', () => {
     expect(toolbar.props.style).toEqual(expect.objectContaining({ flexDirection: 'row' }));
     expect(toolbar.props.style).not.toHaveProperty('position');
   });
+
+  it('re-clamps retained scale when host bounds narrow', () => {
+    const renderPanZoom = ({ children }: PanZoomRenderProps) => children;
+    const screen = render(React.createElement(PanZoomSurface, { capabilities: { gestures: { renderPanZoom } }, initialScale: 2, min: 0.5, max: 3, children: React.createElement(Text, null, 'Chart') }));
+    screen.rerender(React.createElement(PanZoomSurface, { capabilities: { gestures: { renderPanZoom } }, initialScale: 2, min: 0.75, max: 1.25, children: React.createElement(Text, null, 'Chart') }));
+    expect(screen.getByRole('adjustable').props.accessibilityValue.now).toBe(1.25);
+  });
 });
 
 describe('case-specific PanZoom interaction proof', () => {

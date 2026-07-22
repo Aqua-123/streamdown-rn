@@ -5,7 +5,7 @@ import {
   type TableData,
 } from '../core/tableSerialization';
 import type { NativeFileRequest, NativeImageDownloadCapability } from '../platform/capabilities';
-import { sanitizeResourceURL } from '../core/security';
+import { sanitizeResourceURL, type SecurityPolicyOptions } from '../core/security';
 
 export type TableFormat = 'csv' | 'tsv' | 'markdown';
 
@@ -77,28 +77,38 @@ export function imageFileRequest(content: Uint8Array, mimeType: string, basename
 const DEFAULT_MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
 export async function fetchImageFileRequest(
+  capability: NativeImageDownloadCapability,
   uri: string,
   basename = 'image',
   maxBytes = DEFAULT_MAX_IMAGE_BYTES,
   timeoutMs = 15_000,
-  capability?: NativeImageDownloadCapability
+  resourcePolicy: SecurityPolicyOptions = {}
 ): Promise<NativeFileRequest> {
   if (!Number.isFinite(maxBytes) || maxBytes <= 0) {
     throw new TypeError('maxBytes must be a positive finite number');
   }
-  const safe = sanitizeResourceURL(uri, 'image');
+  const safe = sanitizeResourceURL(uri, 'image', resourcePolicy);
   if (!safe) throw new TypeError('Image download URL is not allowed');
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
     throw new TypeError('timeoutMs must be a positive finite number');
   }
-  if (!capability) throw new Error('Image downloads require a bounded native imageDownloads capability');
   const request = await capability.download({
     uri: safe,
     basename: sanitizeBasename(basename, 'image'),
     maxBytes,
     timeoutMs,
     mimeTypes: imageMimeTypes,
-    validateUrl: (url) => sanitizeResourceURL(url, 'image') !== null,
+    validateUrl: (url) => {
+      if (sanitizeResourceURL(url, 'image', resourcePolicy) !== url) return false;
+      if (url === safe || !resourcePolicy.urlTransform) return true;
+      // A transform may sign or proxy a URL and is not safe to replay on redirects.
+      // Keep redirects within the already-approved transformed origin instead.
+      try {
+        return new URL(url).origin === new URL(safe).origin;
+      } catch {
+        return false;
+      }
+    },
   });
   if (!(request.content instanceof Uint8Array)) {
     throw new TypeError('Image download capability must return Uint8Array content');
