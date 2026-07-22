@@ -1,6 +1,6 @@
 # API
 
-> **Unreleased / next release:** This is the main-branch API. npm `0.2.1` does not export `Streamdown`; see the published example in the [README](../README.md#published-npm-021).
+> **Current release:** API for npm `0.1.0`.
 
 The root entry exports `Streamdown`, `StreamdownRN`, the default alias, skeleton primitives, controls, capability helpers, security utilities, streaming instrumentation, and public types. DOM-only Streamdown properties such as `className`, `rehypePlugins`, `prefix`, and `remarkRehypeOptions` are typed as unsupported.
 

@@ -1,5 +1,14 @@
 # Third-party notices
 
+## Design and lineage credits
+
+- [darkresearch/generative-ui](https://github.com/darkresearch/generative-ui) provided the original `streamdown-rn` package used as this project's base.
+- [shadcn/ui](https://ui.shadcn.com) informed the open-code primitive patterns and semantic theme vocabulary.
+- [Base UI](https://base-ui.com) informed the headless, composable primitive APIs.
+- [Vercel Streamdown](https://github.com/vercel/streamdown) is the pinned feature and parity baseline described in `parity/upstream.json`.
+
+These are credits, not claims that their browser implementations are bundled into this React Native package.
+
 The published runtime directly depends on:
 
 | Package | Pinned installed version | License | Purpose |

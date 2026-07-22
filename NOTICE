@@ -1,6 +1,13 @@
 streamdown-rn
 Copyright Dark Research contributors
 
+This project began from the streamdown-rn package in darkresearch/generative-ui
+(https://github.com/darkresearch/generative-ui).
+
+Its native primitives and theme conventions were informed by shadcn/ui
+(https://ui.shadcn.com) and Base UI (https://base-ui.com). No browser-specific
+component implementation from those projects is bundled by this package.
+
 This product includes parity metadata derived from the test-suite names and
 layout of Vercel Streamdown (https://github.com/vercel/streamdown), pinned at
 commit e5deed330aa4231751a106445d93d62e4716a22f and licensed under Apache-2.0.

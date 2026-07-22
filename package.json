@@ -1,6 +1,6 @@
 {
   "name": "streamdown-rn",
-  "version": "0.2.1",
+  "version": "0.1.0",
   "description": "Streaming Markdown for React Native with native semantics, explicit security policy, and opt-in rich-content adapters",
   "type": "commonjs",
   "main": "dist/index.js",
