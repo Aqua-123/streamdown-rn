@@ -300,6 +300,7 @@ async function selfTest() {
   try { parseHarnessLog(`${PREFIXES.event}{"type":"cache","entries":1}`, { identity: {}, bundles: {} }); } catch { rejected = true; }
   if (!rejected) fail('missing completion marker self-test failed');
 
+  fs.mkdirSync(path.join(root, 'benchmarks/results'), { recursive: true });
   const captureRoot = fs.mkdtempSync(path.join(root, 'benchmarks/results/.capture-fake-'));
   const sourceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'streamdown-hermes-source-'));
   try {
