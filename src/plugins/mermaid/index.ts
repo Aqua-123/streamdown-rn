@@ -53,6 +53,7 @@ export function normalizeBeautifulMermaidSvg(svg: string, theme?: ThemeConfig): 
   return svg
     .replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, '')
     .replace(/\sstyle\s*=\s*(?:"[^"]*"|'[^']*')/gi, '')
+    .replace(/(\sorient\s*=\s*["'])auto-start-reverse(["'])/gi, '$1auto$2')
     .replace(/var\(\s*(--[\w-]+)(?:\s*,[^)]*)?\)/gi, (_match, name: string) => palette[name] ?? primitives?.foreground ?? '#27272A');
 }
 

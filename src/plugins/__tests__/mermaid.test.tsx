@@ -56,10 +56,12 @@ describe('mermaid plugin', () => {
   });
 
   it('normalizes beautiful-mermaid browser CSS without weakening generic SVG security', async () => {
-    const browserSvg = '<svg style="--bg:#fff"><style>@import url(https://evil); text { color: red }</style><defs><marker id="arrowhead"><path d="M0 0" /></marker></defs><path marker-end="url(#arrowhead)" stroke="var(--_line)" /></svg>';
+    const browserSvg = '<svg style="--bg:#fff"><style>@import url(https://evil); text { color: red }</style><defs><marker id="arrowhead" orient="auto-start-reverse"><path d="M0 0" /></marker></defs><path marker-end="url(#arrowhead)" stroke="var(--_line)" /></svg>';
     const normalized = normalizeBeautifulMermaidSvg(browserSvg);
     expect(normalized).not.toMatch(/<style|\sstyle=|@import|var\(/i);
     expect(normalized).toContain('stroke="#71717A"');
+    expect(normalized).toContain('orient="auto"');
+    expect(normalized).not.toContain('auto-start-reverse');
     expect(sanitizeMermaidSvg(normalized)).toContain('marker-end="url(#arrowhead)"');
     expect(() => sanitizeMermaidSvg('<svg><path marker-end="url(https://evil/x)" /></svg>')).toThrow(/unsafe/i);
     expect(() => sanitizeMermaidSvg('<svg><path marker-end="url(#x)" style="fill:red" /></svg>')).toThrow(/unsafe/i);
