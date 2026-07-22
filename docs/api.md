@@ -34,16 +34,22 @@ compound parts are supported primitives. `ActionButton`, `FullscreenModal`,
 exports remain aliases of the same components. Renderer-owned `CodeControls`,
 `TableControls`, and `SafeImage` are private and are not exported here.
 
+`Button` accepts static children and native view styles, or callbacks receiving
+`{ pressed, focused, hovered, disabled }`. The callback contract is React
+Native-specific: it deliberately does not provide DOM `asChild` or element
+replacement semantics.
+
 ```tsx verify
 import React from 'react';
-import { Button, Dropdown, type ButtonProps } from 'streamdown-rn/ui';
+import { Button, Dropdown, type ButtonProps, type ButtonState } from 'streamdown-rn/ui';
 
 const triggerProps: Omit<ButtonProps, 'children'> = { accessibilityLabel: 'More actions' };
+const pressedStyle = ({ pressed }: ButtonState) => ({ opacity: pressed ? 0.6 : 1 });
 
 export function Actions() {
   return (
     <Dropdown.Root>
-      <Dropdown.Trigger {...triggerProps}>More</Dropdown.Trigger>
+      <Dropdown.Trigger {...triggerProps} style={pressedStyle}>{({ pressed }) => pressed ? 'Opening' : 'More'}</Dropdown.Trigger>
       <Dropdown.Popup accessibilityLabel="More actions">
         <Dropdown.Item onSelect={() => undefined}>Retry</Dropdown.Item>
       </Dropdown.Popup>

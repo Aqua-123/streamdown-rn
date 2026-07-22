@@ -102,7 +102,7 @@ try {
     fs.writeFileSync(uiConsumer, `import {
   ActionButton, Button, Dropdown, DropdownItem, DropdownPopup, DropdownRoot, DropdownTrigger,
   FullscreenModal, NativeLink, PanZoomSurface,
-  type ActionButtonProps, type ButtonProps, type ButtonVariant,
+  type ActionButtonProps, type ButtonProps, type ButtonState, type ButtonVariant,
   type DropdownItemProps, type DropdownOpenReason, type DropdownPopupProps,
   type DropdownRootProps, type DropdownTriggerProps, type FullscreenModalProps,
   type NativeLinkProps, type PanZoomSurfaceProps,
@@ -110,8 +110,10 @@ try {
 const components = [ActionButton, Button, Dropdown, DropdownItem, DropdownPopup, DropdownRoot, DropdownTrigger, FullscreenModal, NativeLink, PanZoomSurface];
 type Contracts = ActionButtonProps | ButtonProps | DropdownItemProps | DropdownPopupProps | DropdownRootProps | DropdownTriggerProps | FullscreenModalProps | NativeLinkProps | PanZoomSurfaceProps;
 const variant: ButtonVariant = 'ghost';
+const state: ButtonState = { pressed: false, focused: false, hovered: false, disabled: false };
+const callbackButton: ButtonProps = { children: (value: ButtonState) => value.pressed ? 'Pressed' : 'Idle', style: (value: ButtonState) => ({ opacity: value.disabled ? 0.5 : 1 }) };
 const reason: DropdownOpenReason = 'trigger';
-void components; void (null as Contracts | null); void variant; void reason;
+void components; void (null as Contracts | null); void variant; void state; void callbackButton; void reason;
 `);
     run(
       path.join(root, 'node_modules/.bin/tsc'),

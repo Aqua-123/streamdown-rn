@@ -38,6 +38,7 @@ export {
   NativeLink,
   PanZoomSurface,
   type ButtonProps,
+  type ButtonState,
   type ButtonVariant,
   type DropdownRootProps,
   type DropdownTriggerProps,

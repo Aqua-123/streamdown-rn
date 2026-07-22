@@ -12,13 +12,20 @@ import {
 
 export type ButtonVariant = 'ghost' | 'menu';
 
+export interface ButtonState {
+  pressed: boolean;
+  focused: boolean;
+  hovered: boolean;
+  disabled: boolean;
+}
+
 export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> {
-  children: React.ReactNode;
+  children: React.ReactNode | ((state: ButtonState) => React.ReactNode);
   variant?: ButtonVariant;
   foregroundColor?: string;
   radius?: number;
   focusRingColor?: string;
-  style?: StyleProp<ViewStyle>;
+  style?: StyleProp<ViewStyle> | ((state: ButtonState) => StyleProp<ViewStyle>);
   textStyle?: StyleProp<TextStyle>;
 }
 
@@ -35,33 +42,43 @@ export const Button = forwardRef<View, ButtonProps>(function Button({
   textStyle,
   onFocus,
   onBlur,
+  onHoverIn,
+  onHoverOut,
   ...props
 }, ref) {
   const [focused, setFocused] = useState(false);
-  const content = isValidElement<{ color?: string }>(children) && children.type !== React.Fragment && foregroundColor
-    ? cloneElement(children, { color: foregroundColor })
-    : children;
+  const [hovered, setHovered] = useState(false);
+  const effectiveDisabled = Boolean(disabled || accessibilityState?.disabled);
+  const getButtonState = (pressed: boolean): ButtonState => ({ pressed, focused, hovered, disabled: effectiveDisabled });
   return <Pressable
     {...props}
     ref={ref}
     accessibilityRole={accessibilityRole ?? 'button'}
-    accessibilityState={{ ...accessibilityState, disabled: Boolean(disabled || accessibilityState?.disabled) }}
-    disabled={disabled}
+    accessibilityState={{ ...accessibilityState, disabled: effectiveDisabled }}
+    disabled={effectiveDisabled}
     onFocus={(event) => { setFocused(true); onFocus?.(event); }}
     onBlur={(event) => { setFocused(false); onBlur?.(event); }}
+    onHoverIn={(event) => { setHovered(true); onHoverIn?.(event); }}
+    onHoverOut={(event) => { setHovered(false); onHoverOut?.(event); }}
     style={({ pressed }) => [
       styles.base,
       variant === 'menu' ? styles.menu : styles.ghost,
       radius === undefined ? undefined : { borderRadius: radius },
       focusRingColor ? { borderWidth: 1, borderColor: focused ? focusRingColor : 'transparent' } : undefined,
       pressed && styles.pressed,
-      disabled && styles.disabled,
-      style,
+      effectiveDisabled && styles.disabled,
+      typeof style === 'function' ? style(getButtonState(pressed)) : style,
     ]}
   >
-    {typeof children === 'string' || typeof children === 'number'
-      ? <Text style={[styles.text, { color: foregroundColor }, textStyle]}>{children}</Text>
-      : content}
+    {({ pressed }) => {
+      const resolvedChildren = typeof children === 'function' ? children(getButtonState(pressed)) : children;
+      const content = isValidElement<{ color?: string }>(resolvedChildren) && resolvedChildren.type !== React.Fragment && foregroundColor
+        ? cloneElement(resolvedChildren, { color: foregroundColor })
+        : resolvedChildren;
+      return typeof resolvedChildren === 'string' || typeof resolvedChildren === 'number'
+        ? <Text style={[styles.text, { color: foregroundColor }, textStyle]}>{resolvedChildren}</Text>
+        : content;
+    }}
   </Pressable>;
 });
 

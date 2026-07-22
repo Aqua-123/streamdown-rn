@@ -11,6 +11,21 @@ import { createRendererPlugin } from '../../src/plugins/renderers';
 import { createMathPlugin, type MathNativeAdapter } from '../../src/plugins/math';
 import { createMermaidPlugin, type MermaidAdapter } from '../../src/plugins/mermaid';
 import { createOfflineWebViewAdapter, type OfflineWebViewTransport } from '../../src/plugins/mermaid/webview';
+import type { ButtonProps, ButtonState } from '../../src/components/ui';
+
+const buttonState: ButtonState = { pressed: false, focused: false, hovered: false, disabled: false };
+const callbackButton: ButtonProps = {
+  children: (state) => state.pressed ? 'Pressed' : 'Idle',
+  style: (state) => ({ opacity: state.disabled ? 0.5 : 1 }),
+};
+// @ts-expect-error Button children callbacks must return a React node.
+const invalidButtonChildren: ButtonProps = { children: () => Symbol('invalid') };
+// @ts-expect-error Button style callbacks must return a native view style.
+const invalidButtonStyle: ButtonProps = { children: 'Invalid', style: () => 'invalid' };
+void buttonState;
+void callbackButton;
+void invalidButtonChildren;
+void invalidButtonStyle;
 
 const nativeProps: StreamdownProps = {
   children: '# native',
