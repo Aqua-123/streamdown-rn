@@ -3,7 +3,7 @@ import { Text, View, type View as NativeView } from 'react-native';
 import type { ThemeConfig } from '../../core/types';
 import { controlRadius, innerRadius, outerRadius, resolveThemePrimitives } from '../../themes';
 import type { NativeCapabilities } from '../../platform/capabilities';
-import { Dropdown } from '../../components/ui';
+import { Dropdown, Toolbar } from '../../components/ui';
 import {
   ActionButton,
   FullscreenModal,
@@ -94,7 +94,7 @@ export function MermaidBlock({ source, plugin, theme, capabilities, controls, tr
   return <View testID="mermaid-block" style={{ marginVertical: theme.spacing.block, padding: 8, gap: 8, borderWidth: 1, borderColor: primitives.sidebarBorder, borderRadius: outerRadius(primitives.radius), backgroundColor: primitives.sidebar }}>
     <View style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center' }}>
       <Text style={{ flex: 1, marginLeft: 4, color: primitives.mutedForeground, fontFamily: theme.fonts.mono, fontSize: 12, textTransform: 'lowercase' }}>mermaid</Text>
-      <View accessibilityRole="toolbar" style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+      <Toolbar.Root disabled={disabled} style={{ flexWrap: 'wrap' }}>
         {download ? <Dropdown.Root open={downloadOpen} onOpenChange={setDownloadOpen}>
           <Dropdown.Trigger accessibilityLabel={translations.downloadDiagram} disabled={disabled} foregroundColor={primitives.mutedForeground} radius={controlsRadius} focusRingColor={primitives.ring}>{icons?.download ?? defaultIcons.download}</Dropdown.Trigger>
           <Dropdown.Popup accessibilityLabel={translations.downloadDiagram} radius={controlsRadius} style={{ borderColor: primitives.border, backgroundColor: primitives.popover }}>
@@ -107,7 +107,7 @@ export function MermaidBlock({ source, plugin, theme, capabilities, controls, tr
         {share ? <ActionButton label={translations.shareDiagram} icon={icons?.share ?? defaultIcons.share} disabled={disabled} color={primitives.mutedForeground} radius={controlsRadius} focusRingColor={primitives.ring} onAction={() => capabilities.share?.shareText(source, 'Mermaid diagram') ?? { status: 'unavailable' }} /> : null}
         {allowFullscreen ? <ActionButton buttonRef={opener} label={translations.viewFullscreen} icon={icons?.fullscreen ?? defaultIcons.fullscreen} disabled={disabled} color={primitives.mutedForeground} radius={controlsRadius} focusRingColor={primitives.ring} onAction={() => { setFullscreen(true); return { status: 'success' }; }} /> : null}
         {error ? <ActionButton label={translations.retryDiagram} icon={icons?.retry ?? defaultIcons.retry} disabled={disabled} color={primitives.mutedForeground} radius={controlsRadius} focusRingColor={primitives.ring} onAction={() => { setRevision((value) => value + 1); return { status: 'success' }; }} /> : null}
-      </View>
+      </Toolbar.Root>
     </View>
     {!incomplete && !result && !error ? <View accessible accessibilityLabel="Rendering Mermaid diagram" accessibilityState={{ busy: true }} /> : null}
     <View testID="mermaid-surface" style={{ minHeight: 180, overflow: 'hidden', borderWidth: 1, borderColor: primitives.border, borderRadius: innerRadius(primitives.radius), backgroundColor: primitives.background }}>

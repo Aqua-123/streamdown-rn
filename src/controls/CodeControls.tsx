@@ -1,5 +1,5 @@
-import { View } from 'react-native';
 import type { NativeCapabilities } from '../platform/capabilities';
+import { Toolbar } from '../components/ui/Toolbar';
 import { codeFileRequest } from './serialization';
 import { ActionButton } from './ActionButton';
 import type { ControlsConfig } from './config';
@@ -23,7 +23,7 @@ export function CodeControls({ code, language, capabilities, controls, translati
   const download = controlEnabled(controls, 'code', 'download') && Boolean(capabilities.files);
   if (!copy && !download) return null;
   return (
-    <View accessibilityRole="toolbar" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 4 }}>
+    <Toolbar.Root disabled={disabled} style={{ flexWrap: 'wrap', alignItems: 'center', gap: 4 }}>
       {download ? <ActionButton
         label={translations.downloadFile}
         icon={icons?.download ?? defaultIcons.download}
@@ -43,6 +43,6 @@ export function CodeControls({ code, language, capabilities, controls, translati
         focusRingColor={focusRingColor}
         onAction={() => capabilities.clipboard!.writeText(code)}
       /> : null}
-    </View>
+    </Toolbar.Root>
   );
 }

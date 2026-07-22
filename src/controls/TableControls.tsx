@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { Dropdown } from '../components/ui';
+import { Toolbar } from '../components/ui/Toolbar';
 import type { TableData } from '../core/tableSerialization';
 import type { CapabilityResult, NativeCapabilities } from '../platform/capabilities';
 import { ActionButton } from './ActionButton';
@@ -57,7 +58,7 @@ export function TableControls({ table, children, capabilities, controls, transla
     const result = await capabilities.files!.save(tableFileRequest(table, format));
     if (result.status !== 'success') throw capabilityError(result);
   };
-  const renderActions = (scope: 'inline' | 'fullscreen', includeFullscreen: boolean) => <View accessibilityRole="toolbar" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+  const renderActions = (scope: 'inline' | 'fullscreen', includeFullscreen: boolean) => <Toolbar.Root disabled={disabled} style={{ alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
     {copy ? <Dropdown.Root open={menu?.type === 'copy' && menu.scope === scope} onOpenChange={(open) => setMenu(open ? { type: 'copy', scope } : null)}>
       <Dropdown.Trigger accessibilityLabel={translations.copyTable} disabled={disabled} foregroundColor={color} radius={radius} focusRingColor={focusRingColor}>{icons?.copy ?? defaultIcons.copy}</Dropdown.Trigger>
       <Dropdown.Popup accessibilityLabel={translations.copyTable} radius={radius} style={{ borderColor: popoverBorderColor, backgroundColor: popoverColor }}>
@@ -74,7 +75,7 @@ export function TableControls({ table, children, capabilities, controls, transla
       </Dropdown.Popup>
     </Dropdown.Root> : null}
     {expand && includeFullscreen ? <ActionButton buttonRef={opener} label={translations.viewFullscreen} icon={icons?.fullscreen ?? defaultIcons.fullscreen} disabled={disabled} color={color} radius={radius} focusRingColor={focusRingColor} onAction={() => { setFullscreen(true); return { status: 'success' }; }} /> : null}
-  </View>;
+  </Toolbar.Root>;
   const renderCopyFeedback = (scope: 'inline' | 'fullscreen') => copyFeedback?.scope === scope
     ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color }}>{translations.copied}</Text>
     : null;

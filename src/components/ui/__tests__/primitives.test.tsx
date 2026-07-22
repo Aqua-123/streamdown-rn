@@ -16,7 +16,11 @@ function menu(onSelect: () => void | Promise<void>, root: React.ComponentProps<t
 describe('UI primitives', () => {
   it('exposes the exact supported UI inventory and keeps root aliases identical', () => {
     expect(Object.keys(ui).sort()).toEqual([
+      'Action',
       'ActionButton',
+      'ActionRoot',
+      'ActionStatus',
+      'ActionTrigger',
       'Button',
       'Dropdown',
       'DropdownItem',
@@ -26,6 +30,9 @@ describe('UI primitives', () => {
       'FullscreenModal',
       'NativeLink',
       'PanZoomSurface',
+      'Toolbar',
+      'ToolbarButton',
+      'ToolbarRoot',
     ]);
     for (const name of Object.keys(ui) as Array<keyof typeof ui>) {
       expect(root[name]).toBe(ui[name]);

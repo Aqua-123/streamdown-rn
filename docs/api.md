@@ -28,11 +28,12 @@ export function Example() {
 
 ## UI primitives
 
-Import UI building blocks from `streamdown-rn/ui`. `Button` and the Dropdown
-compound parts are supported primitives. `ActionButton`, `FullscreenModal`,
-`NativeLink`, and `PanZoomSurface` are compatibility compositions; their root
-exports remain aliases of the same components. Renderer-owned `CodeControls`,
-`TableControls`, and `SafeImage` are private and are not exported here.
+Import UI building blocks from `streamdown-rn/ui`. `Button`, `Action`, `Toolbar`,
+and the Dropdown compound parts are supported primitives. `ActionButton`,
+`FullscreenModal`, `NativeLink`, and `PanZoomSurface` are compatibility
+compositions; their root exports remain aliases of the same components.
+Renderer-owned `CodeControls`, `TableControls`, and `SafeImage` are private and
+are not exported here.
 
 `Button` accepts static children and native view styles, or callbacks receiving
 `{ pressed, focused, hovered, disabled }`. The callback contract is React
@@ -54,6 +55,35 @@ export function Actions() {
         <Dropdown.Item onSelect={() => undefined}>Retry</Dropdown.Item>
       </Dropdown.Popup>
     </Dropdown.Root>
+  );
+}
+```
+
+`Action.Root` owns one synchronous or asynchronous capability lifecycle;
+`Action.Trigger` uses the shared Button interaction and `Action.Status` exposes
+polite result feedback. `Toolbar.Root` uses React Native's supported `toolbar`
+role and layout direction, and shares its disabled state with `Toolbar.Button`.
+Both Roots accept typed state render props for custom descendants. Toolbar
+deliberately does not claim a DOM roving-focus or arrow-key contract.
+
+```tsx verify
+import React from 'react';
+import { type CapabilityResult } from 'streamdown-rn';
+import { Action, Toolbar } from 'streamdown-rn/ui';
+
+async function save(): Promise<CapabilityResult> {
+  return { status: 'success' };
+}
+
+export function EditorActions() {
+  return (
+    <Action.Root onAction={save} successMessage="Saved">{({ busy }) => <>
+      <Toolbar.Root accessibilityLabel="Editor actions">{({ orientation }) => <>
+        <Action.Trigger accessibilityLabel="Save">{busy ? 'Saving…' : 'Save'}</Action.Trigger>
+        <Toolbar.Button accessibilityLabel="Undo" accessibilityHint={`Toolbar orientation: ${orientation}`} onPress={() => undefined}>Undo</Toolbar.Button>
+      </>}</Toolbar.Root>
+      <Action.Status />
+    </>}</Action.Root>
   );
 }
 ```

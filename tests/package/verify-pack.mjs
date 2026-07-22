@@ -100,12 +100,15 @@ try {
     );
     const uiConsumer = path.join(consumer, 'ui-consumer.ts');
     fs.writeFileSync(uiConsumer, `import {
-  ActionButton, Button, Dropdown, DropdownItem, DropdownPopup, DropdownRoot, DropdownTrigger,
-  FullscreenModal, NativeLink, PanZoomSurface,
-  type ActionButtonProps, type ButtonProps, type ButtonState, type ButtonVariant,
+  Action, ActionButton, ActionRoot, ActionStatus, ActionTrigger,
+  Button, Dropdown, DropdownItem, DropdownPopup, DropdownRoot, DropdownTrigger,
+  FullscreenModal, NativeLink, PanZoomSurface, Toolbar, ToolbarButton, ToolbarRoot,
+  type ActionButtonProps, type ActionRootProps, type ActionState, type ActionStatusProps, type ActionTriggerProps,
+  type ButtonProps, type ButtonState, type ButtonVariant,
   type DropdownItemProps, type DropdownOpenReason, type DropdownPopupProps,
   type DropdownRootProps, type DropdownTriggerProps, type FullscreenModalProps,
-  type NativeLinkProps, type PanZoomSurfaceProps,
+  type NativeLinkProps, type PanZoomSurfaceProps, type ToolbarButtonProps,
+  type ToolbarOrientation, type ToolbarRootProps, type ToolbarState,
 } from 'streamdown-rn/ui';
 import {
   NATIVE_ELEMENT_NAMES,
@@ -114,10 +117,13 @@ import {
   type NativeSlots,
   type StreamdownProps,
 } from 'streamdown-rn';
-const components = [ActionButton, Button, Dropdown, DropdownItem, DropdownPopup, DropdownRoot, DropdownTrigger, FullscreenModal, NativeLink, PanZoomSurface];
-type Contracts = ActionButtonProps | ButtonProps | DropdownItemProps | DropdownPopupProps | DropdownRootProps | DropdownTriggerProps | FullscreenModalProps | NativeLinkProps | PanZoomSurfaceProps;
+const components = [Action, ActionButton, ActionRoot, ActionStatus, ActionTrigger, Button, Dropdown, DropdownItem, DropdownPopup, DropdownRoot, DropdownTrigger, FullscreenModal, NativeLink, PanZoomSurface, Toolbar, ToolbarButton, ToolbarRoot];
+type Contracts = ActionButtonProps | ActionRootProps | ActionStatusProps | ActionTriggerProps | ButtonProps | DropdownItemProps | DropdownPopupProps | DropdownRootProps | DropdownTriggerProps | FullscreenModalProps | NativeLinkProps | PanZoomSurfaceProps | ToolbarButtonProps | ToolbarRootProps;
 const variant: ButtonVariant = 'ghost';
 const state: ButtonState = { pressed: false, focused: false, hovered: false, disabled: false };
+const actionState: ActionState | null = null;
+const toolbarState: ToolbarState = { disabled: false, orientation: 'horizontal' };
+const orientation: ToolbarOrientation = 'vertical';
 const callbackButton: ButtonProps = { children: (value: ButtonState) => value.pressed ? 'Pressed' : 'Idle', style: (value: ButtonState) => ({ opacity: value.disabled ? 0.5 : 1 }) };
 const reason: DropdownOpenReason = 'trigger';
 const slots: NativeSlots = {
@@ -128,7 +134,7 @@ const element: NativeElementName = NATIVE_ELEMENT_NAMES[0];
 const streamdownProps: StreamdownProps = { slots };
 // @ts-expect-error Standard slot names are exact.
 const invalidSlots: NativeSlots = { paragraf: () => null };
-void components; void (null as Contracts | null); void variant; void state; void callbackButton; void reason;
+void components; void (null as Contracts | null); void variant; void state; void actionState; void toolbarState; void orientation; void callbackButton; void reason;
 void element; void streamdownProps; void invalidSlots;
 `);
     run(
@@ -153,8 +159,8 @@ export default function App() { return <Streamdown mode="static">{'# packed core
 
     fs.writeFileSync(path.join(consumer, 'App.js'), `import React from 'react';
 import { View } from 'react-native';
-import { ActionButton, Button, Dropdown, DropdownItem, DropdownPopup, DropdownRoot, DropdownTrigger, FullscreenModal, NativeLink, PanZoomSurface } from 'streamdown-rn/ui';
-const exports = [ActionButton, Button, Dropdown, DropdownItem, DropdownPopup, DropdownRoot, DropdownTrigger, FullscreenModal, NativeLink, PanZoomSurface];
+import { Action, ActionButton, ActionRoot, ActionStatus, ActionTrigger, Button, Dropdown, DropdownItem, DropdownPopup, DropdownRoot, DropdownTrigger, FullscreenModal, NativeLink, PanZoomSurface, Toolbar, ToolbarButton, ToolbarRoot } from 'streamdown-rn/ui';
+const exports = [Action, ActionButton, ActionRoot, ActionStatus, ActionTrigger, Button, Dropdown, DropdownItem, DropdownPopup, DropdownRoot, DropdownTrigger, FullscreenModal, NativeLink, PanZoomSurface, Toolbar, ToolbarButton, ToolbarRoot];
 export default function App() { return <View accessibilityLabel={'ui-' + exports.length} />; }
 `);
     let uiText = '';

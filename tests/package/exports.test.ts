@@ -31,6 +31,13 @@ describe('packed package', () => {
       'SkeletonCircle',
       'SkeletonNumber',
       'Button',
+      'Action',
+      'ActionRoot',
+      'ActionTrigger',
+      'ActionStatus',
+      'Toolbar',
+      'ToolbarRoot',
+      'ToolbarButton',
       'Dropdown',
       'DropdownRoot',
       'DropdownTrigger',
@@ -62,7 +69,11 @@ describe('packed package', () => {
     }
     const ui = require(path.join(packageRoot as string, uiExport.default));
     expect(Object.keys(ui).sort()).toEqual([
+      'Action',
       'ActionButton',
+      'ActionRoot',
+      'ActionStatus',
+      'ActionTrigger',
       'Button',
       'Dropdown',
       'DropdownItem',
@@ -72,6 +83,9 @@ describe('packed package', () => {
       'FullscreenModal',
       'NativeLink',
       'PanZoomSurface',
+      'Toolbar',
+      'ToolbarButton',
+      'ToolbarRoot',
     ]);
     for (const name of Object.keys(ui)) expect(api[name]).toBe(ui[name]);
     expect(ui).not.toHaveProperty('CodeControls');
