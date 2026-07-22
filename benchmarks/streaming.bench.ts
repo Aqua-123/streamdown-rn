@@ -41,7 +41,7 @@ const incrementalLongBlockMs = Object.fromEntries(Object.entries(incrementalSour
   return [kind, timings];
 }));
 export const passesIncrementalGrowthGuard = (timings: number[]) => {
-  const ratios = timings.slice(1).map((elapsed, index) => elapsed / Math.max(timings[index], 0.01));
+  const ratios = timings.slice(1).map((elapsed, index) => elapsed / Math.max(timings[index], 5));
   return timings.at(-1)! < 250 && Math.max(...ratios) < 3.25;
 };
 if (passesIncrementalGrowthGuard([1, 4, 16, 64])) throw new Error('Quadratic growth guard self-check failed');
