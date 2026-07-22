@@ -25,6 +25,14 @@ describe('native control serialization', () => {
     });
   });
 
+  it('shares spreadsheet formula neutralization across clipboard and CSV files', () => {
+    const unsafe = { headers: ['=Name'], rows: [['@SUM("a,b")']] };
+    expect(serializeTable(unsafe, 'csv')).toBe('"\'=Name"\n"\'@SUM(""a,b"")"');
+    expect(serializeTable(unsafe, 'tsv')).toBe("'=Name\n'@SUM(\"a,b\")");
+    expect(serializeTable(unsafe, 'markdown')).toBe('| =Name |\n| --- |\n| @SUM("a,b") |');
+    expect(tableFileRequest(unsafe, 'csv').content).toBe('\uFEFF"\'=Name"\n"\'@SUM(""a,b"")"');
+  });
+
   it('uses safe basenames and known code metadata', () => {
     expect(sanitizeBasename('../ quarterly / report ')).toBe('quarterly-report');
     expect(codeFileRequest('const x = 1', 'typescript', '../../demo')).toMatchObject({

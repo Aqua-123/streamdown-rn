@@ -55,5 +55,7 @@ describe('portable block semantics', () => {
     expect(tableDataToMarkdown(data)).toBe(
       '| a | b |\n| --- | --- |\n| x,y | q"z |\n| one |  |'
     );
+    expect(tableDataToCSV({ headers: ['=formula'], rows: [['@value']] })).toBe('"\'=formula"\n"\'@value"');
+    expect(tableDataToTSV({ headers: ['=formula'], rows: [['@value']] })).toBe("'=formula\n'@value");
   });
 });

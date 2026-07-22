@@ -9,6 +9,8 @@ import {
 } from "../../../../src/core/tableSerialization";
 
 describe("Table Utils", () => {
+  const formulaPrefixes = ['=', '+', '-', '@', '\t', '\r', '\n', '＝', '＋', '－', '＠'];
+
   describe('tableDataFromSemanticRows', () => {
     it('extracts trimmed headers, rows, and empty cells without DOM sections', () => {
       expect(tableDataFromSemanticRows([[' Name ', ''], [' Ada ', ' 42 ']])).toEqual({ headers: ['Name', ''], rows: [['Ada', '42']] });
@@ -17,6 +19,16 @@ describe("Table Utils", () => {
     });
   });
   describe("tableDataToCSV", () => {
+    it.each(formulaPrefixes)('neutralizes formula-leading %p cells in headers and rows', (prefix) => {
+      expect(tableDataToCSV({ headers: [`${prefix}header`], rows: [[`${prefix}row`]] }))
+        .toBe(`"'${prefix}header"\n"'${prefix}row"`);
+    });
+
+    it('quotes neutralized cells so delimiters, quotes, and line breaks cannot escape', () => {
+      expect(tableDataToCSV({ headers: ['safe'], rows: [['\t=SUM("a,b")\r\nnext']] }))
+        .toBe('safe\n"\'\t=SUM(""a,b"")\r\nnext"');
+    });
+
     it("should convert simple table data to CSV", () => {
       const data: TableData = {
         headers: ["Name", "Age", "City"],
@@ -88,6 +100,17 @@ describe("Table Utils", () => {
   });
 
   describe("tableDataToTSV", () => {
+    it.each(formulaPrefixes)('neutralizes formula-leading %p cells in headers and rows', (prefix) => {
+      const escaped = `${prefix}value`.replace(/\t/g, '\\t').replace(/\r/g, '\\r').replace(/\n/g, '\\n');
+      expect(tableDataToTSV({ headers: [`${prefix}value`], rows: [[`${prefix}value`]] }))
+        .toBe(`'${escaped}\n'${escaped}`);
+    });
+
+    it('keeps neutralized delimiter and control payloads in one escaped cell', () => {
+      expect(tableDataToTSV({ headers: ['safe'], rows: [['\t=SUM("a,b")\r\nnext']] }))
+        .toBe('safe\n\'\\t=SUM("a,b")\\r\\nnext');
+    });
+
     it("should convert simple table data to TSV", () => {
       const data: TableData = {
         headers: ["Name", "Age", "City"],
@@ -188,6 +211,15 @@ describe("Table Utils", () => {
   });
 
   describe("tableDataToMarkdown", () => {
+    it('keeps safe Unicode and Markdown formula text byte-for-byte unchanged', () => {
+      const data = { headers: ['東京', '=header'], rows: [['Zoë', '@row']] };
+      expect(tableDataToCSV({ headers: ['東京'], rows: [['Zoë']] })).toBe('東京\nZoë');
+      expect(tableDataToTSV({ headers: ['東京'], rows: [['Zoë']] })).toBe('東京\nZoë');
+      expect(tableDataToMarkdown(data)).toBe(
+        '| 東京 | =header |\n| --- | --- |\n| Zoë | @row |'
+      );
+    });
+
     it("should convert simple table data to Markdown", () => {
       const data: TableData = {
         headers: ["Name", "Age", "City"],

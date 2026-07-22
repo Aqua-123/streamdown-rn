@@ -10,15 +10,23 @@ export function tableDataFromSemanticRows(rows: readonly (readonly string[])[], 
     : { headers: [], rows: normalized.map((row) => [...row]) };
 }
 
-function escapeDelimited(value: string, delimiter: string): string {
-  if (!value.includes(delimiter) && !/["\n\r]/.test(value)) return value;
+function neutralizeSpreadsheetCell(value: string): [string, boolean] {
+  const dangerous = /^[=+\-@\t\r\n＝＋－＠]/u.test(value);
+  return [dangerous ? `'${value}` : value, dangerous];
+}
+
+function escapeDelimited(value: string, delimiter: string, force = false): string {
+  if (!force && !value.includes(delimiter) && !/["\n\r]/.test(value)) return value;
   return `"${value.replace(/"/g, '""')}"`;
 }
 
 export function tableDataToCSV({ headers, rows }: TableData): string {
   return [headers, ...rows]
     .filter((row, index) => index > 0 || row.length > 0)
-    .map((row) => row.map((cell) => escapeDelimited(cell, ',')).join(','))
+    .map((row) => row.map((cell) => {
+      const [value, dangerous] = neutralizeSpreadsheetCell(cell);
+      return escapeDelimited(value, ',', dangerous);
+    }).join(','))
     .join('\n');
 }
 
@@ -27,7 +35,8 @@ export function tableDataToTSV({ headers, rows }: TableData): string {
     .filter((row, index) => index > 0 || row.length > 0)
     .map((row) =>
       row
-        .map((cell) => cell.replace(/\t/g, '\\t').replace(/\n/g, '\\n').replace(/\r/g, '\\r'))
+        .map((cell) => neutralizeSpreadsheetCell(cell)[0]
+          .replace(/\t/g, '\\t').replace(/\n/g, '\\n').replace(/\r/g, '\\r'))
         .join('\t')
     )
     .join('\n');
