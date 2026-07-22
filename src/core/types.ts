@@ -6,7 +6,7 @@
  */
 
 import type { ComponentType, ReactNode } from 'react';
-import type { Content, Node } from 'mdast';
+import type { Node } from 'mdast';
 import type { StyleProp, ViewStyle } from 'react-native';
 import type { PluggableList } from 'unified';
 import type { SecurityPolicyOptions } from './security';
@@ -69,8 +69,6 @@ interface BaseBlock {
 export interface StableBlock extends BaseBlock {
   /** Block-specific metadata */
   meta: BlockMeta;
-  /** Parsed MDAST node (cached for performance) */
-  ast?: Content;
 }
 
 /**

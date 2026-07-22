@@ -5,7 +5,6 @@ import type {
   StableBlock,
 } from '../types';
 import { generateBlockId, hashContent } from '../types';
-import { parseBlockContent } from '../parser';
 
 export function finalizeBlock(
   content: string,
@@ -14,10 +13,6 @@ export function finalizeBlock(
   startPos: number
 ): StableBlock {
   const meta = extractBlockMeta(content, type);
-  const ast =
-    type === 'component'
-      ? undefined
-      : (parseBlockContent(content) ?? undefined);
 
   return {
     id: generateBlockId(type, counter),
@@ -27,7 +22,6 @@ export function finalizeBlock(
     startPos,
     endPos: startPos + content.length,
     meta,
-    ast,
   };
 }
 
@@ -91,4 +85,3 @@ function extractBlockMeta(content: string, type: BlockType): BlockMeta {
       return { type } as BlockMeta;
   }
 }
-

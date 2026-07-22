@@ -94,15 +94,18 @@ describe('streaming lifecycle', () => {
     expect(semanticSignature(streamed.toJSON())).toEqual(semanticSignature(staticTree.toJSON()));
   });
 
-  it('does not parse or render finalized blocks during later appends', () => {
+  it('parses each new stable block once and skips later active appends', () => {
     const metrics = createStreamingInstrumentation();
     const screen = render(<Streamdown instrumentation={metrics}>{'# Stable\n\nactive'}</Streamdown>);
     const before = metrics.snapshot();
+    expect(before.stableParses).toBe(1);
     screen.rerender(<Streamdown instrumentation={metrics}>{'# Stable\n\nactive grows'}</Streamdown>);
     const after = metrics.snapshot();
     expect(after.stableParses).toBe(before.stableParses);
     expect(after.stableRenders).toBe(before.stableRenders);
     expect(after.appendedCharacters - before.appendedCharacters).toBe(6);
+    screen.rerender(<Streamdown instrumentation={metrics}>{'# Stable\n\nactive grows\n\nnext'}</Streamdown>);
+    expect(metrics.snapshot().stableParses).toBe(after.stableParses + 1);
   });
 
   it('rerenders stable output for behavior changes without reparsing its Root', () => {
@@ -116,6 +119,15 @@ describe('streaming lifecycle', () => {
     expect(screen.queryByRole('link')).toBeNull();
     expect(after.stableRenders).toBe(before.stableRenders + 1);
     expect(after.stableParses).toBe(before.stableParses);
+    expect(after.cacheHits).toBe(before.cacheHits + 1);
+  });
+
+  it('reparses stable roots only when parser inputs change', () => {
+    const metrics = createStreamingInstrumentation();
+    const screen = render(<Streamdown instrumentation={metrics}>{'# Stable\n\nactive'}</Streamdown>);
+    expect(metrics.snapshot().stableParses).toBe(1);
+    screen.rerender(<Streamdown instrumentation={metrics} remarkPlugins={[]}>{'# Stable\n\nactive'}</Streamdown>);
+    expect(metrics.snapshot().stableParses).toBe(2);
   });
 
   it('caches the completed document Root until parser inputs change', () => {
@@ -161,7 +173,7 @@ describe('streaming lifecycle', () => {
     const first = '[{c:"Probe",p:{"value":1}}]\n\nactive';
     const second = '[{c:"Probe",p:{"value":2}}]\n\nreplacement';
     const screen = render(<Streamdown componentRegistry={registry} instrumentation={metrics}>{first}</Streamdown>);
-    expect(metrics.snapshot().cacheEntries).toBe(0); // component blocks bypass markdown parsing
+    expect(metrics.snapshot()).toMatchObject({ stableParses: 0, cacheEntries: 0 }); // component blocks bypass markdown parsing
     expect(mounts).toBe(1);
     screen.rerender(<Streamdown componentRegistry={registry} instrumentation={metrics}>{second}</Streamdown>);
     expect(metrics.snapshot()).toMatchObject({ resets: 1, cacheEntries: 0 });

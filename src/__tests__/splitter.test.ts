@@ -214,20 +214,6 @@ describe('Block Splitter', () => {
     });
   });
   
-  describe('AST generation', () => {
-    it('should generate AST for stable blocks', () => {
-      const registry = processNewContent(INITIAL_REGISTRY, '# Hello\n\n');
-      expect(registry.blocks[0].ast).toBeDefined();
-      expect(registry.blocks[0].ast?.type).toBe('heading');
-    });
-    
-    it('should not generate AST for component blocks', () => {
-      const input = '[{c:"Card",p:{}}]\n\n';
-      const registry = processNewContent(INITIAL_REGISTRY, input);
-      expect(registry.blocks[0].ast).toBeUndefined();
-    });
-  });
-  
   describe('Character-level block type detection (regression tests)', () => {
     it('should detect heading type immediately from first character', () => {
       let registry = INITIAL_REGISTRY;
