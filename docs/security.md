@@ -18,10 +18,38 @@ const safe = sanitizeURL('https://example.com');
 const blocked = sanitizeURL('javascript:alert(1)');
 void safe; void blocked;
 
+const httpsOnly = (url: string) => {
+  try {
+    return new URL(url).protocol === 'https:' ? url : null;
+  } catch {
+    return null;
+  }
+};
+
 export function Restricted({ markdown }: { markdown: string }) {
-  return <Streamdown mode="static" allowedElements={['paragraph', 'text', 'link']} allowedLinkSchemes={['https']}>{markdown}</Streamdown>;
+  return <Streamdown mode="static" allowedElements={['p', 'a']} urlTransform={httpsOnly}>{markdown}</Streamdown>;
 }
 ```
+
+Element filters use native semantic names, not MDAST `semantic.type` values:
+
+| Markdown construct | Filter name | Typical `semantic.type` |
+| --- | --- | --- |
+| Heading | `h1`-`h6` | `heading` |
+| Inline code / code block | `code` / `pre` | `inlineCode` / `code` |
+| Unordered / ordered list; item | `ul` / `ol`; `li` | `list`; `listItem` |
+| Table; row; header / body cell | `table`; `tr`; `th` / `td` | `table`; `tableRow`; `tableCell` |
+| Link / reference | `a` | `link` / `linkReference` |
+| Image / reference | `img` | `image` / `imageReference` |
+| Footnote reference | `sup` | `footnoteReference` |
+| Paragraph | `p` | `paragraph` |
+| Blockquote; line break; thematic break | `blockquote`; `br`; `hr` | `blockquote`; `break`; `thematicBreak` |
+| Strong; emphasis; strikethrough | `strong`; `em`; `del` | `strong`; `emphasis`; `delete` |
+| Custom or literal element | its `data.hName` value | plugin-defined |
+
+Text nodes have no element filter name and remain readable when their containing element is allowed or unwrapped. Elements omitted from `allowedElements` are dropped by default; set `unwrapDisallowed` to retain their children instead.
+
+`allowedLinkSchemes` is additive: built-in `http`, `https`, `mailto`, `tel`, and `sms` links stay enabled, while listed application schemes are added. Use a `urlTransform` such as `httpsOnly` above when links must be HTTPS-only; transformed URLs are validated again before rendering.
 
 Host components, native capabilities, token/math/diagram providers, and the WebView transport are trusted application code. Do not treat the sanitizer as a permission boundary inside trusted adapters. Report vulnerabilities through the repository security channel before public disclosure.
 

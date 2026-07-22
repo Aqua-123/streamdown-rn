@@ -158,6 +158,52 @@ describe('native resource security policy', () => {
 });
 
 describe('semantic filtering boundary', () => {
+  it('backs the documented p/a allowlist and additive versus restrictive URL policies', () => {
+    const source = parseSemanticDocument(
+      '**removed** [HTTP](http://example.com) [HTTPS](https://example.com)'
+    );
+    const additive = applySecurityPolicy(source, {
+      allowedElements: ['p', 'a'],
+      allowedLinkSchemes: ['https'],
+    });
+    const additiveParagraph = additive.children[0] as {
+      type: string;
+      children: Array<{ type: string; url?: string }>;
+    };
+    expect(additiveParagraph.type).toBe('paragraph');
+    expect(additiveParagraph.children.map((node) => node.type)).toEqual([
+      'text',
+      'link',
+      'text',
+      'link',
+    ]);
+    expect(JSON.stringify(additive)).not.toContain('removed');
+    expect(additiveParagraph.children.filter((node) => node.type === 'link').map((node) => node.url))
+      .toEqual(['http://example.com', 'https://example.com']);
+
+    const unwrapped = applySecurityPolicy(source, {
+      allowedElements: ['p', 'a'],
+      unwrapDisallowed: true,
+    });
+    expect(JSON.stringify(unwrapped)).toContain('removed');
+
+    const httpsOnly = applySecurityPolicy(source, {
+      allowedElements: ['p', 'a'],
+      urlTransform: (url) => {
+        try {
+          return new URL(url).protocol === 'https:' ? url : null;
+        } catch {
+          return null;
+        }
+      },
+    });
+    const httpsOnlyParagraph = httpsOnly.children[0] as {
+      children: Array<{ type: string; url?: string }>;
+    };
+    expect(httpsOnlyParagraph.children.filter((node) => node.type === 'link').map((node) => node.url))
+      .toEqual([undefined, 'https://example.com']);
+  });
+
   it('drops or unwraps semantic nodes exactly as configured', () => {
     const source = parseSemanticDocument('**bold** and *italic*');
     const dropped = applySecurityPolicy(source, {
