@@ -1,5 +1,7 @@
 # Plugins and native providers
 
+> **Unreleased / next release:** npm `0.2.1` has no plugin subpaths. These entry points describe main-branch source for the next release.
+
 Plugin entry points are separate so the default bundle does not pull in optional renderer implementations.
 
 ```tsx verify

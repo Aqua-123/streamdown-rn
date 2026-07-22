@@ -1,0 +1,25 @@
+{
+  "package": "streamdown-rn",
+  "version": "0.2.1",
+  "topLevelExports": [
+    "default",
+    "StreamdownRN",
+    "Skeleton",
+    "SkeletonText",
+    "SkeletonRect",
+    "SkeletonCircle",
+    "SkeletonNumber",
+    "SkeletonProps",
+    "SkeletonTextProps",
+    "sanitizeURL",
+    "sanitizeProps",
+    "StreamdownRNProps",
+    "ComponentDefinition",
+    "ComponentRegistry",
+    "DebugSnapshot"
+  ],
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-native": "^0.81.0"
+  }
+}

@@ -10,7 +10,7 @@
 
 ### Release status
 
-- Expo 54/RN 0.81 and Expo 56/RN 0.85 Release launches are recorded on iOS simulators and Android emulators. Publishing remains blocked while planned parity mappings, reviewed iOS/Android visual manifests, physical-device release-Hermes profiling, manual screen-reader checks, iOS automated semantics, and optional-provider runtime proof are incomplete. Run `bun run release:report` for the current evidence snapshot.
+- All 1,511 parity cases are implemented. The 24 referenced visual artifacts per platform are hash-valid, but six current matrix cases per platform are still missing. Publishing remains blocked on complete visual coverage, physical-device release-Hermes profiling, and manual VoiceOver and TalkBack checks. Run `bun run release:report` for the current evidence snapshot; release gates are unchanged.
 
 ## 0.2.1
 

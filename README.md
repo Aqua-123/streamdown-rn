@@ -2,34 +2,43 @@
 
 Streaming Markdown for React Native with a native semantic renderer, append-aware block caching, explicit security policy, and opt-in rich-renderer adapters.
 
-This repository uses Vercel Streamdown as a pinned parity oracle, not as a claim that browser behavior is automatically native behavior. The current release gate is blocked until every planned parity case and the required device, accessibility, visual, and physical-device performance evidence are complete. See [parity status](./docs/parity.md) and [release status](./docs/release.md).
+> **Published versus next release:** This main branch documents the next release. npm `0.2.1` does not export `Streamdown` or any plugin subpaths; use the published example below with npm installs.
 
-## Install
+This repository uses Vercel Streamdown as a pinned parity oracle, not as a claim that browser behavior is automatically native behavior. The current release gate is blocked until the required device, accessibility, visual, and physical-device performance evidence are complete. See [parity status](./docs/parity.md) and [release status](./docs/release.md).
+
+## Published npm 0.2.1
 
 ```bash
 npm install streamdown-rn
 ```
 
-Required peers are React 19 and React Native `^0.81.0 || ^0.85.0`. Code highlighting, native math, native Mermaid SVG, and full-fidelity WebView rendering are optional host integrations; they are not bundled into the core entry.
+Published `0.2.1` requires React `^19.0.0` and React Native `^0.81.0`.
 
-## Use
+```tsx verify-published
+import React from 'react';
+import { StreamdownRN } from 'streamdown-rn';
+
+export function Message({ markdown }: { markdown: string }) {
+  return <StreamdownRN>{markdown}</StreamdownRN>;
+}
+```
+
+## Unreleased / next release
+
+The source package requires React 19 and React Native `^0.81.0 || ^0.85.0`. Its `Streamdown`, mode, capabilities, and plugin-subpath APIs are not in npm `0.2.1`.
 
 ```tsx verify
 import React from 'react';
 import { Streamdown } from 'streamdown-rn';
 
 export function Message({ markdown, done }: { markdown: string; done: boolean }) {
-  return (
-    <Streamdown mode="streaming" isAnimating={!done} isComplete={done} theme="dark">
-      {markdown}
-    </Streamdown>
-  );
+  return <Streamdown mode="streaming" isAnimating={!done} isComplete={done} theme="dark">{markdown}</Streamdown>;
 }
 ```
 
-`StreamdownRN` and the default export are aliases of `Streamdown`. Static content should use `mode="static"`.
+`StreamdownRN` and the default export are aliases of `Streamdown` in the next release. Static content should use `mode="static"`. Code highlighting, native math, native Mermaid SVG, and full-fidelity WebView rendering are optional host integrations; they are not bundled into the core entry.
 
-## What is included
+## Next-release features
 
 - CommonMark/GFM semantic rendering, incomplete-stream repair, stable block caching, direction detection, footnotes, tables, task lists, links, and images.
 - Capability-backed clipboard, file, share, link approval, focus, announcement, and gesture actions. Unavailable native capabilities fail visibly instead of silently.
@@ -37,6 +46,8 @@ export function Message({ markdown, done }: { markdown: string; done: boolean })
 - Separate `code`, `cjk`, `renderers`, `math`, `mermaid`, and `mermaid/webview` entry points. Core Metro bundles are tested for optional-renderer isolation.
 
 ## Documentation
+
+The following pages describe unreleased main-branch source unless they explicitly say otherwise.
 
 - [API](./docs/api.md)
 - [Plugins and optional native providers](./docs/plugins.md)
