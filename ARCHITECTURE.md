@@ -23,6 +23,24 @@ The active block reparses as text arrives. Completed blocks retain stable identi
 
 The default entry never imports Shiki, RaTeX, beautiful-mermaid, or react-native-webview. It does use `react-native-svg` for the exact Streamdown control-icon paths and task checkmark; Mermaid engines and SVG document rendering remain optional host-injected behavior. Packed Expo fixtures verify that boundary. Optional-provider Metro resolution is a separate bundling gate and does not prove native rendering.
 
+### Renderer ownership
+
+`ASTRenderer.tsx` owns root materialization, security, direction, definitions,
+and empty-footnote collection. It passes the resulting context to the one
+explicit node-type switch in `nodeDispatcher.tsx`. The dispatcher owns routing
+and optional custom-renderer selection; substantial state and layout live in
+the cohesive `codeRenderer.tsx`, `tableRenderer.tsx`, and
+`registryComponents.tsx` modules. `semanticComposition.tsx` owns semantic slot
+metadata, legacy override precedence, and shared composition helpers, while
+`rendererTypes.ts` contains renderer-internal contracts.
+
+The dependency direction is facade -> dispatcher -> cohesive renderers and
+semantic composition. Cohesive renderers may use semantic composition, but do
+not import the dispatcher or facade. To add a semantic node, add its routing to
+the dispatcher and extend semantic composition only when it introduces a slot
+or shared composition rule. Keep optional provider implementations outside the
+default renderer graph.
+
 ## Math and Mermaid
 
 Math parsing uses `remark-math` at the end of the portable remark pipeline. Math source remains readable when no proven native adapter exists or rendering fails. RaTeX is a host adapter candidate; its current evidence is Metro bundling only.
