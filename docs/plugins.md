@@ -1,6 +1,6 @@
 # Plugins and native providers
 
-> **Current release:** Plugin entry points for npm `0.1.0`.
+> **Current release:** Plugin entry points for npm `0.1.1`.
 
 Plugin entry points are separate so the default bundle does not pull in optional renderer implementations.
 
