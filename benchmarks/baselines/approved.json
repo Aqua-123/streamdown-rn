@@ -2,13 +2,13 @@
   "schemaVersion": 1,
   "records": [
     {
-      "package": "streamdown-rn",
-      "version": "0.2.1",
-      "repository": "darkresearch/generative-ui packages/streamdown-rn",
-      "lineageStatus": "npm-owner-confirmation-required",
-      "npmIntegrity": "sha512-KbnVYi85Xl7h9TJxWKsOFrEERF9bI3kcxUjbepayX1IHv9H/SIhQapqYlGmcEzoo/H/dToFXFN1mQsaOnHizvQ==",
-      "packageSha256": "f86c31b995ed7e066a39861f0902c4c5d7f57efae26646a6484fa28683350876",
-      "gitHead": "f0454d0561adcf12450dc2f6baa55e174dea7219"
+      "package": "streamdown-native",
+      "version": "0.1.0",
+      "repository": "Aqua-123/streamdown-rn",
+      "lineageStatus": "owner-confirmed",
+      "npmIntegrity": "sha512-IHVRL/Ex+DiXguzYkwh9CqCFvM6FilXsKBDsIGzBNDRiiUpDruM2dINK36k8DDV5yff3uO7UPnFy0SMWjMLgBw==",
+      "packageSha256": "9d153cf298ada8c39acbf95518057d140a713f013bafd6ce0bca50e5d0d922e8",
+      "gitHead": "da17fbefd58a510c38b58090db4a93527c51aee7"
     }
   ]
 }

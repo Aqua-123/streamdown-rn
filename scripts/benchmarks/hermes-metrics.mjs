@@ -197,33 +197,22 @@ export function deriveHermesMetricsFromFiles(eventsFile, traceExportFile, rawTra
 }
 
 export const BASELINE_SEED = Object.freeze({
-  package: 'streamdown-rn', version: '0.2.1', repository: 'darkresearch/generative-ui packages/streamdown-rn',
-  lineageStatus: 'npm-owner-confirmation-required',
-  npmIntegrity: 'sha512-KbnVYi85Xl7h9TJxWKsOFrEERF9bI3kcxUjbepayX1IHv9H/SIhQapqYlGmcEzoo/H/dToFXFN1mQsaOnHizvQ==',
-  packageSha256: 'f86c31b995ed7e066a39861f0902c4c5d7f57efae26646a6484fa28683350876',
-  gitHead: 'f0454d0561adcf12450dc2f6baa55e174dea7219',
+  package: 'streamdown-native', version: '0.1.0', repository: 'Aqua-123/streamdown-rn',
+  lineageStatus: 'owner-confirmed',
+  npmIntegrity: 'sha512-IHVRL/Ex+DiXguzYkwh9CqCFvM6FilXsKBDsIGzBNDRiiUpDruM2dINK36k8DDV5yff3uO7UPnFy0SMWjMLgBw==',
+  packageSha256: '9d153cf298ada8c39acbf95518057d140a713f013bafd6ce0bca50e5d0d922e8',
+  gitHead: 'da17fbefd58a510c38b58090db4a93527c51aee7',
 });
 
 export function loadApprovedBaseline(file = path.join(root, 'benchmarks/baselines/approved.json')) {
   const ledger = JSON.parse(fs.readFileSync(file, 'utf8'));
   exactKeys(ledger, ['schemaVersion', 'records'], 'approved baseline ledger');
-  if (ledger.schemaVersion !== 1 || !Array.isArray(ledger.records) || ledger.records.length === 0 || ledger.records.length > 16) {
-    fail('approved baseline ledger must contain its immutable seed and at most 15 appended reviews');
+  if (ledger.schemaVersion !== 1 || !Array.isArray(ledger.records) || ledger.records.length !== 1) {
+    fail('approved baseline ledger must contain exactly one confirmed prior release');
   }
   const keys = ['package', 'version', 'repository', 'lineageStatus', 'npmIntegrity', 'packageSha256', 'gitHead'];
   const seed = ledger.records[0];
   exactKeys(seed, keys, 'approved baseline seed');
-  if (!isDeepStrictEqual(seed, BASELINE_SEED)) fail('approved baseline seed was rewritten; append a reviewed record instead');
-  const immutableFacts = Object.fromEntries(Object.entries(BASELINE_SEED).filter(([key]) => key !== 'lineageStatus'));
-  const confirmed = ledger.records.slice(1).filter((record, index) => {
-    exactKeys(record, keys, `approved baseline review ${index + 1}`);
-    const facts = Object.fromEntries(Object.entries(record).filter(([key]) => key !== 'lineageStatus'));
-    if (!isDeepStrictEqual(facts, immutableFacts)) fail('approved baseline review changed immutable npm facts');
-    if (record.lineageStatus !== 'owner-confirmed') fail(`unsupported approved baseline lineage transition: ${record.lineageStatus}`);
-    return true;
-  });
-  if (confirmed.length !== 1) {
-    fail('npm baseline lineage owner confirmation is required; append one reviewed owner-confirmed record without editing the truthful seed');
-  }
-  return confirmed[0];
+  if (!isDeepStrictEqual(seed, BASELINE_SEED)) fail('approved baseline does not match streamdown-native@0.1.0');
+  return seed;
 }

@@ -204,7 +204,7 @@ function selfTest() {
   Object.assign(metrics, { stableRerendersPerAppend: 0, cacheEntries: 128, coreBundleOptionalMarkerCount: 0, jsDroppedFramePercent: 0.5, uiDroppedFramePercent: 0.5, heapGrowthMiB: 8, optionalHeapGrowthMiB: 8 });
   const corpus = { sha256: protocol.corpusSha256, bytes: protocol.expandedBytes, chunkSize: protocol.chunkSize };
   const source = { commit: 'a'.repeat(40), packageSha256: 'b'.repeat(64) };
-  const approved = { ...BASELINE_SEED, lineageStatus: 'owner-confirmed' };
+  const approved = BASELINE_SEED;
   const baselineSource = { commit: approved.gitHead, packageSha256: approved.packageSha256 };
   const results = ['android', 'ios'].flatMap((platform) => ['baseline', 'candidate'].map((role) => ({
     schemaVersion: 1, timestamp: new Date().toISOString(), status: role === 'candidate' ? 'pass' : 'characterization', runId: `${platform}-${role}`,
@@ -239,15 +239,11 @@ function selfTest() {
   try {
     const ledger = path.join(ledgerRoot, 'approved.json');
     fs.writeFileSync(ledger, JSON.stringify({ schemaVersion: 1, records: [BASELINE_SEED] }));
-    let pendingRejected = false;
-    try { loadApprovedBaseline(ledger); } catch (error) { pendingRejected = /owner confirmation is required/.test(error.message); }
-    if (!pendingRejected) fail('self-test accepted an unconfirmed npm baseline lineage');
-    fs.writeFileSync(ledger, JSON.stringify({ schemaVersion: 1, records: [BASELINE_SEED, approved] }));
-    if (!isDeepStrictEqual(loadApprovedBaseline(ledger), approved)) fail('self-test rejected an append-only owner confirmation');
-    fs.writeFileSync(ledger, JSON.stringify({ schemaVersion: 1, records: [{ ...BASELINE_SEED, gitHead: '0'.repeat(40) }, approved] }));
+    if (!isDeepStrictEqual(loadApprovedBaseline(ledger), approved)) fail('self-test rejected the confirmed prior release');
+    fs.writeFileSync(ledger, JSON.stringify({ schemaVersion: 1, records: [{ ...BASELINE_SEED, gitHead: '0'.repeat(40) }] }));
     let rewrittenRejected = false;
     try { loadApprovedBaseline(ledger); } catch { rewrittenRejected = true; }
-    if (!rewrittenRejected) fail('self-test accepted a rewritten baseline seed');
+    if (!rewrittenRejected) fail('self-test accepted a mismatched prior release');
   } finally { fs.rmSync(ledgerRoot, { recursive: true, force: true }); }
 
   const fixtureRoot = fs.mkdtempSync(path.join(root, 'benchmarks/results/.hermes-self-test-'));

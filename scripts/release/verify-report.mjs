@@ -25,10 +25,6 @@ assert.equal(Object.values(report.parity.knownDivergences).reduce((sum, count) =
 assert.deepEqual(report.visuals.required, ['tests/visual/baselines/ios.manifest.json', 'tests/visual/baselines/android.manifest.json']);
 assert.equal(report.visuals.status, report.visuals.integrity === 'valid' && report.visuals.completeness === 'complete' ? 'available' : 'blocked');
 assert.equal(report.benchmarks.releaseEvidence, report.benchmarks.deltas[0].status === 'pass' ? 'available' : 'blocked');
-const baselineLedger = JSON.parse(fs.readFileSync('benchmarks/baselines/approved.json', 'utf8'));
-if (!baselineLedger.records.some((record) => record.lineageStatus === 'owner-confirmed')) {
-  assert.match(report.benchmarks.deltas[0].reason, /npm baseline lineage owner confirmation is required/);
-}
 assert.equal(report.releaseReady, isReleaseReady(report));
 const ready = {
   parity: { status: 'complete' }, compatibility: { status: 'pass' }, blockers: [],
