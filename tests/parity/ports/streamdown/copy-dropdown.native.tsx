@@ -75,6 +75,76 @@ describe('TableCopyDropdown case-specific native proof', () => {
     fireEvent.press(screen.getByRole('menuitem', { name: 'Copy table as CSV' }));
     await waitFor(() => expect(screen.getByText('Copied')).toBeTruthy());
   });
+  it('shows a scoped custom check for every format and restarts the reset buffer', async () => {
+    jest.useFakeTimers();
+    const writeText = jest.fn().mockResolvedValue({ status: 'success' });
+    const screen = render(
+      <TableControls
+        table={table}
+        capabilities={{ clipboard: { writeText } }}
+        translations={defaultTranslations}
+        icons={{ copy: <Text testID="table-copy">copy</Text>, check: <Text testID="table-check">check</Text> }}
+      ><Text>table</Text></TableControls>
+    );
+    const select = async (name: string) => {
+      fireEvent.press(screen.getByRole('button', { name: 'Copy table' }));
+      fireEvent.press(screen.getByRole('menuitem', { name }));
+      await act(async () => undefined);
+      expect(screen.getByTestId('table-check')).toBeTruthy();
+    };
+    await select('Copy table as Markdown');
+    act(() => jest.advanceTimersByTime(1500));
+    await select('Copy table as CSV');
+    act(() => jest.advanceTimersByTime(1500));
+    expect(screen.getByTestId('table-check')).toBeTruthy();
+    await select('Copy table as TSV');
+    expect(writeText).toHaveBeenNthCalledWith(1, '| Name | City |\n| --- | --- |\n| Ada | London |');
+    expect(writeText).toHaveBeenNthCalledWith(2, 'Name,City\nAda,London');
+    expect(writeText).toHaveBeenNthCalledWith(3, 'Name\tCity\nAda\tLondon');
+    act(() => jest.advanceTimersByTime(2000));
+    expect(screen.getByTestId('table-copy')).toBeTruthy();
+    expect(screen.queryByTestId('table-check')).toBeNull();
+    jest.useRealTimers();
+  });
+
+  it('keeps the copy icon for rejected and non-success outcomes', async () => {
+    const writeText = jest.fn()
+      .mockResolvedValueOnce({ status: 'denied' })
+      .mockRejectedValueOnce(new Error('copy failed'));
+    const screen = render(
+      <TableControls
+        table={table}
+        capabilities={{ clipboard: { writeText } }}
+        translations={defaultTranslations}
+        icons={{ copy: <Text testID="table-copy">copy</Text>, check: <Text testID="table-check">check</Text> }}
+      ><Text>table</Text></TableControls>
+    );
+    for (const [index, message] of ['Action denied', 'copy failed'].entries()) {
+      if (index === 0) fireEvent.press(screen.getByRole('button', { name: 'Copy table' }));
+      fireEvent.press(screen.getByRole('menuitem', { name: 'Copy table as CSV' }));
+      await waitFor(() => expect(screen.getByText(message)).toBeTruthy());
+      expect(screen.getByTestId('table-copy')).toBeTruthy();
+      expect(screen.queryByTestId('table-check')).toBeNull();
+    }
+  });
+
+  it('keeps inline and fullscreen copy feedback scoped', async () => {
+    const screen = render(
+      <TableControls
+        table={table}
+        capabilities={{ clipboard: { writeText: jest.fn().mockResolvedValue({ status: 'success' }) } }}
+        translations={defaultTranslations}
+        icons={{ copy: <Text testID="table-copy">copy</Text>, check: <Text testID="table-check">check</Text> }}
+      ><Text>table</Text></TableControls>
+    );
+    fireEvent.press(screen.getByRole('button', { name: 'View fullscreen' }));
+    const buttons = screen.getAllByRole('button', { name: 'Copy table' });
+    fireEvent.press(buttons[1]);
+    fireEvent.press(screen.getByRole('menuitem', { name: 'Copy table as CSV' }));
+    await act(async () => undefined);
+    expect(buttons[0].findByProps({ testID: 'table-copy' })).toBeTruthy();
+    expect(buttons[1].findByProps({ testID: 'table-check' })).toBeTruthy();
+  });
   // parity:8137a275411e9f6934221677d90a36abf769830b90a96c744b82f70096d3d530
   it('closes the menu after copying', async () => {
     const { screen, writeText } = copyControls();

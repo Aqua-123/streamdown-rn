@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg from 'react-native-svg';
 import { Streamdown } from '../../StreamdownRN';
@@ -22,10 +22,22 @@ describe('translations and icons', () => {
     expect(screen.getByTestId('copy-icon')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Download file' })).toBeTruthy();
     expect(Object.values(defaultIcons).every(React.isValidElement)).toBe(true);
+    expect(React.isValidElement(defaultIcons.check)).toBe(true);
     expect(screen.queryByText('↓')).toBeNull();
 
     screen.rerender(<Streamdown mode="static" capabilities={capabilities} icons={{ copy: <Text testID="next-copy-icon">N</Text> }}>{markdown}</Streamdown>);
     expect(screen.getByTestId('next-copy-icon')).toBeTruthy();
+  });
+
+  it('uses a custom check icon without removing other defaults', async () => {
+    const screen = render(<Streamdown
+      mode="static"
+      capabilities={{ clipboard: { writeText: async () => ({ status: 'success' }) }, files: { save: jest.fn() } }}
+      icons={{ check: <Text testID="custom-check">OK</Text> }}
+    >{'```txt\nhello\n```'}</Streamdown>);
+    expect(screen.getByRole('button', { name: 'Download file' })).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Copy Code' }));
+    await waitFor(() => expect(screen.getByTestId('custom-check')).toBeTruthy());
   });
 
   it('keeps reference SVG controls visible in the dark theme', () => {

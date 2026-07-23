@@ -16,6 +16,7 @@ import { createMathPlugin, type MathNativeAdapter } from '../../src/plugins/math
 import { createMermaidPlugin, type MermaidAdapter } from '../../src/plugins/mermaid';
 import { createOfflineWebViewAdapter, type OfflineWebViewTransport } from '../../src/plugins/mermaid/webview';
 import type { ButtonProps, ButtonState } from '../../src/components/ui';
+import type { IconMap } from '../../src/controls/icons';
 
 const buttonState: ButtonState = { pressed: false, focused: false, hovered: false, disabled: false };
 const callbackButton: ButtonProps = {
@@ -30,6 +31,11 @@ void buttonState;
 void callbackButton;
 void invalidButtonChildren;
 void invalidButtonStyle;
+
+const checkIcons: IconMap = { check: null };
+const propsWithCheckIcon: StreamdownProps = { children: 'copy', icons: { check: null } };
+void checkIcons;
+void propsWithCheckIcon;
 
 const nativeProps: StreamdownProps = {
   children: '# native',

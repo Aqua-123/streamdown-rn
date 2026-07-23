@@ -36,6 +36,7 @@ export function CodeControls({ code, language, capabilities, controls, translati
       {copy ? <ActionButton
         label={translations.copyCode}
         icon={icons?.copy ?? defaultIcons.copy}
+        successIcon={icons?.check ?? defaultIcons.check}
         successMessage={translations.copied}
         disabled={disabled}
         color={color}

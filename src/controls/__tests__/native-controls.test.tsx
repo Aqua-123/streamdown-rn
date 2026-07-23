@@ -1,8 +1,10 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { Modal, ScrollView, StyleSheet, View } from 'react-native';
+import { Path } from 'react-native-svg';
 import { Streamdown } from '../../StreamdownRN';
 import { darkTheme } from '../../themes';
+import { CheckIcon } from '../icons';
 
 describe('native markdown controls', () => {
   // parity:269d04432066d1280c2dd71918500ca9e34655cccfe81020b2c8eb13143e54ad
@@ -11,11 +13,15 @@ describe('native markdown controls', () => {
     const markdown = '```js\nconsole.log("✓")\n```';
     const screen = render(<Streamdown mode="static" capabilities={{ clipboard: { writeText } }}>{markdown}</Streamdown>);
     const copyButton = screen.getByRole('button', { name: 'Copy Code' });
+    const copyPath = copyButton.findByType(Path).props.d;
     expect(StyleSheet.flatten(copyButton.props.style)).toMatchObject({ borderRadius: 8, borderWidth: 1, borderColor: 'transparent' });
     fireEvent(copyButton, 'focus');
     expect(StyleSheet.flatten(copyButton.props.style).borderColor).toBe(darkTheme.primitives!.ring);
     fireEvent.press(copyButton);
     await waitFor(() => expect(writeText).toHaveBeenCalledWith('console.log("✓")'));
+    const expectedCheckPath = render(<CheckIcon />).UNSAFE_getByType(Path).props.d;
+    await waitFor(() => expect(copyButton.findByType(Path).props.d).toBe(expectedCheckPath));
+    expect(copyPath).not.toBe(expectedCheckPath);
 
     screen.rerender(<Streamdown mode="static">{markdown}</Streamdown>);
     expect(screen.queryByRole('button', { name: 'Copy Code' })).toBeNull();

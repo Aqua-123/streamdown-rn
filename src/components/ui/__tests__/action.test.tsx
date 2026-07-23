@@ -1,6 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { StyleSheet, type View } from 'react-native';
+import { StyleSheet, Text, type View } from 'react-native';
 import { ActionButton } from '../../../controls/ActionButton';
 import { Action } from '../Action';
 
@@ -27,11 +27,12 @@ describe('ActionButton compatibility', () => {
     ['rejected', async () => { throw new Error('rejected failure'); }, 'rejected failure'],
   ])('normalizes %s failures', async (_kind, onAction, message) => {
     const onResult = jest.fn();
-    render(<ActionButton label="Run" onAction={onAction} onResult={onResult} />);
+    render(<ActionButton label="Run" successIcon={<Text testID="success-icon">check</Text>} onAction={onAction} onResult={onResult} />);
     fireEvent.press(screen.getByRole('button', { name: 'Run' }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(message));
     expect(screen.getByRole('alert').props.accessibilityLiveRegion).toBe('polite');
     expect(onResult).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed', error: expect.any(Error) }));
+    expect(screen.queryByTestId('success-icon')).toBeNull();
   });
 
   it('suppresses overlapping presses while busy', async () => {
@@ -47,16 +48,29 @@ describe('ActionButton compatibility', () => {
     await act(async () => finish?.({ status: 'success' }));
   });
 
-  it('resets success feedback and clears its timer on unmount', async () => {
+  it('shows the success icon during feedback, restores the original icon, and keeps its accessible name', async () => {
     jest.useFakeTimers();
     const clear = jest.spyOn(global, 'clearTimeout');
-    const view = render(<ActionButton label="Save" successMessage="Saved" resetAfterMs={50} onAction={() => ({ status: 'success' })} />);
-    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+    const view = render(<ActionButton
+      label="Save"
+      icon={<Text testID="save-icon">save</Text>}
+      successIcon={<Text testID="success-icon">check</Text>}
+      successMessage="Saved"
+      resetAfterMs={50}
+      onAction={() => ({ status: 'success' })}
+    />);
+    const button = screen.getByRole('button', { name: 'Save' });
+    fireEvent.press(button);
     expect(screen.getByRole('alert')).toHaveTextContent('Saved');
+    expect(screen.getByTestId('success-icon')).toBeTruthy();
+    expect(screen.queryByTestId('save-icon')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Save' })).toBe(button);
     act(() => jest.advanceTimersByTime(50));
     expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByTestId('save-icon')).toBeTruthy();
+    expect(screen.queryByTestId('success-icon')).toBeNull();
 
-    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.press(button);
     view.unmount();
     expect(clear).toHaveBeenCalled();
     clear.mockRestore();
@@ -78,9 +92,10 @@ describe('ActionButton compatibility', () => {
     ['cancelled', 'Action cancelled'],
     ['failed', 'Action failed'],
   ] as const)('preserves the default %s message', async (status, message) => {
-    render(<ActionButton label="Run" onAction={() => ({ status })} />);
+    render(<ActionButton label="Run" successIcon={<Text testID="success-icon">check</Text>} onAction={() => ({ status })} />);
     fireEvent.press(screen.getByRole('button', { name: 'Run' }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(message));
+    expect(screen.queryByTestId('success-icon')).toBeNull();
   });
 
   it('preserves ref, color, radius, and focus ring composition', () => {

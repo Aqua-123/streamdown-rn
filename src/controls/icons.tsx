@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import Svg, { Path, type SvgProps } from 'react-native-svg';
 
-export type IconName = 'copy' | 'share' | 'download' | 'fullscreen' | 'close' | 'retry' | 'zoomIn' | 'zoomOut' | 'zoomReset';
+export type IconName = 'copy' | 'check' | 'share' | 'download' | 'fullscreen' | 'close' | 'retry' | 'zoomIn' | 'zoomOut' | 'zoomReset';
 export type IconMap = Partial<Record<IconName, ReactNode>>;
 
 type IconProps = SvgProps & { size?: number };
@@ -47,7 +47,7 @@ export const ZoomOutIcon = (props: IconProps) => <Icon {...props}>
 </Icon>;
 
 export const defaultIcons: Readonly<Record<IconName, ReactNode>> = {
-  copy: <CopyIcon />, share: <ExternalLinkIcon />, download: <DownloadIcon />,
+  copy: <CopyIcon />, check: <CheckIcon />, share: <ExternalLinkIcon />, download: <DownloadIcon />,
   fullscreen: <Maximize2Icon />, close: <XIcon />, retry: <RotateCcwIcon />,
   zoomIn: <ZoomInIcon />, zoomOut: <ZoomOutIcon />, zoomReset: <RotateCcwIcon />,
 };

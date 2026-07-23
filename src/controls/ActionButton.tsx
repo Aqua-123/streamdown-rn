@@ -6,6 +6,7 @@ import type { CapabilityResult } from '../platform/capabilities';
 export interface ActionButtonProps {
   label: string;
   icon?: React.ReactNode;
+  successIcon?: React.ReactNode;
   disabled?: boolean;
   onAction: () => Promise<CapabilityResult> | CapabilityResult;
   onResult?: (result: CapabilityResult) => void;
@@ -18,11 +19,11 @@ export interface ActionButtonProps {
   focusRingColor?: string;
 }
 
-export function ActionButton({ label, icon, disabled, onAction, onResult, buttonRef, successMessage, resetAfterMs = 2000, color, expanded, radius, focusRingColor }: ActionButtonProps) {
+export function ActionButton({ label, icon, successIcon, disabled, onAction, onResult, buttonRef, successMessage, resetAfterMs = 2000, color, expanded, radius, focusRingColor }: ActionButtonProps) {
   const visual = icon ?? label;
   return (
     <Action.Root disabled={disabled} onAction={onAction} onResult={onResult} successMessage={successMessage} resetAfterMs={resetAfterMs}>
-      <View>
+      {(state) => <View>
         <Action.Trigger
           ref={buttonRef}
           accessibilityLabel={label}
@@ -31,10 +32,10 @@ export function ActionButton({ label, icon, disabled, onAction, onResult, button
           radius={radius}
           focusRingColor={focusRingColor}
         >
-          {visual}
+          {state.result?.status === 'success' && state.message ? successIcon ?? visual : visual}
         </Action.Trigger>
         <Action.Status style={{ color }} />
-      </View>
+      </View>}
     </Action.Root>
   );
 }

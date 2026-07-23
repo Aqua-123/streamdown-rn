@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text } from 'react-native';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import Svg from 'react-native-svg';
 import { Streamdown } from '../../StreamdownRN';
 import { defaultTranslations } from '../../controls/translations';
@@ -241,6 +241,31 @@ describe('mermaid plugin', () => {
     expect(screen.queryByLabelText('Download diagram')).toBeNull();
     expect(screen.getByLabelText('View fullscreen')).toBeTruthy();
     expect(screen.queryByLabelText('Zoom')).toBeNull();
+  });
+
+  it('shows and resets the Mermaid success icon only after a successful copy', async () => {
+    jest.useFakeTimers();
+    const adapter = { families: ['flowchart'] as const, render: jest.fn(async () => ({ kind: 'native' as const, content: <Text>visual</Text> })) };
+    const writeText = jest.fn().mockResolvedValueOnce({ status: 'success' }).mockResolvedValueOnce({ status: 'denied' });
+    render(<Streamdown
+      mode="static"
+      plugins={{ mermaid: createMermaidPlugin({ adapter }) }}
+      capabilities={{ clipboard: { writeText } }}
+      icons={{ copy: <Text testID="mermaid-copy">copy</Text>, check: <Text testID="mermaid-check">check</Text> }}
+    >{'```mermaid\nflowchart LR\nA-->B\n```'}</Streamdown>);
+    await waitFor(() => expect(screen.getByText('visual')).toBeTruthy());
+    const button = screen.getByRole('button', { name: 'Copy diagram' });
+    fireEvent.press(button);
+    await act(async () => undefined);
+    expect(screen.getByTestId('mermaid-check')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy diagram' })).toBe(button);
+    act(() => jest.advanceTimersByTime(2000));
+    expect(screen.getByTestId('mermaid-copy')).toBeTruthy();
+    fireEvent.press(button);
+    await act(async () => undefined);
+    expect(screen.queryByTestId('mermaid-check')).toBeNull();
+    expect(screen.getByRole('alert')).toHaveTextContent('Action denied');
+    jest.useRealTimers();
   });
 
   it('rejects oversized diagrams before adapters and exposes copy/share/fullscreen/panzoom seams', async () => {

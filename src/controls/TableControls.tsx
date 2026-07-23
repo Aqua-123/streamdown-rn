@@ -60,7 +60,9 @@ export function TableControls({ table, children, capabilities, controls, transla
   };
   const renderActions = (scope: 'inline' | 'fullscreen', includeFullscreen: boolean) => <Toolbar.Root disabled={disabled} style={{ alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
     {copy ? <Dropdown.Root open={menu?.type === 'copy' && menu.scope === scope} onOpenChange={(open) => setMenu(open ? { type: 'copy', scope } : null)}>
-      <Dropdown.Trigger accessibilityLabel={translations.copyTable} disabled={disabled} foregroundColor={color} radius={radius} focusRingColor={focusRingColor}>{icons?.copy ?? defaultIcons.copy}</Dropdown.Trigger>
+      <Dropdown.Trigger accessibilityLabel={translations.copyTable} disabled={disabled} foregroundColor={color} radius={radius} focusRingColor={focusRingColor}>
+        {copyFeedback?.scope === scope ? icons?.check ?? defaultIcons.check : icons?.copy ?? defaultIcons.copy}
+      </Dropdown.Trigger>
       <Dropdown.Popup accessibilityLabel={translations.copyTable} radius={radius} style={{ borderColor: popoverBorderColor, backgroundColor: popoverColor }}>
         <Dropdown.Item accessibilityLabel={translations.copyTableAsMarkdown} disabled={disabled} foregroundColor={popoverForegroundColor} radius={radius} focusRingColor={focusRingColor} onSelect={() => copyTable(scope, 'markdown')}>{translations.tableFormatMarkdown}</Dropdown.Item>
         <Dropdown.Item accessibilityLabel={translations.copyTableAsCsv} disabled={disabled} foregroundColor={popoverForegroundColor} radius={radius} focusRingColor={focusRingColor} onSelect={() => copyTable(scope, 'csv')}>{translations.tableFormatCsv}</Dropdown.Item>
