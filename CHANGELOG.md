@@ -1,5 +1,11 @@
 # streamdown-native
 
+## 0.1.2
+
+### Patch Changes
+
+- 4f1cd52: Fix native streaming text colors on iOS and Android by sending React Native processed color values through the bridge, including platform and dynamic colors; restore React Native codegen compatibility in the ESM build; and export `streamdown-native/package.json` for tooling that resolves package metadata.
+
 ## 0.1.1
 
 ### Patch Changes
