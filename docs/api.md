@@ -1,6 +1,6 @@
 # API
 
-> **Current release:** API for npm `0.1.0`.
+> **Current release:** API for npm `0.1.1`.
 
 The root entry exports `Streamdown`, `StreamdownRN`, the default alias, skeleton primitives, controls, capability helpers, security utilities, streaming instrumentation, and public types. DOM-only Streamdown properties such as `className`, `rehypePlugins`, `prefix`, and `remarkRehypeOptions` are typed as unsupported.
 

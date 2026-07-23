@@ -2,7 +2,7 @@
 
 Streaming Markdown for React Native, with native semantics, incremental rendering, explicit security boundaries, and opt-in rich-content adapters.
 
-> **Current release:** This branch documents npm `0.1.0`.
+> **Current release:** This branch documents npm `0.1.1`.
 
 ## Install
 

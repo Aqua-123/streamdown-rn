@@ -1,57 +1,129 @@
 {
   "name": "streamdown-native",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Streaming Markdown for React Native with native semantics, explicit security policy, and opt-in rich-content adapters",
   "type": "commonjs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "react-native": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
-      "import": { "types": "./dist/index.d.mts", "default": "./dist/esm/index.js" },
-      "require": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+      "react-native": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
       "default": "./dist/index.js"
     },
     "./ui": {
-      "react-native": { "types": "./dist/components/ui/index.d.ts", "default": "./dist/components/ui/index.js" },
-      "import": { "types": "./dist/components/ui/index.d.mts", "default": "./dist/esm/components/ui/index.js" },
-      "require": { "types": "./dist/components/ui/index.d.ts", "default": "./dist/components/ui/index.js" },
+      "react-native": {
+        "types": "./dist/components/ui/index.d.ts",
+        "default": "./dist/components/ui/index.js"
+      },
+      "import": {
+        "types": "./dist/components/ui/index.d.mts",
+        "default": "./dist/esm/components/ui/index.js"
+      },
+      "require": {
+        "types": "./dist/components/ui/index.d.ts",
+        "default": "./dist/components/ui/index.js"
+      },
       "default": "./dist/components/ui/index.js"
     },
     "./code": {
-      "react-native": { "types": "./dist/plugins/code/index.d.ts", "default": "./dist/plugins/code/index.js" },
-      "import": { "types": "./dist/plugins/code/index.d.mts", "default": "./dist/esm/plugins/code/index.js" },
-      "require": { "types": "./dist/plugins/code/index.d.ts", "default": "./dist/plugins/code/index.js" },
+      "react-native": {
+        "types": "./dist/plugins/code/index.d.ts",
+        "default": "./dist/plugins/code/index.js"
+      },
+      "import": {
+        "types": "./dist/plugins/code/index.d.mts",
+        "default": "./dist/esm/plugins/code/index.js"
+      },
+      "require": {
+        "types": "./dist/plugins/code/index.d.ts",
+        "default": "./dist/plugins/code/index.js"
+      },
       "default": "./dist/plugins/code/index.js"
     },
     "./cjk": {
-      "react-native": { "types": "./dist/plugins/cjk/index.d.ts", "default": "./dist/plugins/cjk/index.js" },
-      "import": { "types": "./dist/plugins/cjk/index.d.mts", "default": "./dist/esm/plugins/cjk/index.js" },
-      "require": { "types": "./dist/plugins/cjk/index.d.ts", "default": "./dist/plugins/cjk/index.js" },
+      "react-native": {
+        "types": "./dist/plugins/cjk/index.d.ts",
+        "default": "./dist/plugins/cjk/index.js"
+      },
+      "import": {
+        "types": "./dist/plugins/cjk/index.d.mts",
+        "default": "./dist/esm/plugins/cjk/index.js"
+      },
+      "require": {
+        "types": "./dist/plugins/cjk/index.d.ts",
+        "default": "./dist/plugins/cjk/index.js"
+      },
       "default": "./dist/plugins/cjk/index.js"
     },
     "./renderers": {
-      "react-native": { "types": "./dist/plugins/renderers/index.d.ts", "default": "./dist/plugins/renderers/index.js" },
-      "import": { "types": "./dist/plugins/renderers/index.d.mts", "default": "./dist/esm/plugins/renderers/index.js" },
-      "require": { "types": "./dist/plugins/renderers/index.d.ts", "default": "./dist/plugins/renderers/index.js" },
+      "react-native": {
+        "types": "./dist/plugins/renderers/index.d.ts",
+        "default": "./dist/plugins/renderers/index.js"
+      },
+      "import": {
+        "types": "./dist/plugins/renderers/index.d.mts",
+        "default": "./dist/esm/plugins/renderers/index.js"
+      },
+      "require": {
+        "types": "./dist/plugins/renderers/index.d.ts",
+        "default": "./dist/plugins/renderers/index.js"
+      },
       "default": "./dist/plugins/renderers/index.js"
     },
     "./math": {
-      "react-native": { "types": "./dist/plugins/math/index.d.ts", "default": "./dist/plugins/math/index.js" },
-      "import": { "types": "./dist/plugins/math/index.d.mts", "default": "./dist/esm/plugins/math/index.js" },
-      "require": { "types": "./dist/plugins/math/index.d.ts", "default": "./dist/plugins/math/index.js" },
+      "react-native": {
+        "types": "./dist/plugins/math/index.d.ts",
+        "default": "./dist/plugins/math/index.js"
+      },
+      "import": {
+        "types": "./dist/plugins/math/index.d.mts",
+        "default": "./dist/esm/plugins/math/index.js"
+      },
+      "require": {
+        "types": "./dist/plugins/math/index.d.ts",
+        "default": "./dist/plugins/math/index.js"
+      },
       "default": "./dist/plugins/math/index.js"
     },
     "./mermaid": {
-      "react-native": { "types": "./dist/plugins/mermaid/index.d.ts", "default": "./dist/plugins/mermaid/index.js" },
-      "import": { "types": "./dist/plugins/mermaid/index.d.mts", "default": "./dist/esm/plugins/mermaid/index.js" },
-      "require": { "types": "./dist/plugins/mermaid/index.d.ts", "default": "./dist/plugins/mermaid/index.js" },
+      "react-native": {
+        "types": "./dist/plugins/mermaid/index.d.ts",
+        "default": "./dist/plugins/mermaid/index.js"
+      },
+      "import": {
+        "types": "./dist/plugins/mermaid/index.d.mts",
+        "default": "./dist/esm/plugins/mermaid/index.js"
+      },
+      "require": {
+        "types": "./dist/plugins/mermaid/index.d.ts",
+        "default": "./dist/plugins/mermaid/index.js"
+      },
       "default": "./dist/plugins/mermaid/index.js"
     },
     "./mermaid/webview": {
-      "react-native": { "types": "./dist/plugins/mermaid/webview/index.d.ts", "default": "./dist/plugins/mermaid/webview/index.js" },
-      "import": { "types": "./dist/plugins/mermaid/webview/index.d.mts", "default": "./dist/esm/plugins/mermaid/webview/index.js" },
-      "require": { "types": "./dist/plugins/mermaid/webview/index.d.ts", "default": "./dist/plugins/mermaid/webview/index.js" },
+      "react-native": {
+        "types": "./dist/plugins/mermaid/webview/index.d.ts",
+        "default": "./dist/plugins/mermaid/webview/index.js"
+      },
+      "import": {
+        "types": "./dist/plugins/mermaid/webview/index.d.mts",
+        "default": "./dist/esm/plugins/mermaid/webview/index.js"
+      },
+      "require": {
+        "types": "./dist/plugins/mermaid/webview/index.d.ts",
+        "default": "./dist/plugins/mermaid/webview/index.js"
+      },
       "default": "./dist/plugins/mermaid/webview/index.js"
     }
   },
