@@ -6,7 +6,7 @@
 2. Merge the pull request only after `Hosted gates / verify` passes. A push to `main` automatically creates or updates the Changesets version pull request.
 3. Review and merge the version pull request. Changesets updates `package.json`, `CHANGELOG.md`, and the promoted versioned documentation; maintainers do not edit release versions by hand.
 4. Capture and approve the exact commit's physical-device evidence through the protected `Release evidence` workflow.
-5. Manually dispatch `Release` with that successful evidence run ID. After all stop gates pass, approve the protected `npm` environment deployment.
+5. Manually dispatch `Release` with that successful evidence run ID. If the dedicated evidence runner is unavailable, the maintainer may instead explicitly attest completed physical iOS and Android verification with the `hardware_verified` input. After all remaining stop gates pass, approve the protected `npm` environment deployment.
 6. The workflow publishes the sealed tarball through npm trusted publishing, then creates the matching `v<version>` tag and GitHub release. No local machine or long-lived npm write token publishes production releases.
 
 Use `bun run changeset:status` to inspect pending release intent and `bun run release:report -- --output release-report.json` to inspect release readiness.

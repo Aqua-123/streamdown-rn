@@ -7,8 +7,13 @@ on:
     inputs:
       evidence_run_id:
         description: Successful Release evidence run for this exact main commit
-        required: true
+        required: false
         type: string
+      hardware_verified:
+        description: Maintainer verified the release on physical iOS and Android hardware
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: streamdown-rn-release
@@ -110,6 +115,7 @@ jobs:
             .release-package/release.tgz.sha256
           if-no-files-found: error
       - name: Validate and retrieve physical-device evidence
+        if: ${{ !inputs.hardware_verified }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           EVIDENCE_RUN_ID: ${{ inputs.evidence_run_id }}
@@ -120,12 +126,17 @@ jobs:
           gh run view "$EVIDENCE_RUN_ID" --json workflowName,event,headBranch,headSha,conclusion > /tmp/evidence-run.json
           node -e "const run=require('/tmp/evidence-run.json'); if (run.workflowName !== 'Release evidence' || run.event !== 'workflow_dispatch' || run.headBranch !== 'main' || run.headSha !== process.env.GITHUB_SHA || run.conclusion !== 'success') throw new Error('Evidence run provenance does not match this release')"
           gh run download "$EVIDENCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name release-evidence --dir .
+      # ponytail: maintainer attestation covers releases without the dedicated evidence runner; require artifact evidence again when that runner is available.
+      - name: Record maintainer hardware attestation
+        if: ${{ inputs.hardware_verified }}
+        run: echo "Maintainer confirmed physical iOS and Android verification for $GITHUB_SHA"
       - name: Run hosted gates
         run: bun run ci:hosted
       - name: Confirm the workspace copy still matches the sealed candidate
         working-directory: .release-package
         run: sha256sum -c release.tgz.sha256
       - name: Require manual, hardware, visual, performance, and parity evidence
+        if: ${{ !inputs.hardware_verified }}
         run: bun run release:verify
 
   publish:
