@@ -10,7 +10,7 @@ static NSArray<NSDictionary *> *SDJSONArray(NSString *json)
 
 static UIColor *SDColor(id value)
 {
-  if (![value isKindOfClass:NSString.class]) return nil;
+  if (!value || [value isKindOfClass:NSString.class]) return nil;
   @try { return [RCTConvert UIColor:value]; } @catch (__unused NSException *exception) { return nil; }
 }
 

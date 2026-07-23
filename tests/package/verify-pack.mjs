@@ -192,10 +192,16 @@ try {
     assert.match(nativeViewConfig, /uiViewClassName:\s*["']StreamdownText["']/);
     assert.doesNotMatch(nativeViewConfig, /codegenNativeComponent\)\(['"]StreamdownText/);
     for (const conditions of Object.values(packedManifest.exports)) {
+      if (typeof conditions === 'string') continue;
       const importTarget = conditions.import?.default;
       assert.equal(typeof importTarget, 'string');
       run('node', ['--check', path.join(installedPackage, importTarget)]);
     }
+    const packageManifestEntry = run('node', [
+      '--eval',
+      "console.log(require.resolve('streamdown-native/package.json'))",
+    ], { cwd: consumer });
+    assert.match(packageManifestEntry, /streamdown-native\/package\.json$/);
     for (const subpath of ['./code', './cjk', './renderers', './math', './mermaid/webview']) {
       const specifier = `streamdown-native/${subpath.slice(2)}`;
       const esmKeys = JSON.parse(run('node', [

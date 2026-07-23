@@ -22,16 +22,17 @@ if (transformedNativeComponent.map) {
 }
 
 const manifest = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-const entries = Object.values(manifest.exports).map((conditions) => {
+const entries = Object.values(manifest.exports).flatMap((conditions) => {
+  if (typeof conditions === 'string') return [];
   const cjs = conditions.require?.default ?? conditions.default;
   const esm = conditions.import?.default;
   if (typeof cjs !== 'string' || typeof esm !== 'string') throw new Error('Every package export requires import and CommonJS targets');
-  return {
+  return [{
     cjsPath: cjs.replace(/^\.\//, ''),
     declarationPath: conditions.require?.types.replace(/^\.\//, ''),
     wrapperPath: esm.replace(/^\.\//, ''),
     esmDeclarationPath: conditions.import?.types.replace(/^\.\//, ''),
-  };
+  }];
 });
 
 const relativeModule = (from, to) => {

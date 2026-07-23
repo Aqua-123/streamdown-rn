@@ -1,4 +1,11 @@
-import { StyleSheet, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
+import {
+  processColor,
+  StyleSheet,
+  type ProcessedColorValue,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
 import { sanitizeResourceURL } from '../core/security';
 import { transformResourceURL } from '../core/security/treePolicy';
 import type { RenderContext, SemanticNode } from '../renderers/rendererTypes';
@@ -6,8 +13,8 @@ import type { RenderContext, SemanticNode } from '../renderers/rendererTypes';
 export interface NativeTextRun {
   start: number;
   end: number;
-  color?: string;
-  backgroundColor?: string;
+  color?: ProcessedColorValue;
+  backgroundColor?: ProcessedColorValue;
   fontFamily?: string;
   fontSize?: number;
   fontWeight?: string;
@@ -85,15 +92,20 @@ function numberValue(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
+function colorValue(value: TextStyle['color']): ProcessedColorValue | null | undefined {
+  if (value === undefined) return undefined;
+  return processColor(value) ?? null;
+}
+
 export function serializeTextStyle(style: StyleProp<TextStyle>): Omit<NativeTextRun, 'start' | 'end'> | null {
   const flat = StyleSheet.flatten(style) ?? {};
-  if ((flat.color !== undefined && typeof flat.color !== 'string') || (flat.backgroundColor !== undefined && typeof flat.backgroundColor !== 'string')) {
-    return null;
-  }
+  const color = colorValue(flat.color);
+  const backgroundColor = colorValue(flat.backgroundColor);
+  if (color === null || backgroundColor === null) return null;
   const decoration = typeof flat.textDecorationLine === 'string' ? flat.textDecorationLine : '';
   return {
-    color: stringValue(flat.color),
-    backgroundColor: stringValue(flat.backgroundColor),
+    color,
+    backgroundColor,
     fontFamily: stringValue(flat.fontFamily),
     fontSize: numberValue(flat.fontSize),
     fontWeight: flat.fontWeight === undefined ? undefined : String(flat.fontWeight),

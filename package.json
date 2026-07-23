@@ -125,7 +125,8 @@
         "default": "./dist/plugins/mermaid/webview/index.js"
       },
       "default": "./dist/plugins/mermaid/webview/index.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "author": "Dark Research <engineering@darkresearch.ai>",
   "license": "Apache-2.0",

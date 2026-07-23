@@ -181,8 +181,8 @@ class StreamdownTextView(context: Context) : TextView(context), Choreographer.Fr
 
   private fun applyRun(value: SpannableString, run: JSONObject, start: Int, end: Int) {
     val flags = Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-    run.string("color")?.let { parseColor(it)?.let { color -> value.setSpan(ForegroundColorSpan(color), start, end, flags) } }
-    run.string("backgroundColor")?.let { parseColor(it)?.let { color -> value.setSpan(BackgroundColorSpan(color), start, end, flags) } }
+    run.color("color")?.let { color -> value.setSpan(ForegroundColorSpan(color), start, end, flags) }
+    run.color("backgroundColor")?.let { color -> value.setSpan(BackgroundColorSpan(color), start, end, flags) }
     run.string("fontFamily")?.let { value.setSpan(TypefaceSpan(it), start, end, flags) }
     if (run.has("fontSize")) {
       val sp = run.optDouble("fontSize", 16.0).toFloat()
@@ -259,6 +259,11 @@ class StreamdownTextView(context: Context) : TextView(context), Choreographer.Fr
   companion object {
     private fun jsonArray(value: String): JSONArray = try { JSONArray(value) } catch (_: Exception) { JSONArray() }
     private fun JSONObject.string(name: String): String? = if (has(name) && !isNull(name)) optString(name) else null
+    private fun JSONObject.color(name: String): Int? = when (val value = opt(name)) {
+      is Number -> value.toInt()
+      is String -> parseColor(value)
+      else -> null
+    }
     private fun parseColor(value: String): Int? = try { Color.parseColor(value) } catch (_: IllegalArgumentException) { null }
     private fun topology(value: String, limit: Int): String {
       val output = mutableListOf<String>()
