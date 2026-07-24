@@ -132,11 +132,11 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Aqua-123/streamdown-rn.git"
+    "url": "git+https://github.com/Aqua-123/streamdown-native.git"
   },
-  "homepage": "https://github.com/Aqua-123/streamdown-rn#readme",
+  "homepage": "https://github.com/Aqua-123/streamdown-native#readme",
   "bugs": {
-    "url": "https://github.com/Aqua-123/streamdown-rn/issues"
+    "url": "https://github.com/Aqua-123/streamdown-native/issues"
   },
   "keywords": [
     "react-native",
